@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小五面積：平行四邊形、三角形、梯形</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Noto+Sans+TC:wght@400;700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', 'Noto Sans TC', sans-serif;
+            background-color: #f0fdf4; /* 清新綠色背景 */
+            background-image: radial-gradient(#bbf7d0 3px, transparent 3px);
+            background-size: 30px 30px;
+            overscroll-behavior-y: contain; 
+            touch-action: manipulation;
+        }
+        .math-font {
+            font-family: 'Nunito', 'Fredoka One', monospace;
+        }
+        
+        /* 浮動動畫 (小老師公仔用) */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* 輸入框樣式 */
+        .eq-input-cell {
+            min-width: 60px;
+            height: 60px;
+            padding: 0 12px;
+            border: 3px solid #cbd5e1;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            font-size: 2rem;
+            font-weight: 900;
+            color: #6d28d9;
+            font-family: 'Nunito', monospace;
+            background-color: white;
+            transition: all 0.2s;
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .eq-input-cell.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            background-color: #f8fafc;
+        }
+
+        .eq-input-cell.active-cell {
+            border-color: #a855f7;
+            box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.3);
+            background-color: #faf5ff;
+            transform: scale(1.05);
+        }
+
+        .eq-input-cell.correct {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+            color: #166534;
+        }
+        
+        .eq-input-cell.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #b91c1c;
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* 讓空的輸入框能顯示 placeholder */
+        .eq-input-cell:empty::before {
+            content: attr(placeholder);
+            color: #94a3b8;
+            font-size: 1.25rem;
+            pointer-events: none;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        .num-btn {
+            background-color: #ffffff;
+            border: 2px solid #bae6fd;
+            border-bottom: 6px solid #7dd3fc;
+            border-radius: 16px;
+            height: 64px;
+            font-size: 2rem;
+            font-weight: 900;
+            color: #0284c7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.1s;
+            touch-action: manipulation; 
+        }
+        .num-btn:active {
+            border-bottom-width: 2px;
+            transform: translateY(4px);
+            background-color: #e0f2fe;
+        }
+        .num-btn.btn-action {
+            background-color: #fff1f2;
+            border-color: #fecdd3;
+            border-bottom-color: #fb7185;
+            color: #e11d48;
+        }
+        .num-btn.btn-action:active {
+            background-color: #ffe4e6;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        
+        /* 頁籤顏色 (不設定底部消除，讓它保留邊框去覆蓋下方) */
+        .tab-para { border-color: #3b82f6; background-color: #3b82f6; color: white; }
+        .tab-para-inactive { border-color: #bfdbfe; background-color: #eff6ff; color: #60a5fa; }
+        
+        .tab-tri { border-color: #22c55e; background-color: #22c55e; color: white; }
+        .tab-tri-inactive { border-color: #bbf7d0; background-color: #f0fdf4; color: #4ade80; }
+        
+        .tab-trap { border-color: #f59e0b; background-color: #f59e0b; color: white; }
+        .tab-trap-inactive { border-color: #fde68a; background-color: #fffbeb; color: #fbbf24; }
+    </style>
+</head>
+<body class="min-h-screen py-8 px-4 text-gray-800">
+
+    <div class="max-w-5xl mx-auto space-y-6 md:space-y-8">
+        
+        <!-- Header 繽紛版 -->
+        <div class="text-center bg-white p-5 md:p-6 rounded-[2rem] shadow-[0_8px_0_#4ade80] border-4 border-green-400">
+            <h1 class="text-3xl md:text-5xl font-black text-green-600 mb-6 tracking-wide math-font drop-shadow-sm">📐 面積計算樂園 📐</h1>
+            
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6 bg-green-50 p-4 rounded-3xl border-2 border-dashed border-green-300 inline-flex w-full max-w-3xl mx-auto shadow-sm">
+                <!-- 更新貓貓老師圖片，移除 rounded-full 避免透明圖片被裁切 -->
+                <img src="https://pmath-lab.github.io/p5area/CATT.png" alt="貓貓老師" class="w-24 h-24 object-contain drop-shadow-md animate-float">
+                <p class="text-base md:text-xl text-gray-700 text-left leading-relaxed">
+                    <span class="font-black text-green-700 text-xl md:text-2xl bg-white px-3 py-1 rounded-xl shadow-sm border border-green-200">貓貓老師話：</span><br>
+                    <span class="inline-block mt-2 font-bold">「認住<strong class="text-red-500 text-2xl">直角</strong>找<strong class="text-blue-600 text-2xl">底高</strong>，<br>列式運算實計到！」</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- 全新包裝群組：隔絕 space-y 干擾，並設定層級堆疊 -->
+        <div class="relative">
+            
+            <!-- 選擇圖形 Tabs -->
+            <div class="flex items-end justify-center gap-2 md:gap-4 px-2">
+                <button id="tabPara" onclick="switchMode('para')" class="px-4 py-3 md:px-8 md:py-4 rounded-t-3xl font-black text-base md:text-xl border-4 transition-all cursor-pointer flex items-center justify-center relative z-30 tab-para">
+                    平行四邊形
+                </button>
+                <button id="tabTri" onclick="switchMode('tri')" class="px-4 py-2 md:px-8 md:py-3 rounded-t-3xl font-black text-base md:text-xl border-4 transition-all cursor-pointer flex items-center justify-center relative z-10 hover:opacity-90 tab-tri-inactive">
+                    三角形
+                </button>
+                <button id="tabTrap" onclick="switchMode('trap')" class="px-4 py-2 md:px-8 md:py-3 rounded-t-3xl font-black text-base md:text-xl border-4 transition-all cursor-pointer flex items-center justify-center relative z-10 hover:opacity-90 tab-trap-inactive">
+                    梯形
+                </button>
+            </div>
+
+            <!-- 主內容框 (-mt-[4px] 精準向上覆蓋，z-20 在未選頁籤之上，選中頁籤之下) -->
+            <div id="mainContentBox" class="bg-white p-4 md:p-8 rounded-[2rem] shadow-[0_8px_0_#3b82f6] border-4 border-[#3b82f6] relative z-20 -mt-[4px] transition-all duration-300">
+                
+                <!-- 教學區域 -->
+                <div id="tutorialSection" class="mb-8 bg-blue-50 p-5 md:p-6 rounded-3xl border-4 border-blue-200 shadow-sm">
+                    <h2 class="text-xl md:text-2xl font-black text-blue-700 mb-4 border-b-4 border-dashed border-blue-200 pb-3 flex items-center gap-2">
+                        <span class="text-3xl">📖</span> 面積公式溫習
+                    </h2>
+                    <div class="text-center">
+                        <p class="text-2xl md:text-4xl font-black text-gray-800 tracking-wider my-4" id="formulaDisplay"></p>
+                    </div>
+                </div>
+
+                <hr class="my-8 border-t-4 border-dashed border-gray-200">
+
+                <!-- 練習區域 -->
+                <div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl md:text-3xl font-black text-gray-800 flex items-center gap-2">
+                            <span class="text-4xl">✏️</span> 動手代入公式
+                        </h2>
+                        <div class="bg-amber-300 text-amber-900 px-4 py-2 md:px-6 md:py-3 rounded-2xl font-black text-lg md:text-xl shadow-[0_4px_0_#d97706] border-2 border-amber-400 transform -rotate-2">
+                            得分：<span id="scoreDisplay" class="text-3xl">0</span>
+                        </div>
+                    </div>
+
+                    <div id="instructionBanner" class="bg-indigo-100 text-indigo-800 p-3 md:p-4 rounded-2xl text-center font-black mb-8 text-lg md:text-xl border-4 border-indigo-300 shadow-sm animate-pulse">
+                        👉 請在空白框內輸入完整的算式，列式正確後再計算答案。
+                    </div>
+
+                    <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center lg:items-start justify-center">
+                        
+                        <!-- 左邊：圖形與算式區 -->
+                        <div class="w-full lg:w-3/5 bg-white p-5 md:p-8 rounded-[2rem] border-4 border-gray-200 shadow-[0_8px_0_#cbd5e1] flex flex-col items-center">
+                            
+                            <!-- SVG 畫圖區 -->
+                            <div id="svgContainer" class="w-full max-w-sm aspect-[5/3] mb-8 relative">
+                                <!-- SVG 會由 JS 動態生成 -->
+                            </div>
+
+                            <!-- 算式輸入區 -->
+                            <div id="equationContainer" class="flex flex-wrap justify-center items-center gap-2 md:gap-4 text-2xl md:text-4xl font-black text-gray-700 math-font w-full">
+                                <!-- 算式空格會由 JS 動態生成 -->
+                            </div>
+                        </div>
+
+                        <!-- 右邊：自訂鍵盤及提交按鈕 -->
+                        <div id="numpadArea" class="w-full max-w-sm flex flex-col items-center gap-4 mt-4 lg:mt-0">
+                            
+                            <div class="grid grid-cols-4 gap-3 w-full bg-white p-4 md:p-5 rounded-3xl border-4 border-gray-200 shadow-[0_6px_0_#e2e8f0]">
+                                <!-- Row 1 -->
+                                <button onclick="handleNumpad('7')" class="num-btn math-font">7</button>
+                                <button onclick="handleNumpad('8')" class="num-btn math-font">8</button>
+                                <button onclick="handleNumpad('9')" class="num-btn math-font">9</button>
+                                <button onclick="handleNumpad('÷')" class="num-btn math-font bg-indigo-50 border-indigo-200 border-bottom-indigo-400 text-indigo-600">÷</button>
+                                
+                                <!-- Row 2 -->
+                                <button onclick="handleNumpad('4')" class="num-btn math-font">4</button>
+                                <button onclick="handleNumpad('5')" class="num-btn math-font">5</button>
+                                <button onclick="handleNumpad('6')" class="num-btn math-font">6</button>
+                                <button onclick="handleNumpad('×')" class="num-btn math-font bg-indigo-50 border-indigo-200 border-bottom-indigo-400 text-indigo-600">×</button>
+                                
+                                <!-- Row 3 -->
+                                <button onclick="handleNumpad('1')" class="num-btn math-font">1</button>
+                                <button onclick="handleNumpad('2')" class="num-btn math-font">2</button>
+                                <button onclick="handleNumpad('3')" class="num-btn math-font">3</button>
+                                <button onclick="handleNumpad('-')" class="num-btn math-font bg-indigo-50 border-indigo-200 border-bottom-indigo-400 text-indigo-600">-</button>
+                                
+                                <!-- Row 4 -->
+                                <button onclick="handleNumpad('(')" class="num-btn math-font bg-indigo-50 border-indigo-200 border-bottom-indigo-400 text-indigo-600">(</button>
+                                <button onclick="handleNumpad('0')" class="num-btn math-font">0</button>
+                                <button onclick="handleNumpad(')')" class="num-btn math-font bg-indigo-50 border-indigo-200 border-bottom-indigo-400 text-indigo-600">)</button>
+                                <button onclick="handleNumpad('+')" class="num-btn math-font bg-indigo-50 border-indigo-200 border-bottom-indigo-400 text-indigo-600">+</button>
+
+                                <!-- Row 5 -->
+                                <button onclick="handleNumpad('.')" class="num-btn font-black text-4xl math-font text-gray-500 border-gray-300 border-bottom-gray-400">.</button>
+                                <button onclick="handleNumpad('Backspace')" class="num-btn btn-action text-2xl">⌫</button>
+                                
+                                <!-- 整合進鍵盤的提交與下一題按鈕 (佔據2欄) -->
+                                <button onclick="checkAnswer()" id="submitBtn" class="col-span-2 h-[64px] bg-green-500 hover:bg-green-400 text-white text-xl md:text-2xl font-black rounded-2xl shadow-[0_6px_0_#16a34a] active:translate-y-[6px] active:shadow-none transition-all border-2 border-green-600 flex justify-center items-center">
+                                    提交 ✨
+                                </button>
+                                <button onclick="generateQuestion()" id="nextBtn" class="hidden col-span-2 h-[64px] bg-yellow-400 hover:bg-yellow-300 text-yellow-900 text-xl md:text-2xl font-black rounded-2xl shadow-[0_6px_0_#d97706] active:translate-y-[6px] active:shadow-none transition-all border-2 border-yellow-500 flex justify-center items-center">
+                                    下一題 ➡️
+                                </button>
+                            </div>
+                            
+                            <!-- 回饋訊息移至鍵盤下方 -->
+                            <div id="feedbackMessage" class="min-h-[48px] text-center text-lg md:text-xl font-black transition-all opacity-0 flex items-center justify-center w-full"></div>
+                            
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'para'; // 'para', 'tri', 'trap'
+        let currentQData = {};
+        let score = 0;
+        let currentActiveInput = null;
+        let currentStep = 1; // 1: 列式階段, 2: 答案階段
+        let currentRotation = 0; // 新增：記錄當前的旋轉角度
+
+        const mainContentBox = document.getElementById('mainContentBox');
+        const formulaDisplay = document.getElementById('formulaDisplay');
+        const svgContainer = document.getElementById('svgContainer');
+        const equationContainer = document.getElementById('equationContainer');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const feedbackMessage = document.getElementById('feedbackMessage');
+        const submitBtn = document.getElementById('submitBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            const tabPara = document.getElementById('tabPara');
+            const tabTri = document.getElementById('tabTri');
+            const tabTrap = document.getElementById('tabTrap');
+            const tutorialSection = document.getElementById('tutorialSection');
+            const mainContentBox = document.getElementById('mainContentBox');
+
+            // 基礎樣式：定義形狀與過渡效果
+            const baseTabClass = "px-4 md:px-8 rounded-t-3xl font-black text-base md:text-xl border-4 transition-all cursor-pointer flex items-center justify-center";
+            
+            // 選中狀態：高度較高，且圖層在最上面 (z-30)，剛好利用其底部邊框蓋住主容器的頂部邊框
+            const activeTabClass = "py-3 md:py-4 relative z-30"; 
+            
+            // 未選中狀態：高度較矮，且圖層較下 (z-10)，會被主容器 (z-20) 蓋住底部邊框
+            const inactiveTabClass = "py-2 md:py-3 relative z-10 hover:opacity-90";
+
+            // 先全部重置為未使用
+            tabPara.className = `${baseTabClass} ${inactiveTabClass} tab-para-inactive`;
+            tabTri.className = `${baseTabClass} ${inactiveTabClass} tab-tri-inactive`;
+            tabTrap.className = `${baseTabClass} ${inactiveTabClass} tab-trap-inactive`;
+
+            // 設定 -mt-[4px] 與 z-20 的主容器框 (往上疊加 4px 以遮蔽未使用頁籤)
+            if (mode === 'para') {
+                tabPara.className = `${baseTabClass} ${activeTabClass} tab-para`;
+                mainContentBox.className = "bg-white p-4 md:p-8 rounded-b-[2rem] rounded-tr-[2rem] shadow-[0_8px_0_#3b82f6] border-4 border-[#3b82f6] relative z-20 -mt-[4px] transition-all duration-300";
+                tutorialSection.className = "mb-8 bg-blue-50 p-5 md:p-6 rounded-3xl border-4 border-blue-200 shadow-sm";
+                formulaDisplay.innerHTML = `<span class="text-blue-600">平行四邊形面積</span> = <span class="bg-white px-4 py-2 rounded-xl shadow-sm border-2 border-blue-200 inline-block">底 × 高</span>`;
+            } else if (mode === 'tri') {
+                tabTri.className = `${baseTabClass} ${activeTabClass} tab-tri`;
+                mainContentBox.className = "bg-white p-4 md:p-8 rounded-[2rem] shadow-[0_8px_0_#22c55e] border-4 border-[#22c55e] relative z-20 -mt-[4px] transition-all duration-300";
+                tutorialSection.className = "mb-8 bg-green-50 p-5 md:p-6 rounded-3xl border-4 border-green-200 shadow-sm";
+                formulaDisplay.innerHTML = `<span class="text-green-600">三角形面積</span> = <span class="bg-white px-4 py-2 rounded-xl shadow-sm border-2 border-green-200 inline-block">底 × 高 ÷ 2</span>`;
+            } else if (mode === 'trap') {
+                tabTrap.className = `${baseTabClass} ${activeTabClass} tab-trap`;
+                mainContentBox.className = "bg-white p-4 md:p-8 rounded-b-[2rem] rounded-tl-[2rem] shadow-[0_8px_0_#f59e0b] border-4 border-[#f59e0b] relative z-20 -mt-[4px] transition-all duration-300";
+                tutorialSection.className = "mb-8 bg-amber-50 p-5 md:p-6 rounded-3xl border-4 border-amber-200 shadow-sm";
+                formulaDisplay.innerHTML = `<span class="text-amber-600">梯形面積</span> = <span class="bg-white px-4 py-2 rounded-xl shadow-sm border-2 border-amber-200 inline-block">(上底 + 下底) × 高 ÷ 2</span>`;
+            }
+
+            generateQuestion();
+        }
+
+        function generateQuestion() {
+            submitBtn.classList.remove('hidden');
+            nextBtn.classList.add('hidden');
+            feedbackMessage.style.opacity = 0;
+            currentActiveInput = null;
+            currentStep = 1;
+
+            // 隨機產生 0 到 359 度的旋轉角度
+            currentRotation = Math.floor(Math.random() * 360);
+
+            let variant = Math.floor(Math.random() * 3);
+
+            if (currentMode === 'para') {
+                if (variant === 0) {
+                    let b = Math.floor(Math.random() * 7) + 6;  // 6-12 (原本 12-19)
+                    let h = Math.floor(Math.random() * 5) + 4;  // 4-8 (原本 6-10)
+                    let d = h + Math.floor(Math.random() * 3) + 1;
+                    currentQData = { area: b * h, validEqs: [`${b}×${h}`, `${h}×${b}`] };
+                    drawSVG('para', variant, b, h, d);
+                } else if (variant === 1) {
+                    // 變體1：高瘦型平行四邊形
+                    let b = Math.floor(Math.random() * 5) + 4;  // 4-8
+                    let h = Math.floor(Math.random() * 7) + 6;  // 6-12
+                    let d = h + Math.floor(Math.random() * 3) + 1;
+                    currentQData = { area: b * h, validEqs: [`${b}×${h}`, `${h}×${b}`] };
+                    drawSVG('para', variant, b, h, d);
+                } else {
+                    // 變體2：高落在斜邊上，水平邊變為干擾數字
+                    let baseSlant = Math.floor(Math.random() * 5) + 8; // 8-12
+                    let h = Math.floor(Math.random() * 3) + 4; // 4-6
+                    let distBase = h + Math.floor(Math.random() * 3) + 2; // 確保 distBase > h，避免出現矩形或幾何矛盾
+                    drawSVG('para', variant, baseSlant, h, distBase);
+                }
+                buildEquationUI('para');
+            } else if (currentMode === 'tri') {
+                if (variant === 0) {
+                    // 變體0：標準銳角三角形
+                    let b = Math.floor(Math.random() * 7) + 6; // 6-12
+                    let h = Math.floor(Math.random() * 5) + 4; // 4-8
+                    let d = h + Math.floor(Math.random() * 4) + 1;
+                    currentQData = { area: (b * h) / 2, validEqs: [`${b}×${h}÷2`, `${h}×${b}÷2`] };
+                    drawSVG('tri', variant, b, h, d);
+                } else if (variant === 1) {
+                    // 變體1：鈍角三角形，高在外部
+                    let b = Math.floor(Math.random() * 6) + 4; // 4-9
+                    let h = Math.floor(Math.random() * 4) + 4; // 4-7
+                    let d = Math.floor(Math.random() * 6) + 10; // 長斜邊作為干擾 (10-15)
+                    currentQData = { area: (b * h) / 2, validEqs: [`${b}×${h}÷2`, `${h}×${b}÷2`] };
+                    drawSVG('tri', variant, b, h, d);
+                } else {
+                    // 變體2：直角三角形，兩股分別為底和高
+                    let b = Math.floor(Math.random() * 5) + 6; // 6-10
+                    let h = Math.floor(Math.random() * 5) + 6; // 6-10
+                    let d = Math.ceil(Math.sqrt(b*b + h*h)) + Math.floor(Math.random() * 2); // 斜邊干擾
+                    currentQData = { area: (b * h) / 2, validEqs: [`${b}×${h}÷2`, `${h}×${b}÷2`] };
+                    drawSVG('tri', variant, b, h, d);
+                }
+                buildEquationUI('tri');
+            } else if (currentMode === 'trap') {
+                let top = Math.floor(Math.random() * 6) + 3; // 3-8
+                let bot = top + Math.floor(Math.random() * 5) + 2; // 5-14
+                let h = Math.floor(Math.random() * 5) + 4; // 4-8
+                let d = h + Math.floor(Math.random() * 3) + 1;
+                
+                let eqs = [
+                    `(${top}+${bot})×${h}÷2`, `(${bot}+${top})×${h}÷2`,
+                    `${h}×(${top}+${bot})÷2`, `${h}×(${bot}+${top})÷2`,
+                    `(${top}+${bot})÷2×${h}`, `(${bot}+${top})÷2×${h}`
+                ];
+                currentQData = { area: ((top + bot) * h) / 2, validEqs: eqs };
+                drawSVG('trap', variant, top, bot, h, d);
+                buildEquationUI('trap');
+            }
+        }
+
+        function drawSVG(type, variant, ...params) {
+            let svgHTML = '';
+            // 加大 viewBox 範圍，往外擴張給予充足的旋轉空間 (原本是 0 0 240 160)
+            // 新的範圍讓中心點依舊保持在 (120, 80)，但四周多了 60px 的空間防止裁切
+            const viewBox = "-60 -60 360 280"; 
+
+            if (type === 'para') {
+                if (variant === 0 || variant === 1) {
+                    let b = params[0], h = params[1], d = params[2];
+                    let pts = variant === 0 ? "50,30 210,30 170,120 10,120" : "70,20 160,20 130,140 40,140";
+                    svgHTML = `
+                        <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
+                            <polygon points="${pts}" fill="#eff6ff" stroke="#3b82f6" stroke-width="3" stroke-linejoin="round"/>
+                            <line x1="90" y1="${variant===0?30:20}" x2="90" y2="${variant===0?120:140}" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
+                            <polyline points="90,${variant===0?110:130} 100,${variant===0?110:130} 100,${variant===0?120:140}" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="90" y="${variant===0?145:155}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${b} cm</text>
+                            <text x="80" y="80" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <!-- 干擾數字移至右上方 -->
+                            <text x="${variant===0?195:150}" y="70" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                        </svg>
+                    `;
+                } else {
+                    let baseSlant = params[0], h = params[1], distBase = params[2];
+                    // 根據幾何比例動態計算坐標，確保邊長與高完全成真實比例，直角完全精準
+                    let H_vert = (baseSlant * h) / distBase;
+                    let dx_side = Math.sqrt(Math.max(0, baseSlant * baseSlant - H_vert * H_vert));
+                    let totalW = distBase + dx_side;
+                    let totalH = H_vert;
+                    let scale = Math.min(180 / totalW, 90 / totalH);
+                    let W = distBase * scale;
+                    let H = H_vert * scale;
+                    let dx = dx_side * scale;
+                    let x0 = 120 - (W + dx) / 2;
+                    let y0 = 80 - H / 2;
+                    let p1x = x0 + dx, p1y = y0;
+                    let p2x = x0 + dx + W, p2y = y0;
+                    let p3x = x0 + W, p3y = y0 + H;
+                    let p4x = x0, p4y = y0 + H;
+                    let slantLen = baseSlant * scale;
+                    let t = Math.min(0.9, Math.max(0.1, (distBase * dx_side) / (baseSlant * baseSlant)));
+                    let footX = p2x - t * dx;
+                    let footY = p2y + t * H;
+                    let u_alt_x = -H / slantLen;
+                    let u_alt_y = -dx / slantLen;
+                    let ux = -dx / slantLen;
+                    let uy = H / slantLen;
+                    let startX = p1x;
+                    let startY = p1y;
+                    let s = 10;
+                    let pAx = footX + s * u_alt_x;
+                    let pAy = footY + s * u_alt_y;
+                    let pBx = footX + s * u_alt_x + s * (-ux);
+                    let pBy = footY + s * u_alt_y + s * (-uy);
+                    let pCx = footX + s * (-ux);
+                    let pCy = footY + s * (-uy);
+                    let textBaseX = (p2x + p3x) / 2 + 18 * (-u_alt_x);
+                    let textBaseY = (p2y + p3y) / 2 + 18 * (-u_alt_y);
+                    let textHx = (startX + footX) / 2 - 12 * ux;
+                    let textHy = (startY + footY) / 2 - 12 * uy;
+                    let textDistX = (p4x + p3x) / 2;
+                    let textDistY = p4y + 24;
+                    svgHTML = `
+                        <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
+                            <!-- 平行四邊形頂點 -->
+                            <polygon points="${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)} ${p3x.toFixed(1)},${p3y.toFixed(1)} ${p4x.toFixed(1)},${p4y.toFixed(1)}" fill="#eff6ff" stroke="#3b82f6" stroke-width="3" stroke-linejoin="round"/>
+                            <!-- 垂直於右側斜邊的高 -->
+                            <line x1="${startX.toFixed(1)}" y1="${startY.toFixed(1)}" x2="${footX.toFixed(1)}" y2="${footY.toFixed(1)}" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
+                            <!-- 真實直角符號 -->
+                            <polyline points="${pAx.toFixed(1)},${pAy.toFixed(1)} ${pBx.toFixed(1)},${pBy.toFixed(1)} ${pCx.toFixed(1)},${pCy.toFixed(1)}" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="${textBaseX.toFixed(1)}" y="${textBaseY.toFixed(1)}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${baseSlant} cm</text>
+                            <text x="${textHx.toFixed(1)}" y="${textHy.toFixed(1)}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <!-- 底部干擾數字 -->
+                            <text x="${textDistX.toFixed(1)}" y="${textDistY.toFixed(1)}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${distBase} cm</text>
+                        </svg>
+                    `;
+                }
+            } else if (type === 'tri') {
+                let b = params[0], h = params[1], d = params[2];
+                if (variant === 0) {
+                    svgHTML = `
+                        <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
+                            <polygon points="120,20 40,120 200,120" fill="#f0fdf4" stroke="#22c55e" stroke-width="3" stroke-linejoin="round"/>
+                            <line x1="120" y1="20" x2="120" y2="120" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
+                            <polyline points="120,110 130,110 130,120" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="120" y="145" text-anchor="middle" class="font-bold text-lg fill-gray-800">${b} cm</text>
+                            <text x="110" y="80" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <!-- 干擾數字移至右側斜邊外 -->
+                            <text x="170" y="65" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                        </svg>
+                    `;
+                } else if (variant === 1) {
+                    svgHTML = `
+                        <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
+                            <polygon points="30,40 120,120 220,120" fill="#f0fdf4" stroke="#22c55e" stroke-width="3" stroke-linejoin="round"/>
+                            <line x1="30" y1="40" x2="30" y2="120" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
+                            <line x1="30" y1="120" x2="120" y2="120" stroke="#94a3b8" stroke-width="2" stroke-dasharray="3,3" />
+                            <polyline points="30,110 40,110 40,120" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="170" y="145" text-anchor="middle" class="font-bold text-lg fill-gray-800">${b} cm</text>
+                            <text x="20" y="85" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <text x="135" y="70" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                        </svg>
+                    `;
+                } else {
+                    svgHTML = `
+                        <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
+                            <polygon points="50,30 50,120 190,120" fill="#f0fdf4" stroke="#22c55e" stroke-width="3" stroke-linejoin="round"/>
+                            <polyline points="50,110 60,110 60,120" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="120" y="145" text-anchor="middle" class="font-bold text-lg fill-gray-800">${b} cm</text>
+                            <text x="40" y="80" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <text x="130" y="65" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                        </svg>
+                    `;
+                }
+            } else if (type === 'trap') {
+                let top = params[0], bot = params[1], h = params[2], d = params[3];
+                if (variant === 0) {
+                    svgHTML = `
+                        <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
+                            <polygon points="80,30 160,30 200,110 40,110" fill="#fffbeb" stroke="#f59e0b" stroke-width="3" stroke-linejoin="round"/>
+                            <line x1="80" y1="30" x2="80" y2="110" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
+                            <polyline points="80,100 90,100 90,110" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="120" y="20" text-anchor="middle" class="font-bold text-lg fill-gray-800">${top} cm</text>
+                            <text x="120" y="145" text-anchor="middle" class="font-bold text-lg fill-gray-800">${bot} cm</text>
+                            <text x="70" y="75" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <text x="195" y="65" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                        </svg>
+                    `;
+                } else if (variant === 1) {
+                    svgHTML = `
+                        <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
+                            <polygon points="40,30 180,30 180,120 100,120" fill="#fffbeb" stroke="#f59e0b" stroke-width="3" stroke-linejoin="round"/>
+                            <polyline points="170,30 170,40 180,40" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <polyline points="170,120 170,110 180,110" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="110" y="20" text-anchor="middle" class="font-bold text-lg fill-gray-800">${top} cm</text>
+                            <text x="140" y="145" text-anchor="middle" class="font-bold text-lg fill-gray-800">${bot} cm</text>
+                            <text x="190" y="80" text-anchor="start" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <text x="60" y="70" text-anchor="end" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                        </svg>
+                    `;
+                } else {
+                    svgHTML = `
+                        <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
+                            <polygon points="60,20 180,50 180,110 60,140" fill="#fffbeb" stroke="#f59e0b" stroke-width="3" stroke-linejoin="round"/>
+                            <line x1="60" y1="80" x2="180" y2="80" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
+                            <polyline points="60,70 70,70 70,80" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <polyline points="170,80 170,70 180,70" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="45" y="85" text-anchor="end" class="font-bold text-lg fill-gray-800">${top} cm</text>
+                            <text x="195" y="85" text-anchor="start" class="font-bold text-lg fill-gray-800">${bot} cm</text>
+                            <text x="120" y="72" text-anchor="middle" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <text x="130" y="145" text-anchor="middle" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                        </svg>
+                    `;
+                }
+            }
+            
+            let contentMatch = svgHTML.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);
+            if (contentMatch && contentMatch[1]) {
+                let innerContent = contentMatch[1];
+                let svgStartTag = svgHTML.match(/<svg[^>]*>/)[0];
+                
+                // 【重點更新】加入白邊特效
+                // stroke="white" (白色外框)
+                // stroke-width="3" (粗細適中)
+                // paint-order="stroke fill" (讓外框畫在黑色文字的背後，保證黑字不變幼)
+                let counterRotationStyle = `style="transform: rotate(${-currentRotation}deg); transform-origin: center; transform-box: fill-box;" stroke="white" stroke-width="3" paint-order="stroke fill" stroke-linejoin="round"`;
+                innerContent = innerContent.replace(/<text /g, `<text ${counterRotationStyle} `);
+
+                svgContainer.innerHTML = `
+                    ${svgStartTag}
+                        <g style="transform: rotate(${currentRotation}deg); transform-origin: 120px 80px; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);">
+                            ${innerContent}
+                        </g>
+                    </svg>
+                `;
+            } else {
+                svgContainer.innerHTML = svgHTML; 
+            }
+        }
+
+        function buildEquationUI(type) {
+            let html = `
+                <div class="flex flex-col items-center gap-4 w-full">
+                    <!-- 列式輸入框 -->
+                    <div class="flex items-center w-full">
+                        <div class="eq-input-cell !w-full !justify-start !px-6 text-left" id="inp-eq" onclick="setActiveInput(this)" placeholder="請輸入完整算式"></div>
+                    </div>
+                    <!-- 答案輸入框 (預設隱藏) -->
+                    <div class="flex items-center justify-center gap-3 hidden w-full" id="ans-row">
+                        <span class="text-3xl text-gray-700">=</span>
+                        <div class="eq-input-cell !w-[120px]" id="inp-ans" onclick="setActiveInput(this)" placeholder="答案"></div>
+                        <span class="text-2xl text-gray-500 font-bold">cm²</span>
+                    </div>
+                </div>
+            `;
+            equationContainer.innerHTML = html;
+            setActiveInput(document.getElementById('inp-eq'));
+        }
+
+        function setActiveInput(cell) {
+            if (currentActiveInput) {
+                currentActiveInput.classList.remove('active-cell');
+            }
+            currentActiveInput = cell;
+            if (cell) {
+                cell.classList.add('active-cell');
+                cell.classList.remove('incorrect');
+            }
+        }
+
+        function handleNumpad(key) {
+            if (!currentActiveInput) return;
+            let currentVal = currentActiveInput.innerText;
+
+            if (key === 'Backspace') {
+                currentActiveInput.innerText = currentVal.slice(0, -1);
+            } else {
+                // 列式框允許輸入較多字元，答案框限制較少
+                let maxLength = currentActiveInput.id === 'inp-eq' ? 25 : 8;
+                if (currentVal.length < maxLength) {
+                    currentActiveInput.innerText += key;
+                }
+            }
+        }
+
+        // 支援實體鍵盤輸入
+        document.addEventListener('keydown', function(e) {
+            const validKeys = ['0','1','2','3','4','5','6','7','8','9','.','+','-','*','/','(',')'];
+            if (validKeys.includes(e.key)) {
+                let mappedKey = e.key;
+                if (e.key === '*') mappedKey = '×';
+                if (e.key === '/') mappedKey = '÷';
+                handleNumpad(mappedKey);
+            } else if (e.key === 'Backspace') {
+                e.preventDefault(); 
+                handleNumpad('Backspace');
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if(!submitBtn.classList.contains('hidden')) checkAnswer();
+                else if(!nextBtn.classList.contains('hidden')) generateQuestion();
+            }
+        });
+
+        function checkAnswer() {
+            if (currentStep === 1) {
+                let eqInput = document.getElementById('inp-eq');
+                let eqStr = eqInput.innerText.trim().replace(/\s+/g, '');
+                
+                // 改進：使用陣列包含檢查，確保任何邏輯正確的算式都能過關
+                let isCorrect = currentQData.validEqs.includes(eqStr);
+
+                eqInput.style.animation = 'none';
+                eqInput.offsetHeight; 
+
+                if (isCorrect) {
+                    eqInput.classList.add('correct', 'disabled');
+                    eqInput.classList.remove('active-cell', 'incorrect');
+                    
+                    let ansRow = document.getElementById('ans-row');
+                    ansRow.classList.remove('hidden');
+                    ansRow.classList.add('flex');
+                    
+                    currentStep = 2;
+                    let ansInput = document.getElementById('inp-ans');
+                    setActiveInput(ansInput);
+                    
+                    feedbackMessage.innerHTML = `<span class="text-green-600 bg-green-100 border-2 border-green-300 rounded-xl p-2 block w-full shadow-sm">列式正確！你找對底同高喇，請繼續計算答案。</span>`;
+                    feedbackMessage.style.opacity = 1;
+                } else {
+                    eqInput.classList.add('incorrect');
+                    feedbackMessage.innerHTML = `<span class="text-red-600 bg-red-100 border-2 border-red-300 rounded-xl p-2 block w-full shadow-sm">列式有誤！記得留意「互相垂直」嘅底同高呀🧐</span>`;
+                    feedbackMessage.style.opacity = 1;
+                }
+            } else if (currentStep === 2) {
+                let ansInput = document.getElementById('inp-ans');
+                let ansVal = parseFloat(ansInput.innerText.trim());
+                let area = currentQData.area;
+
+                ansInput.style.animation = 'none';
+                ansInput.offsetHeight;
+
+                if (ansVal === area) {
+                    ansInput.classList.add('correct');
+                    ansInput.classList.remove('incorrect', 'active-cell');
+                    
+                    score += 10;
+                    scoreDisplay.innerText = score;
+                    let praises = ["好叻呀！🎉", "完全正確！🌟", "你係面積計算大師！🏆", "算式同答案都啱晒！✨"];
+                    feedbackMessage.innerHTML = `<span class="text-green-600 bg-green-100 border-2 border-green-300 rounded-xl p-2 block w-full shadow-sm">${praises[Math.floor(Math.random() * praises.length)]}</span>`;
+                    feedbackMessage.style.opacity = 1;
+                    
+                    setActiveInput(null);
+                    submitBtn.classList.add('hidden');
+                    nextBtn.classList.remove('hidden');
+                } else {
+                    ansInput.classList.add('incorrect');
+                    feedbackMessage.innerHTML = `<span class="text-red-600 bg-red-100 border-2 border-red-300 rounded-xl p-2 block w-full shadow-sm">答案計錯咗，慢慢計再試一次！🧐</span>`;
+                    feedbackMessage.style.opacity = 1;
+                }
+            }
+        }
+
+        switchMode('para');
+    </script>
+</body>
+</html>
