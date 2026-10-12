@@ -287,7 +287,7 @@
                 <div>
                     <label class="block text-left text-sm font-bold text-gray-700 mb-1">密碼</label>
                     <div class="relative w-full">
-                        <input type="password" id="login-pwd" inputmode="text" autocomplete="current-password" autocorrect="off" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter') window.handleLogin()" class="w-full border-2 border-gray-300 rounded-lg p-2.5 pr-10 font-bold text-gray-800 focus:border-blue-500 focus:outline-none text-center" placeholder="請輸入密碼">
+                        <input type="password" id="login-pwd" inputmode="text" autocomplete="current-password" autocorrect="off" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter') window.handleLogin()" class="w-full border-2 border-gray-300 rounded-lg p-2.5 pr-10 font-bold text-gray-800 focus:border-blue-500 focus:outline-none text-center" placeholder="請輸入密碼 (預設 123 或 t1)">
                         <button type="button" onclick="window.toggleLoginPasswordVisibility()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1 text-base focus:outline-none select-none" title="顯示/隱藏密碼">
                             <span id="login-pwd-eye">👁️</span>
                         </button>
@@ -1045,7 +1045,7 @@
             }));
             const battleSceneEl = elements.battleScene || document.getElementById('battle-scene-bg');
             if (battleSceneEl) {
-                battleSceneEl.style.backgroundImage = "url('https://pmath-lab.github.io/p5area/area_bg.gif')";
+                battleSceneEl.style.backgroundImage = "url('https://pmath-lab.github.io/p5_area/area_bg.gif')";
                 battleSceneEl.style.backgroundSize = "cover";
                 battleSceneEl.style.backgroundPosition = "center";
                 battleSceneEl.style.backgroundRepeat = "no-repeat";
