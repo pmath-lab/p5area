@@ -496,12 +496,9 @@
             feedbackMessage.style.opacity = 0;
             currentActiveInput = null;
             currentStep = 1;
-
             // 隨機產生 0 到 359 度的旋轉角度
             currentRotation = Math.floor(Math.random() * 360);
-
             let variant = Math.floor(Math.random() * 3);
-
             if (currentMode === 'para') {
                 if (variant === 0) {
                     // 標準平行四邊形
@@ -510,6 +507,7 @@
                     let dx_val = Math.sqrt(d * d - h * h);
                     let min_b = Math.ceil(dx_val) + 2;
                     let b = min_b + Math.floor(Math.random() * 4); // 確保 b > dx，底邊平穩且高在內部
+                    currentQData = { area: b * h, validEqs: [`${b}×${h}`, `${h}×${b}`] };
                     drawSVG('para', variant, b, h, d);
                 } else if (variant === 1) {
                     // 變體1：較為高瘦的平行四邊形
@@ -525,44 +523,60 @@
                     let baseSlant = Math.floor(Math.random() * 5) + 8; // 8-12
                     let h = Math.floor(Math.random() * 3) + 4; // 4-6
                     let distBase = h + Math.floor(Math.random() * 3) + 2; // 確保 distBase > h，避免出現矩形或幾何矛盾
+                    currentQData = { area: baseSlant * h, validEqs: [`${baseSlant}×${h}`, `${h}×${baseSlant}`] };
                     drawSVG('para', variant, baseSlant, h, distBase);
                 }
                 buildEquationUI('para');
             } else if (currentMode === 'tri') {
                 if (variant === 0) {
                     // 變體0：標準銳角三角形
-                    let b = Math.floor(Math.random() * 7) + 6; // 6-12
-                    let h = Math.floor(Math.random() * 5) + 4; // 4-8
-                    let d = h + Math.floor(Math.random() * 4) + 1;
+                    let b, h, d;
+                    do {
+                        b = Math.floor(Math.random() * 7) + 6; // 6-12
+                        h = Math.floor(Math.random() * 5) + 4; // 4-8
+                    } while ((b * h) % 2 !== 0); // 確保乘積為雙數，面積必為整數（不出現小數）
+                    d = h + Math.floor(Math.random() * 4) + 1;
                     currentQData = { area: (b * h) / 2, validEqs: [`${b}×${h}÷2`, `${h}×${b}÷2`] };
                     drawSVG('tri', variant, b, h, d);
                 } else if (variant === 1) {
                     // 變體1：鈍角三角形，高在外部
-                    let b = Math.floor(Math.random() * 6) + 4; // 4-9
-                    let h = Math.floor(Math.random() * 4) + 4; // 4-7
-                    let d = Math.floor(Math.random() * 6) + 10; // 長斜邊作為干擾 (10-15)
+                    let b, h, d;
+                    do {
+                        b = Math.floor(Math.random() * 6) + 4; // 4-9
+                        h = Math.floor(Math.random() * 4) + 4; // 4-7
+                    } while ((b * h) % 2 !== 0); // 確保乘積為雙數，面積必為整數（不出現小數）
+                    d = Math.floor(Math.random() * 6) + 10; // 長斜邊作為干擾 (10-15)
                     currentQData = { area: (b * h) / 2, validEqs: [`${b}×${h}÷2`, `${h}×${b}÷2`] };
                     drawSVG('tri', variant, b, h, d);
                 } else {
                     // 變體2：直角三角形，兩股分別為底和高
-                    let b = Math.floor(Math.random() * 5) + 6; // 6-10
-                    let h = Math.floor(Math.random() * 5) + 6; // 6-10
-                    let d = Math.ceil(Math.sqrt(b*b + h*h)) + Math.floor(Math.random() * 2); // 斜邊干擾
+                    let b, h, d;
+                    do {
+                        b = Math.floor(Math.random() * 5) + 6; // 6-10
+                        h = Math.floor(Math.random() * 5) + 6; // 6-10
+                    } while ((b * h) % 2 !== 0); // 確保乘積為雙數，面積必為整數（不出現小數）
+                    d = Math.ceil(Math.sqrt(b*b + h*h)) + Math.floor(Math.random() * 2); // 斜邊干擾
                     currentQData = { area: (b * h) / 2, validEqs: [`${b}×${h}÷2`, `${h}×${b}÷2`] };
                     drawSVG('tri', variant, b, h, d);
                 }
                 buildEquationUI('tri');
             } else if (currentMode === 'trap') {
-                let top = Math.floor(Math.random() * 6) + 3; // 3-8
-                let bot = top + Math.floor(Math.random() * 5) + 2; // 5-14
-                let h = Math.floor(Math.random() * 5) + 4; // 4-8
-                let d = h + Math.floor(Math.random() * 3) + 1;
+                let top, bot, h, d;
+                do {
+                    top = Math.floor(Math.random() * 6) + 3; // 3-8
+                    bot = top + Math.floor(Math.random() * 5) + 2; // 5-14
+                    h = Math.floor(Math.random() * 5) + 4; // 4-8
+                } while (((top + bot) * h) % 2 !== 0); // 確保乘積為雙數，面積必為整數（不出現小數）
+                d = h + Math.floor(Math.random() * 3) + 1;
                 
                 let eqs = [
                     `(${top}+${bot})×${h}÷2`, `(${bot}+${top})×${h}÷2`,
-                    `${h}×(${top}+${bot})÷2`, `${h}×(${bot}+${top})÷2`,
-                    `(${top}+${bot})÷2×${h}`, `(${bot}+${top})÷2×${h}`
+                    `${h}×(${top}+${bot})÷2`, `${h}×(${bot}+${top})÷2`
                 ];
+                // 若 (top + bot) 為雙數，才允許中途除以 2 的列式，避免運算中途出現小數
+                if ((top + bot) % 2 === 0) {
+                    eqs.push(`(${top}+${bot})÷2×${h}`, `(${bot}+${top})÷2×${h}`);
+                }
                 currentQData = { area: ((top + bot) * h) / 2, validEqs: eqs };
                 drawSVG('trap', variant, top, bot, h, d);
                 buildEquationUI('trap');
