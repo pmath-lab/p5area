@@ -287,7 +287,7 @@
                 <div>
                     <label class="block text-left text-sm font-bold text-gray-700 mb-1">密碼</label>
                     <div class="relative w-full">
-                        <input type="password" id="login-pwd" inputmode="text" autocomplete="current-password" autocorrect="off" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter') window.handleLogin()" class="w-full border-2 border-gray-300 rounded-lg p-2.5 pr-10 font-bold text-gray-800 focus:border-blue-500 focus:outline-none text-center" placeholder="請輸入密碼">
+                        <input type="password" id="login-pwd" inputmode="text" autocomplete="current-password" autocorrect="off" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter') window.handleLogin()" class="w-full border-2 border-gray-300 rounded-lg p-2.5 pr-10 font-bold text-gray-800 focus:border-blue-500 focus:outline-none text-center" placeholder="請輸入密碼 (例如:ss1234567)">
                         <button type="button" onclick="window.toggleLoginPasswordVisibility()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 p-1 text-base focus:outline-none select-none" title="顯示/隱藏密碼">
                             <span id="login-pwd-eye">👁️</span>
                         </button>
@@ -502,14 +502,15 @@
 
                 <div class="w-1/2 flex flex-col justify-center items-center p-1.5 sm:p-2 bg-white rounded-xl border-2 border-gray-400 shadow-sm relative">
                     <div class="w-full flex-1 flex flex-col justify-center items-center px-1 gap-2 sm:gap-4">
-                        <div id="phase1-container" class="w-full flex flex-col items-center transition-all">
-                            <div id="formula-display" class="w-full h-[40px] sm:h-[50px] border-2 border-gray-400 bg-gray-50 rounded flex items-center justify-center px-2 text-base sm:text-xl font-black text-red-600 break-all shadow-inner tracking-wider select-none leading-none overflow-hidden"></div>
+                        <div id="phase1-container" class="w-full flex flex-row items-center gap-1 sm:gap-2 transition-all">
+                            <span class="font-black text-gray-700 text-sm sm:text-base whitespace-nowrap flex-none">面積</span>
+                            <span class="font-black text-gray-700 text-sm sm:text-base w-4 text-center flex-none">=</span>
+                            <div id="formula-display" class="flex-1 h-[40px] sm:h-[50px] border-2 border-gray-400 bg-gray-50 rounded flex items-center justify-center px-2 text-base sm:text-xl font-black text-red-600 break-all shadow-inner tracking-wider select-none leading-none overflow-hidden"></div>
                         </div>
-                        <div id="phase2-container" class="w-full flex flex-col items-center gap-1 sm:gap-1.5 pt-3 border-t-2 border-dashed border-gray-300 hidden animate-fade-in">
-                            <div class="flex items-center gap-1 sm:gap-2 w-full justify-center">
-                                <span class="font-black text-gray-700 text-sm sm:text-base whitespace-nowrap">面積 =</span>
-                                <div id="answer-display" class="w-20 sm:w-28 h-10 sm:h-12 border-2 border-red-500 bg-red-50 rounded flex items-center justify-center text-lg sm:text-2xl font-black text-red-600 shadow-inner select-none leading-none overflow-hidden"></div>
-                            </div>
+                        <div id="phase2-container" class="w-full flex flex-row items-center gap-1 sm:gap-2 pt-3 border-t-2 border-dashed border-gray-300 hidden animate-fade-in">
+                            <span class="font-black text-gray-700 text-sm sm:text-base whitespace-nowrap flex-none invisible select-none">面積</span>
+                            <span class="font-black text-gray-700 text-sm sm:text-base w-4 text-center flex-none">=</span>
+                            <div id="answer-display" class="flex-1 h-10 sm:h-12 border-2 border-red-500 bg-red-50 rounded flex items-center justify-center px-2 text-lg sm:text-2xl font-black text-red-600 shadow-inner select-none leading-none overflow-hidden"></div>
                         </div>
                     </div>
                 </div>
@@ -806,12 +807,13 @@
             "乘龍": "拉普拉斯", "3D龍": "多邊獸", "超夢夢": "超夢", "無極汰那": "無極汰那 (極巨大化)"
         };
 
-        // 自動建立完整 pokemonData 結構 (相容 starters, stage3_form1, stage2_form1, legendary, evolutions)
-        const pokemonData = {
-            starters: [],
+// 自動建立完整 pokemonData 結構 (相容 starters, stage3_form1, stage2_form1, final_forms, legendary, evolutions)
+const pokemonData = {
+starters: [],
             stage3_form1: [],
-            stage2_form1: [],
-            legendary: [],
+            stage2_form1: [], // 進階形態與強力的單階形態寶可夢 (36隻)
+            final_forms: [],  // 最終進化形態寶可夢 (56隻)
+            legendary: [],    // 神獸系列寶可夢 (5隻: 急凍鳥、閃電鳥、火焰鳥、超夢、夢幻)
             gigantamax_legendaries: [
                 { name: "無極汰那 (極巨大化)", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/890.png", stats: { hp: 400, attack: 115, defense: 250, spatk: 125, spdef: 250 } },
                 { name: "超夢 (極巨大化)", image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png", stats: { hp: 400, attack: 150, defense: 120, spatk: 180, spdef: 120 } }
@@ -821,9 +823,11 @@
         };
 
         (function buildKantoPokedex() {
-            const stage3BaseIds = [1, 4, 7, 10, 13, 16, 29, 32, 43, 60, 63, 66, 69, 74, 92, 147];
-            const legendaryIds = [144, 145, 146, 149, 150, 151];
-            const middleAndFinalIds = [2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18, 20, 22, 24, 26, 28, 30, 31, 33, 34, 36, 38, 40, 42, 44, 45, 47, 49, 51, 53, 55, 57, 59, 61, 62, 64, 65, 67, 68, 70, 71, 73, 75, 76, 78, 80, 82, 85, 87, 89, 91, 93, 94, 97, 99, 101, 103, 105, 110, 112, 117, 119, 121, 130, 134, 135, 136, 139, 141, 148];
+            const basicFirstStageIds = [1, 4, 7, 10, 13, 16, 19, 21, 23, 25, 27, 29, 32, 35, 37, 39, 41, 43, 46, 48, 50, 52, 54, 56, 58, 60, 63, 66, 69, 72, 74, 77, 79, 81, 84, 86, 88, 90, 92, 96, 98, 100, 102, 104, 109, 111, 116, 118, 120, 129, 133, 138, 140, 147];
+            const midAndSingleIds = [2, 5, 8, 11, 14, 17, 30, 33, 44, 61, 64, 67, 70, 75, 83, 93, 95, 106, 107, 108, 113, 114, 115, 122, 123, 124, 125, 126, 127, 128, 131, 132, 137, 142, 143, 148];
+            const finalEvolutionIds = [3, 6, 9, 12, 15, 18, 20, 22, 24, 26, 28, 31, 34, 36, 38, 40, 42, 45, 47, 49, 51, 53, 55, 57, 59, 62, 65, 68, 71, 73, 76, 78, 80, 82, 85, 87, 89, 91, 94, 97, 99, 101, 103, 105, 110, 112, 117, 119, 121, 130, 134, 135, 136, 139, 141, 149];
+            const legendaryIds = [144, 145, 146, 150, 151];
+            const allEvolvedIds = [2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18, 20, 22, 24, 26, 28, 30, 31, 33, 34, 36, 38, 40, 42, 44, 45, 47, 49, 51, 53, 55, 57, 59, 61, 62, 64, 65, 67, 68, 70, 71, 73, 75, 76, 78, 80, 82, 85, 87, 89, 91, 93, 94, 97, 99, 101, 103, 105, 110, 112, 117, 119, 121, 130, 134, 135, 136, 139, 141, 148, 149];
 
             KANTO_RAW_DATA.forEach(row => {
                 const [id, name, nextEvo, hp, atk, def, spatk, spdef] = row;
@@ -843,26 +847,20 @@
 
                 if (legendaryIds.includes(id)) {
                     pokemonData.legendary.push(pkm);
-                } else if (stage3BaseIds.includes(id)) {
-                    pokemonData.stage3_form1.push(pkm);
-                } else if (middleAndFinalIds.includes(id)) {
-                    pokemonData.evolutions[name] = pkm;
-                } else {
+                } else if (finalEvolutionIds.includes(id)) {
+                    pokemonData.final_forms.push(pkm);
+                } else if (midAndSingleIds.includes(id)) {
                     pokemonData.stage2_form1.push(pkm);
+                } else if (basicFirstStageIds.includes(id)) {
+                    pokemonData.stage3_form1.push(pkm);
                 }
 
                 // 確保所有二階與三階進化型都能在 evolutions 中被查找到
-                if (middleAndFinalIds.includes(id)) {
+                if (allEvolvedIds.includes(id)) {
                     pokemonData.evolutions[name] = pkm;
                 }
-            });
-
-            // 確保伊布的進化型皆在 evolutions
-            [134, 135, 136].forEach(eid => {
-                const ep = pokemonData.allMap[KANTO_RAW_DATA[eid - 1][1]];
-                if (ep) pokemonData.evolutions[ep.name] = ep;
-            });
-        })();
+});
+})();
 
         pokemonData.starter = pokemonData.starters;
 
@@ -1038,6 +1036,96 @@
         };
 
         window.addEventListener('orientationchange', window.resizeGame);
+        let multiTimerInterval = null;
+        let multiTimeLeft = 300; // 5分鐘 (300秒)
+
+        window.stopMultiTimer = function() {
+            if (multiTimerInterval) {
+                clearInterval(multiTimerInterval);
+                multiTimerInterval = null;
+            }
+        };
+
+        window.updateMultiTimerDisplay = function() {
+            let timerBadge = document.getElementById('multi-timer-badge');
+            if (!timerBadge && elements.headerHomeBtn && elements.headerHomeBtn.parentNode) {
+                timerBadge = document.createElement('div');
+                timerBadge.id = 'multi-timer-badge';
+                elements.headerHomeBtn.parentNode.insertBefore(timerBadge, elements.headerHomeBtn.parentNode.firstChild);
+            }
+            if (!timerBadge) return;
+            timerBadge.classList.remove('hidden');
+            let mins = Math.floor(Math.max(0, multiTimeLeft) / 60);
+            let secs = Math.max(0, multiTimeLeft) % 60;
+            let timeStr = `${mins < 10 ? '0' + mins : mins}:${secs < 10 ? '0' + secs : secs}`;
+            timerBadge.innerText = `⏱️ 限時 ${timeStr}`;
+            if (multiTimeLeft <= 30) {
+                timerBadge.className = "font-black bg-red-900 text-yellow-300 px-2.5 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm rounded-full border-2 border-yellow-400 shadow-inner flex items-center gap-1 animate-bounce";
+            } else if (multiTimeLeft <= 60) {
+                timerBadge.className = "font-black bg-yellow-300 text-red-900 px-2.5 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm rounded-full border-2 border-red-900 shadow-inner flex items-center gap-1 animate-pulse";
+            } else {
+                timerBadge.className = "font-black bg-white text-red-700 px-2.5 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm rounded-full border-2 border-red-800 shadow-inner flex items-center gap-1";
+            }
+        };
+
+        window.triggerMultiTimeoutWipeout = function() {
+            window.stopMultiTimer();
+            if (gameMode !== 'multi' || enemyHp <= 0) return;
+
+            let bossName = currentPokemon ? currentPokemon.name : "極巨化神獸";
+            elements.pokemonSprite.classList.add('pokemon-attack');
+            setTimeout(() => elements.pokemonSprite.classList.remove('pokemon-attack'), 800);
+
+            elements.messageBox.innerText = `⚠️ 5分鐘時間到！${bossName} 發動毀滅性全體攻擊，秒殺了所有寶可夢！`;
+
+            setTimeout(() => {
+                for (let i = 0; i < 4; i++) {
+                    let animWrapper = document.getElementById(`multi-sprite-anim-wrapper-${i}`);
+                    if (animWrapper) {
+                        animWrapper.classList.add('pokemon-hit');
+                    }
+                    let panel = document.getElementById(`multi-panel-${i}`);
+                    if (panel) {
+                        panel.classList.add('shake', 'bg-red-200');
+                    }
+                    let p = multiPlayers[i];
+                    if (p) {
+                        if (p.party && Array.isArray(p.party)) {
+                            p.party.forEach(pk => { if (pk) pk.currentHp = 0; });
+                        }
+                        if (p.isLoggedIn) {
+                            p.isDefeated = true;
+                        }
+                        p.phase = 4;
+                    }
+                }
+                setTimeout(() => {
+                    window.buildMultiplayerPanels();
+                    elements.messageBox.innerText = `全體玩家的寶可夢皆被秒殺... 討伐失敗！GAME OVER！`;
+                    setTimeout(() => {
+                        window.showMultiEndScreen(false, `5分鐘限時已到！${bossName} 秒殺了所有寶可夢...`);
+                    }, 1800);
+                }, 500);
+            }, 300);
+        };
+
+        window.startMultiTimer = function(seconds = 300) {
+            window.stopMultiTimer();
+            multiTimeLeft = seconds;
+            window.updateMultiTimerDisplay();
+            multiTimerInterval = setInterval(() => {
+                if (gameMode !== 'multi' || enemyHp <= 0) {
+                    window.stopMultiTimer();
+                    return;
+                }
+                multiTimeLeft--;
+                window.updateMultiTimerDisplay();
+                if (multiTimeLeft <= 0) {
+                    window.triggerMultiTimeoutWipeout();
+                }
+            }, 1000);
+        };
+
         window.initMultiplayerGame = function() {
             multiPlayers = [0, 1, 2, 3].map(i => ({
                 name: '', id: '', score: 0, totalDamage: 0, isDefeated: false, formula: '', answer: '', isLoggedIn: false, party: [], activePokeIndex: 0, phase: 1, question: null,
@@ -1072,7 +1160,8 @@
             
             window.buildMultiplayerPanels();
             window.showScreen('battle');
-            window.spawnPokemon(); 
+            window.spawnPokemon();
+            window.startMultiTimer(300);
         };
 
         window.buildMultiplayerPanels = function() {
@@ -1295,6 +1384,11 @@
                 multiPlayers[index].formula = '';
                 multiPlayers[index].answer = '';
                 multiPlayers[index].isLoggedIn = true;
+                multiPlayers[index].isDefeated = false;
+                multiPlayers[index].totalDamage = 0;
+                if (multiPlayers.filter(pl => pl.isLoggedIn).length === 1 && enemyHp === enemyMaxHp) {
+                    window.startMultiTimer(300);
+                }
                 multiPlayers[index].isDefeated = false;
                 multiPlayers[index].totalDamage = 0;
                 window.buildMultiplayerPanels();
@@ -1701,7 +1795,8 @@
             }
         };
 
-        window.showMultiEndScreen = function(isVictory) {
+        window.showMultiEndScreen = function(isVictory, customSubtitle = "") {
+            window.stopMultiTimer();
             const endTitle = document.getElementById('multi-end-title');
             const endIcon = document.getElementById('multi-end-icon');
             const endSubtitle = document.getElementById('multi-end-subtitle');
@@ -1716,7 +1811,7 @@
                 endIcon.innerText = isVictory ? "🏆" : "💀";
             }
             if (endSubtitle) {
-                endSubtitle.innerText = isVictory ? "全體玩家合力擊敗了強敵！" : "全體玩家的寶可夢皆已倒下...";
+                endSubtitle.innerText = customSubtitle || (isVictory ? "全體玩家合力擊敗了強敵！" : "全體玩家的寶可夢皆已倒下...");
             }
             
             // 整理 4 位玩家的傷害數據並依總傷害由大至小排序
@@ -1872,6 +1967,9 @@
         };
         // 進入單人對戰畫面之統一介面初始化
         window.enterSingleGameScene = function() {
+            if (window.stopMultiTimer) window.stopMultiTimer();
+            const timerBadge = document.getElementById('multi-timer-badge');
+            if (timerBadge) timerBadge.classList.add('hidden');
             document.querySelectorAll('.single-player-element').forEach(el => el.classList.remove('hidden'));
             if (elements.playerSpriteContainer) {
                 elements.playerSpriteContainer.classList.remove('opacity-0', 'translate-y-12', 'hidden');
@@ -2128,6 +2226,9 @@
         };
 
         window.logout = function() {
+            if (window.stopMultiTimer) window.stopMultiTimer();
+            const timerBadge = document.getElementById('multi-timer-badge');
+            if (timerBadge) timerBadge.classList.add('hidden');
             currentStudentId = null; currentPassword = null;
             playerParty = []; score = 0; activePlayerIndex = 0;
             const pwdInput = document.getElementById('login-pwd');
@@ -2522,7 +2623,25 @@
                 if (elements.enemyInfoContainer) elements.enemyInfoContainer.classList.add('hidden');
                 elements.multiHpText.innerText = "400/400";
             } else {
-                pool = score < 8 ? pokemonData.stage3_form1 : (score < 16 ? pokemonData.stage2_form1 : pokemonData.legendary);
+                const rand = Math.random();
+                if (score < 8) {
+                    // < 8：100% 遭遇各類一階基礎形態寶可夢
+                    pool = pokemonData.stage3_form1;
+                } else if (score < 16) {
+                    // 8 ~ 15：40% 遭遇進階形態與強力的單階形態寶可夢，60% 遭遇各類一階基礎形態寶可夢
+                    pool = (rand < 0.40) ? pokemonData.stage2_form1 : pokemonData.stage3_form1;
+                } else {
+                    // >= 16：1% 遭遇神獸系列，5% 遭遇最終進化形態，40% 遭遇進階形態與強力的單階形態，54% 遭遇各類一階基礎形態
+                    if (rand < 0.01) {
+                        pool = pokemonData.legendary;
+                    } else if (rand < 0.06) {
+                        pool = pokemonData.final_forms;
+                    } else if (rand < 0.46) {
+                        pool = pokemonData.stage2_form1;
+                    } else {
+                        pool = pokemonData.stage3_form1;
+                    }
+                }
                 enemyMaxHp = currentPokemon ? currentPokemon.stats.hp : 100;
                 elements.gmaxCloud.classList.add('hidden');
                 elements.multiHpText.classList.add('hidden');
@@ -2822,18 +2941,25 @@
                 const atk = playerParty[activePlayerIndex].stats; const def = currentPokemon.stats; let damage = 0;
                 if (atk.attack > atk.spatk) damage = Math.max(1, atk.attack - def.defense); else damage = Math.max(1, atk.spatk - def.spdef);
                 
-                let baseDamage = Math.ceil(enemyMaxHp * (1/3)); 
+                let baseDamage = Math.ceil(enemyMaxHp * 0.25); 
                 if (damage < baseDamage) damage = baseDamage;
-                damage = Math.ceil(damage * multiplier);
-
-                if (isFinalHit) damage = enemyHp; 
-
-                enemyHp -= damage; window.updateHpBar(); 
-                
-                if (isFinalHit && enemyHp <= 0) {
+                enemyHp = Math.max(0, enemyHp - damage);
+                window.updateHpBar(); 
+                if (enemyHp <= 0) {
+                    if (!isFinalHit) window.recordAttempt(true);
                     currentPhase = 3;
-                    elements.messageBox.innerHTML = `<span class="text-green-600 font-bold">擊敗了！</span> 丟出精靈球！`;
+                    elements.phase2.classList.add('hidden');
+                    elements.messageBox.innerText = `造成 ${damage} 點傷害！擊敗了 ${currentPokemon.name}！丟出精靈球！`;
                     setTimeout(() => window.catchPokemon(), 800);
+                } else if (isFinalHit) {
+                    currentPhase = 3;
+                    elements.messageBox.innerText = `答案正確！造成 ${damage} 點傷害！對手還有體力，請挑戰下一題繼續進攻！`;
+                    setTimeout(() => {
+                        window.generateNewTurn(true);
+                        elements.messageBox.innerText = `請在右方列出新圖形的面積算式，繼續攻擊 ${currentPokemon.name}！`;
+                    }, 1000);
+                } else {
+                    elements.messageBox.innerText = `列式正確！發動攻擊造成 ${damage} 點傷害！請繼續計算答案！`;
                 }
             }, 250); 
         };
