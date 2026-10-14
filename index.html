@@ -529,51 +529,74 @@
                 buildEquationUI('para');
             } else if (currentMode === 'tri') {
                 if (variant === 0) {
-                    // 變體0：標準銳角三角形
-                    let b, h, d;
+                    // 變體0：標準銳角三角形（根據真實幾何比例生成）
+                    let b, h, d, dx_r;
+                    h = Math.floor(Math.random() * 5) + 4; // 4-8
+                    d = h + Math.floor(Math.random() * 3) + 1; // h+1..h+3
+                    dx_r = Math.sqrt(d * d - h * h);
+                    let min_b = Math.ceil(dx_r) + 2;
                     do {
-                        b = Math.floor(Math.random() * 7) + 6; // 6-12
-                        h = Math.floor(Math.random() * 5) + 4; // 4-8
-                    } while ((b * h) % 2 !== 0); // 確保乘積為雙數，面積必為整數（不出現小數）
-                    d = h + Math.floor(Math.random() * 4) + 1;
+                        b = min_b + Math.floor(Math.random() * 5);
+                    } while ((b * h) % 2 !== 0); // 確保乘積為雙數，面積必為整數
                     currentQData = { area: (b * h) / 2, validEqs: [`${b}×${h}÷2`, `${h}×${b}÷2`] };
                     drawSVG('tri', variant, b, h, d);
                 } else if (variant === 1) {
-                    // 變體1：鈍角三角形，高在外部
+                    // 變體1：鈍角三角形，高在外部（根據真實幾何比例生成）
                     let b, h, d;
                     do {
-                        b = Math.floor(Math.random() * 6) + 4; // 4-9
+                        b = Math.floor(Math.random() * 5) + 4; // 4-8
                         h = Math.floor(Math.random() * 4) + 4; // 4-7
-                    } while ((b * h) % 2 !== 0); // 確保乘積為雙數，面積必為整數（不出現小數）
-                    d = Math.floor(Math.random() * 6) + 10; // 長斜邊作為干擾 (10-15)
+                    } while ((b * h) % 2 !== 0); // 確保乘積為雙數，面積必為整數
+                    let min_d = Math.ceil(Math.sqrt((b + 2) * (b + 2) + h * h));
+                    d = min_d + Math.floor(Math.random() * 2);
                     currentQData = { area: (b * h) / 2, validEqs: [`${b}×${h}÷2`, `${h}×${b}÷2`] };
                     drawSVG('tri', variant, b, h, d);
                 } else {
-                    // 變體2：直角三角形，兩股分別為底和高
-                    let b, h, d;
-                    do {
-                        b = Math.floor(Math.random() * 5) + 6; // 6-10
-                        h = Math.floor(Math.random() * 5) + 6; // 6-10
-                    } while ((b * h) % 2 !== 0); // 確保乘積為雙數，面積必為整數（不出現小數）
-                    d = Math.ceil(Math.sqrt(b*b + h*h)) + Math.floor(Math.random() * 2); // 斜邊干擾
+                    // 變體2：直角三角形，採用整數畢氏三元數確保三邊比例100%精確且面積為整數
+                    const triples = [[6, 8, 10], [8, 6, 10], [5, 12, 13], [12, 5, 13], [9, 12, 15], [12, 9, 15]];
+                    let [b, h, d] = triples[Math.floor(Math.random() * triples.length)];
                     currentQData = { area: (b * h) / 2, validEqs: [`${b}×${h}÷2`, `${h}×${b}÷2`] };
                     drawSVG('tri', variant, b, h, d);
                 }
                 buildEquationUI('tri');
+                buildEquationUI('tri');
             } else if (currentMode === 'trap') {
                 let top, bot, h, d;
-                do {
-                    top = Math.floor(Math.random() * 6) + 3; // 3-8
-                    bot = top + Math.floor(Math.random() * 5) + 2; // 5-14
+                if (variant === 0) {
+                    // 變體0：一般梯形，確保 bot > top + dx_r 使兩底角皆為銳角且四邊比例精確
                     h = Math.floor(Math.random() * 5) + 4; // 4-8
-                } while (((top + bot) * h) % 2 !== 0); // 確保乘積為雙數，面積必為整數（不出現小數）
-                d = h + Math.floor(Math.random() * 3) + 1;
-                
+                    d = h + Math.floor(Math.random() * 2) + 1; // h+1..h+2
+                    let dx_r = Math.sqrt(d * d - h * h);
+                    let min_diff = Math.ceil(dx_r) + 2;
+                    do {
+                        top = Math.floor(Math.random() * 5) + 3; // 3-7
+                        bot = top + min_diff + Math.floor(Math.random() * 4);
+                    } while (((top + bot) * h) % 2 !== 0);
+                } else if (variant === 1) {
+                    // 變體1：直角梯形，採用畢氏三元數確保上下底差、高與斜腰完全符合真實比例
+                    const triples = [[3, 4, 5], [4, 3, 5], [6, 8, 10], [8, 6, 10], [5, 12, 13]];
+                    let [diff, h_val, d_val] = triples[Math.floor(Math.random() * triples.length)];
+                    h = h_val;
+                    d = d_val;
+                    do {
+                        top = Math.floor(Math.random() * 6) + 3; // 3-8
+                        bot = top + diff;
+                    } while (((top + bot) * h) % 2 !== 0);
+                } else {
+                    // 變體2：垂直平行底邊梯形，確保右底 > 左底 + dy_bot 使四邊比例完全精確
+                    h = Math.floor(Math.random() * 5) + 4; // 4-8
+                    d = h + Math.floor(Math.random() * 2) + 1; // h+1..h+2
+                    let dy_bot = Math.sqrt(d * d - h * h);
+                    let min_diff = Math.ceil(dy_bot) + 2;
+                    do {
+                        top = Math.floor(Math.random() * 5) + 3; // 3-7
+                        bot = top + min_diff + Math.floor(Math.random() * 4);
+                    } while (((top + bot) * h) % 2 !== 0);
+                }
                 let eqs = [
                     `(${top}+${bot})×${h}÷2`, `(${bot}+${top})×${h}÷2`,
                     `${h}×(${top}+${bot})÷2`, `${h}×(${bot}+${top})÷2`
                 ];
-                // 若 (top + bot) 為雙數，才允許中途除以 2 的列式，避免運算中途出現小數
                 if ((top + bot) % 2 === 0) {
                     eqs.push(`(${top}+${bot})÷2×${h}`, `(${bot}+${top})÷2×${h}`);
                 }
@@ -682,77 +705,125 @@
             } else if (type === 'tri') {
                 let b = params[0], h = params[1], d = params[2];
                 if (variant === 0) {
+                    let dx_r = Math.sqrt(Math.max(0, d * d - h * h));
+                    let dx_l = Math.max(1, b - dx_r);
+                    let scale = Math.min(180 / b, 95 / h);
+                    let W = b * scale, H = h * scale, DX_l = dx_l * scale;
+                    let x0 = 120 - W / 2, y0 = 80 - H / 2;
+                    let p1x = x0 + DX_l, p1y = y0;
+                    let p2x = x0, p2y = y0 + H;
+                    let p3x = x0 + W, p3y = y0 + H;
                     svgHTML = `
                         <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
-                            <polygon points="120,20 40,120 200,120" fill="#f0fdf4" stroke="#22c55e" stroke-width="3" stroke-linejoin="round"/>
-                            <line x1="120" y1="20" x2="120" y2="120" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
-                            <polyline points="120,110 130,110 130,120" fill="none" stroke="#ef4444" stroke-width="2" />
-                            <text x="120" y="145" text-anchor="middle" class="font-bold text-lg fill-gray-800">${b} cm</text>
-                            <text x="110" y="80" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <polygon points="${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)} ${p3x.toFixed(1)},${p3y.toFixed(1)}" fill="#f0fdf4" stroke="#22c55e" stroke-width="3" stroke-linejoin="round"/>
+                            <line x1="${p1x.toFixed(1)}" y1="${p1y.toFixed(1)}" x2="${p1x.toFixed(1)}" y2="${p2y.toFixed(1)}" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
+                            <polyline points="${p1x.toFixed(1)},${(p2y - 10).toFixed(1)} ${(p1x + 10).toFixed(1)},${(p2y - 10).toFixed(1)} ${(p1x + 10).toFixed(1)},${p2y.toFixed(1)}" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="120.0" y="${(p2y + 24).toFixed(1)}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${b} cm</text>
+                            <text x="${(p1x - 8).toFixed(1)}" y="${(y0 + H / 2 + 5).toFixed(1)}" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
                             <!-- 干擾數字移至右側斜邊外 -->
-                            <text x="170" y="65" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                            <text x="${((p1x + p3x) / 2 + 12).toFixed(1)}" y="${(y0 + H / 2).toFixed(1)}" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
                         </svg>
                     `;
                 } else if (variant === 1) {
+                    let total_w = Math.sqrt(Math.max((b + 2) * (b + 2), d * d - h * h));
+                    let ext = total_w - b;
+                    let scale = Math.min(190 / total_w, 95 / h);
+                    let W_total = total_w * scale, W_base = b * scale, EXT = ext * scale, H = h * scale;
+                    let x0 = 120 - W_total / 2, y0 = 80 - H / 2;
+                    let p1x = x0, p1y = y0;
+                    let p2x = x0 + EXT, p2y = y0 + H;
+                    let p3x = x0 + W_total, p3y = y0 + H;
                     svgHTML = `
                         <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
-                            <polygon points="30,40 120,120 220,120" fill="#f0fdf4" stroke="#22c55e" stroke-width="3" stroke-linejoin="round"/>
-                            <line x1="30" y1="40" x2="30" y2="120" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
-                            <line x1="30" y1="120" x2="120" y2="120" stroke="#94a3b8" stroke-width="2" stroke-dasharray="3,3" />
-                            <polyline points="30,110 40,110 40,120" fill="none" stroke="#ef4444" stroke-width="2" />
-                            <text x="170" y="145" text-anchor="middle" class="font-bold text-lg fill-gray-800">${b} cm</text>
-                            <text x="20" y="85" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
-                            <text x="135" y="70" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                            <polygon points="${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)} ${p3x.toFixed(1)},${p3y.toFixed(1)}" fill="#f0fdf4" stroke="#22c55e" stroke-width="3" stroke-linejoin="round"/>
+                            <line x1="${p1x.toFixed(1)}" y1="${p1y.toFixed(1)}" x2="${p1x.toFixed(1)}" y2="${p2y.toFixed(1)}" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
+                            <line x1="${p1x.toFixed(1)}" y1="${p2y.toFixed(1)}" x2="${p2x.toFixed(1)}" y2="${p2y.toFixed(1)}" stroke="#94a3b8" stroke-width="2" stroke-dasharray="3,3" />
+                            <polyline points="${p1x.toFixed(1)},${(p2y - 10).toFixed(1)} ${(p1x + 10).toFixed(1)},${(p2y - 10).toFixed(1)} ${(p1x + 10).toFixed(1)},${p2y.toFixed(1)}" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="${((p2x + p3x) / 2).toFixed(1)}" y="${(p2y + 24).toFixed(1)}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${b} cm</text>
+                            <text x="${(p1x - 10).toFixed(1)}" y="${(y0 + H / 2 + 5).toFixed(1)}" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <text x="${((p1x + p3x) / 2 + 12).toFixed(1)}" y="${(y0 + H / 2 - 5).toFixed(1)}" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
                         </svg>
                     `;
                 } else {
+                    let scale = Math.min(170 / b, 95 / h);
+                    let W = b * scale, H = h * scale;
+                    let x0 = 120 - W / 2, y0 = 80 - H / 2;
+                    let p1x = x0, p1y = y0;
+                    let p2x = x0, p2y = y0 + H;
+                    let p3x = x0 + W, p3y = y0 + H;
                     svgHTML = `
                         <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
-                            <polygon points="50,30 50,120 190,120" fill="#f0fdf4" stroke="#22c55e" stroke-width="3" stroke-linejoin="round"/>
-                            <polyline points="50,110 60,110 60,120" fill="none" stroke="#ef4444" stroke-width="2" />
-                            <text x="120" y="145" text-anchor="middle" class="font-bold text-lg fill-gray-800">${b} cm</text>
-                            <text x="40" y="80" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
-                            <text x="130" y="65" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                            <polygon points="${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)} ${p3x.toFixed(1)},${p3y.toFixed(1)}" fill="#f0fdf4" stroke="#22c55e" stroke-width="3" stroke-linejoin="round"/>
+                            <polyline points="${p2x.toFixed(1)},${(p2y - 10).toFixed(1)} ${(p2x + 10).toFixed(1)},${(p2y - 10).toFixed(1)} ${(p2x + 10).toFixed(1)},${p2y.toFixed(1)}" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="${((p2x + p3x) / 2).toFixed(1)}" y="${(p2y + 24).toFixed(1)}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${b} cm</text>
+                            <text x="${(p2x - 10).toFixed(1)}" y="${(y0 + H / 2 + 5).toFixed(1)}" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <text x="${((p1x + p3x) / 2 + 12).toFixed(1)}" y="${(y0 + H / 2 - 5).toFixed(1)}" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
                         </svg>
                     `;
                 }
             } else if (type === 'trap') {
                 let top = params[0], bot = params[1], h = params[2], d = params[3];
                 if (variant === 0) {
+                    let dx_r = Math.sqrt(Math.max(0, d * d - h * h));
+                    let dx_l = Math.max(1, (bot - top) - dx_r);
+                    let scale = Math.min(190 / bot, 90 / h);
+                    let W_bot = bot * scale, W_top = top * scale, H = h * scale, DX_l = dx_l * scale;
+                    let x0 = 120 - W_bot / 2, y0 = 80 - H / 2;
+                    let p1x = x0 + DX_l, p1y = y0;
+                    let p2x = x0 + DX_l + W_top, p2y = y0;
+                    let p3x = x0 + W_bot, p3y = y0 + H;
+                    let p4x = x0, p4y = y0 + H;
                     svgHTML = `
                         <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
-                            <polygon points="80,30 160,30 200,110 40,110" fill="#fffbeb" stroke="#f59e0b" stroke-width="3" stroke-linejoin="round"/>
-                            <line x1="80" y1="30" x2="80" y2="110" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
-                            <polyline points="80,100 90,100 90,110" fill="none" stroke="#ef4444" stroke-width="2" />
-                            <text x="120" y="20" text-anchor="middle" class="font-bold text-lg fill-gray-800">${top} cm</text>
-                            <text x="120" y="145" text-anchor="middle" class="font-bold text-lg fill-gray-800">${bot} cm</text>
-                            <text x="70" y="75" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
-                            <text x="195" y="65" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                            <polygon points="${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)} ${p3x.toFixed(1)},${p3y.toFixed(1)} ${p4x.toFixed(1)},${p4y.toFixed(1)}" fill="#fffbeb" stroke="#f59e0b" stroke-width="3" stroke-linejoin="round"/>
+                            <line x1="${p1x.toFixed(1)}" y1="${p1y.toFixed(1)}" x2="${p1x.toFixed(1)}" y2="${p4y.toFixed(1)}" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
+                            <polyline points="${p1x.toFixed(1)},${(p4y - 10).toFixed(1)} ${(p1x + 10).toFixed(1)},${(p4y - 10).toFixed(1)} ${(p1x + 10).toFixed(1)},${p4y.toFixed(1)}" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="${((p1x + p2x) / 2).toFixed(1)}" y="${(y0 - 12).toFixed(1)}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${top} cm</text>
+                            <text x="${((p4x + p3x) / 2).toFixed(1)}" y="${(p4y + 24).toFixed(1)}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${bot} cm</text>
+                            <text x="${(p1x - 8).toFixed(1)}" y="${(y0 + H / 2 + 5).toFixed(1)}" text-anchor="end" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <text x="${((p2x + p3x) / 2 + 12).toFixed(1)}" y="${(y0 + H / 2).toFixed(1)}" text-anchor="start" class="font-bold text-lg fill-gray-800">${d} cm</text>
                         </svg>
                     `;
                 } else if (variant === 1) {
+                    let scale = Math.min(180 / bot, 90 / h);
+                    let W_bot = bot * scale, W_top = top * scale, H = h * scale;
+                    let x0 = 120 - W_bot / 2, y0 = 80 - H / 2;
+                    let p1x = x0 + (W_bot - W_top), p1y = y0;
+                    let p2x = x0 + W_bot, p2y = y0;
+                    let p3x = x0 + W_bot, p3y = y0 + H;
+                    let p4x = x0, p4y = y0 + H;
                     svgHTML = `
                         <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
-                            <polygon points="40,30 180,30 180,120 100,120" fill="#fffbeb" stroke="#f59e0b" stroke-width="3" stroke-linejoin="round"/>
-                            <polyline points="170,30 170,40 180,40" fill="none" stroke="#ef4444" stroke-width="2" />
-                            <polyline points="170,120 170,110 180,110" fill="none" stroke="#ef4444" stroke-width="2" />
-                            <text x="110" y="20" text-anchor="middle" class="font-bold text-lg fill-gray-800">${top} cm</text>
-                            <text x="140" y="145" text-anchor="middle" class="font-bold text-lg fill-gray-800">${bot} cm</text>
-                            <text x="190" y="80" text-anchor="start" class="font-bold text-lg fill-gray-800">${h} cm</text>
-                            <text x="60" y="70" text-anchor="end" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                            <polygon points="${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)} ${p3x.toFixed(1)},${p3y.toFixed(1)} ${p4x.toFixed(1)},${p4y.toFixed(1)}" fill="#fffbeb" stroke="#f59e0b" stroke-width="3" stroke-linejoin="round"/>
+                            <polyline points="${(p2x - 10).toFixed(1)},${p2y.toFixed(1)} ${(p2x - 10).toFixed(1)},${(p2y + 10).toFixed(1)} ${p2x.toFixed(1)},${(p2y + 10).toFixed(1)}" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <polyline points="${(p3x - 10).toFixed(1)},${p3y.toFixed(1)} ${(p3x - 10).toFixed(1)},${(p3y - 10).toFixed(1)} ${p3x.toFixed(1)},${(p3y - 10).toFixed(1)}" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="${((p1x + p2x) / 2).toFixed(1)}" y="${(y0 - 12).toFixed(1)}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${top} cm</text>
+                            <text x="${((p4x + p3x) / 2).toFixed(1)}" y="${(p4y + 24).toFixed(1)}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${bot} cm</text>
+                            <text x="${(p2x + 12).toFixed(1)}" y="${(y0 + H / 2 + 5).toFixed(1)}" text-anchor="start" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <text x="${((p1x + p4x) / 2 - 12).toFixed(1)}" y="${(y0 + H / 2).toFixed(1)}" text-anchor="end" class="font-bold text-lg fill-gray-800">${d} cm</text>
                         </svg>
                     `;
                 } else {
+                    let dy_bot = Math.sqrt(Math.max(0, d * d - h * h));
+                    let dy_top = Math.max(1, (bot - top) - dy_bot);
+                    let scale = Math.min(150 / h, 110 / bot);
+                    let W = h * scale, L_top = top * scale, L_bot = bot * scale, DY_top = dy_top * scale;
+                    let x0 = 120 - W / 2, y0 = 80 - L_bot / 2;
+                    let p1x = x0, p1y = y0 + DY_top;
+                    let p2x = x0 + W, p2y = y0;
+                    let p3x = x0 + W, p3y = y0 + L_bot;
+                    let p4x = x0, p4y = y0 + DY_top + L_top;
+                    let hy = (p1y + p4y) / 2;
                     svgHTML = `
                         <svg viewBox="${viewBox}" class="w-full h-full drop-shadow-md overflow-visible">
-                            <polygon points="60,20 180,50 180,110 60,140" fill="#fffbeb" stroke="#f59e0b" stroke-width="3" stroke-linejoin="round"/>
-                            <line x1="60" y1="80" x2="180" y2="80" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
-                            <polyline points="60,70 70,70 70,80" fill="none" stroke="#ef4444" stroke-width="2" />
-                            <polyline points="170,80 170,70 180,70" fill="none" stroke="#ef4444" stroke-width="2" />
-                            <text x="45" y="85" text-anchor="end" class="font-bold text-lg fill-gray-800">${top} cm</text>
-                            <text x="195" y="85" text-anchor="start" class="font-bold text-lg fill-gray-800">${bot} cm</text>
-                            <text x="120" y="72" text-anchor="middle" class="font-bold text-lg fill-gray-800">${h} cm</text>
-                            <text x="130" y="145" text-anchor="middle" class="font-bold text-lg fill-gray-800">${d} cm</text>
+                            <polygon points="${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)} ${p3x.toFixed(1)},${p3y.toFixed(1)} ${p4x.toFixed(1)},${p4y.toFixed(1)}" fill="#fffbeb" stroke="#f59e0b" stroke-width="3" stroke-linejoin="round"/>
+                            <line x1="${x0.toFixed(1)}" y1="${hy.toFixed(1)}" x2="${(x0 + W).toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5" />
+                            <polyline points="${x0.toFixed(1)},${(hy - 10).toFixed(1)} ${(x0 + 10).toFixed(1)},${(hy - 10).toFixed(1)} ${(x0 + 10).toFixed(1)},${hy.toFixed(1)}" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <polyline points="${(x0 + W - 10).toFixed(1)},${hy.toFixed(1)} ${(x0 + W - 10).toFixed(1)},${(hy - 10).toFixed(1)} ${(x0 + W).toFixed(1)},${(hy - 10).toFixed(1)}" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <text x="${(x0 - 12).toFixed(1)}" y="${(hy + 5).toFixed(1)}" text-anchor="end" class="font-bold text-lg fill-gray-800">${top} cm</text>
+                            <text x="${(x0 + W + 12).toFixed(1)}" y="${(y0 + L_bot / 2 + 5).toFixed(1)}" text-anchor="start" class="font-bold text-lg fill-gray-800">${bot} cm</text>
+                            <text x="120.0" y="${(hy - 10).toFixed(1)}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${h} cm</text>
+                            <text x="120.0" y="${((p4y + p3y) / 2 + 24).toFixed(1)}" text-anchor="middle" class="font-bold text-lg fill-gray-800">${d} cm</text>
                         </svg>
                     `;
                 }
