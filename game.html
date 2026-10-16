@@ -2527,10 +2527,15 @@ starters: [],
             let res = window.validateFormulaStrict(playerFormulaStr, currentQuestion);
             if (res.valid) {
                 currentPhase = 2; elements.phase2.classList.remove('hidden');
+                if (window.updateSingleAreaLabelsAndHint) window.updateSingleAreaLabelsAndHint("");
                 elements.messageBox.innerHTML = `<span class="text-green-600">列式正確！發動攻擊！</span> 請繼續計算答案！`;
                 window.attackPokemon(0.5);
             } else { 
                 let hint = "";
+                if(currentQuestion.type === 0) hint = "底 × 高";
+                else if(currentQuestion.type === 1) hint = "底 × 高 ÷ 2";
+                else if(currentQuestion.type === 2) hint = "(上底+下底) × 高 ÷ 2";
+                if (window.updateSingleAreaLabelsAndHint) window.updateSingleAreaLabelsAndHint(`💡 正確公式：${hint}`);
                 if(currentQuestion.type === 0) hint = "底 × 高";
                 else if(currentQuestion.type === 1) hint = "底 × 高 ÷ 2";
                 else if(currentQuestion.type === 2) hint = "(上底+下底) × 高 ÷ 2";
@@ -2668,6 +2673,58 @@ starters: [],
             window.generateNewTurn(true);
         };
 
+        window.updateSingleAreaLabelsAndHint = function(showHintText = null) {
+            if (!elements.phase1 || !elements.phase2) return;
+            let shapeLabel = "面積";
+            if (currentQuestion) {
+                if (currentQuestion.type === 0) shapeLabel = "平行四邊形面積";
+                else if (currentQuestion.type === 1) shapeLabel = "三角形面積";
+                else if (currentQuestion.type === 2) shapeLabel = "梯形面積";
+            }
+            const label1 = elements.phase1.querySelector('span');
+            if (label1) label1.innerText = shapeLabel;
+            const label2 = elements.phase2.querySelector('span');
+            if (label2) label2.innerText = shapeLabel;
+
+            let hintRow = document.getElementById('single-formula-hint-row');
+            if (!hintRow && elements.phase1.parentNode) {
+                hintRow = document.createElement('div');
+                hintRow.id = 'single-formula-hint-row';
+                hintRow.className = "w-full flex flex-row items-center gap-1 sm:gap-2 hidden";
+
+                const ghostLabel = document.createElement('span');
+                ghostLabel.id = 'single-hint-ghost-label';
+                ghostLabel.className = "font-black text-gray-700 text-sm sm:text-base whitespace-nowrap flex-none invisible select-none";
+                hintRow.appendChild(ghostLabel);
+
+                const ghostEq = document.createElement('span');
+                ghostEq.className = "font-black text-gray-700 text-sm sm:text-base w-4 text-center flex-none invisible select-none";
+                ghostEq.innerText = "=";
+                hintRow.appendChild(ghostEq);
+
+                const hintBox = document.createElement('div');
+                hintBox.id = 'single-formula-hint-box';
+                hintBox.className = "flex-1 bg-amber-50 border-2 border-amber-400 text-amber-900 font-black text-xs sm:text-sm rounded px-2 py-1 text-center shadow-sm";
+                hintRow.appendChild(hintBox);
+
+                elements.phase1.parentNode.insertBefore(hintRow, elements.phase1);
+            }
+
+            const ghostLabelEl = document.getElementById('single-hint-ghost-label');
+            if (ghostLabelEl) ghostLabelEl.innerText = shapeLabel;
+
+            const hintBoxEl = document.getElementById('single-formula-hint-box');
+            if (hintRow && hintBoxEl) {
+                if (showHintText === "") {
+                    hintBoxEl.innerText = "";
+                    hintRow.classList.add('hidden');
+                } else if (typeof showHintText === 'string' && Boolean(showHintText)) {
+                    hintBoxEl.innerText = showHintText;
+                    hintRow.classList.remove('hidden');
+                }
+            }
+        };
+
         window.generateNewTurn = function(newQuestion = true) {
             currentPhase = 1; 
             if (gameMode === 'single') {
@@ -2678,9 +2735,9 @@ starters: [],
                     currentQuestion = window.generateAreaQuestion(); 
                     window.drawShapeToCanvas('shape-canvas', currentQuestion, false); 
                 }
+                window.updateSingleAreaLabelsAndHint("");
             }
         };
-
         window.discardNewPokemon = function() { elements.replaceModal.classList.add('hidden'); window.savePlayerData(); window.checkWinCondition(); };
         window.replacePokemon = function(index) {
             playerParty[index] = newlyCaughtPokemon; window.renderParty(); elements.replaceModal.classList.add('hidden');
@@ -2694,16 +2751,13 @@ starters: [],
         };
 
         window.checkWinCondition = function() {
-            if (score >= 20) {
-                window.processEvolutions(() => { elements.finalScore.innerText = score; window.showScreen('end'); });
-            } else {
-                window.processEvolutions(() => { 
-                    window.showScreen('battle'); 
-                    elements.overlay.classList.remove('hidden'); elements.overlay.classList.add('animate-encounter');
-                    setTimeout(() => { window.spawnPokemon(); }, 1200);
-                    setTimeout(() => { elements.overlay.classList.remove('animate-encounter'); elements.overlay.classList.add('hidden'); }, 2200);
-                });
-            }
+            window.processEvolutions(() => {
+                window.showScreen('battle');
+                elements.overlay.classList.remove('hidden');
+                elements.overlay.classList.add('animate-encounter');
+                setTimeout(() => { window.spawnPokemon(); }, 1200);
+                setTimeout(() => { elements.overlay.classList.remove('animate-encounter'); elements.overlay.classList.add('hidden'); }, 2200);
+            });
         };
 
         window.processEvolutions = function(callback) {
