@@ -1010,10 +1010,14 @@ starters: [],
                     if (elements.singleBottomPanel) elements.singleBottomPanel.classList.remove('hidden');
                     if (elements.multiBottomPanel) elements.multiBottomPanel.classList.add('hidden');
                     const multiSprites = document.getElementById('multi-player-sprites-container');
-                    if (multiSprites) multiSprites.classList.add('hidden');
                     window.showScreen('login');
+                    if (window.preloadExcelStudentData) window.preloadExcelStudentData();
                 } else if (mode === 'multi') {
-                    window.initMultiplayerGame();
+                    if (window.enterMultiModeWithExcelCheck) {
+                        window.enterMultiModeWithExcelCheck();
+                    } else {
+                        window.initMultiplayerGame();
+                    }
                 } else if (mode === 'mode') {
                     if (battleSceneEl) {
                         battleSceneEl.style.backgroundImage = '';
@@ -1161,7 +1165,191 @@ starters: [],
             window.buildMultiplayerPanels();
             window.showScreen('battle');
             window.spawnPokemon();
+            if (window.connectExcelForMultiMode) {
+                window.connectExcelForMultiMode();
+            } else {
+                window.startMultiTimer(300);
+            }
+        };
+
+        window.isMultiExcelReady = false;
+
+        window.enterMultiModeWithExcelCheck = async function() {
+            window.isMultiExcelReady = false;
+            let modeScreen = document.getElementById("mode-screen");
+            let modeBtns = modeScreen ? modeScreen.querySelectorAll("button.btn-game") : [];
+            let modeHint = modeScreen ? modeScreen.querySelector("p") : null;
+            let multiBtn = modeBtns.length ? modeBtns[modeBtns.length - 1] : null;
+            let origBtnText = multiBtn ? multiBtn.innerText : "⚔️ 四人極巨化討伐戰";
+            let origHintText = modeHint ? modeHint.innerText : "請選擇遊玩模式";
+
+            if (multiBtn) {
+                multiBtn.disabled = true;
+                multiBtn.innerText = "⏳ 正在連接 Excel 試算表...";
+                multiBtn.classList.add("opacity-70", "cursor-not-allowed");
+            }
+            if (modeHint) {
+                modeHint.innerText = "正在連接 Excel 試算表讀取學生資料，請稍候...";
+                modeHint.className = "mt-8 text-blue-600 font-black text-sm animate-pulse";
+            }
+
+            if (window.preloadExcelStudentData) {
+                await window.preloadExcelStudentData();
+            }
+            window.isMultiExcelReady = true;
+
+            if (multiBtn) {
+                multiBtn.disabled = false;
+                multiBtn.innerText = origBtnText;
+                multiBtn.classList.remove("opacity-70", "cursor-not-allowed");
+            }
+            if (modeHint) {
+                modeHint.innerText = origHintText;
+                modeHint.className = "mt-8 text-gray-500 font-bold text-sm";
+            }
+
+            window.initMultiplayerGame();
+        };
+
+        window.syncMultiLoginExcelState = function() {
+            [0, 1, 2, 3].forEach(function(i) {
+                let p = multiPlayers[i];
+                if (!p || p.isLoggedIn) return;
+                let selClass = document.getElementById("multi-login-class-" + i);
+                let selNum = document.getElementById("multi-login-num-" + i);
+                let btn = document.querySelector("#multi-panel-" + i + " button");
+                let errEl = document.getElementById("multi-login-err-" + i);
+                if (!window.isMultiExcelReady) {
+                    if (selClass) selClass.disabled = true;
+                    if (selNum) selNum.disabled = true;
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerText = "連接 Excel 中...";
+                        btn.classList.add("opacity-60", "cursor-not-allowed");
+                    }
+                    if (errEl) {
+                        errEl.innerText = "⏳ 正在連接試算表...";
+                        errEl.className = "text-blue-600 text-[13px] font-bold mt-0.5 text-center h-5 w-full truncate";
+                    }
+                } else {
+                    if (selClass) selClass.disabled = false;
+                    if (selNum) selNum.disabled = false;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerText = "連線讀取";
+                        btn.classList.remove("opacity-60", "cursor-not-allowed");
+                    }
+                    if (errEl && (errEl.innerText.includes("正在連接") || errEl.innerText === "")) {
+                        errEl.innerText = "✅ 已連接試算表，請登入";
+                        errEl.className = "text-green-600 text-[13px] font-bold mt-0.5 text-center h-5 w-full truncate";
+                    }
+                }
+            });
+        };
+
+        window.connectExcelForMultiMode = async function() {
+            if (!window.isMultiExcelReady || !window.isExcelDataLoaded) {
+                window.isMultiExcelReady = false;
+                window.stopMultiTimer();
+                window.syncMultiLoginExcelState();
+                if (elements && elements.messageBox) {
+                    elements.messageBox.innerText = "⏳ 正在連接 Excel 試算表讀取學生資料，成功連接後開放 4 位玩家登入...";
+                }
+                if (window.preloadExcelStudentData) {
+                    await window.preloadExcelStudentData();
+                }
+                window.isMultiExcelReady = true;
+            }
+            window.syncMultiLoginExcelState();
+            if (elements && elements.messageBox) {
+                let bName = currentPokemon ? currentPokemon.name : "極巨化神獸";
+                elements.messageBox.innerText = "✅ 已成功連接 Excel 試算表！⚠️ 野生 Lv.50 " + bName + " 出現了！請 4 位學生選擇座號登入！";
+            }
             window.startMultiTimer(300);
+        };
+
+        window.executeMultiPlayerExcelLogin = async function(index, idVal, errEl, btn, completeLoginWithParty) {
+            if (!window.isMultiExcelReady || !window.isExcelDataLoaded) {
+                if (errEl) {
+                    errEl.innerText = "⏳ 正在連接 Excel 試算表...";
+                    errEl.className = "text-blue-600 text-[13px] font-bold mt-0.5 text-center h-5 w-full truncate";
+                }
+                if (window.preloadExcelStudentData) {
+                    await window.preloadExcelStudentData();
+                }
+                window.isMultiExcelReady = true;
+                window.syncMultiLoginExcelState();
+            }
+
+            if (GAS_URL.includes("請將您的") || idVal.startsWith("student")) {
+                let starters = ["奇異種子", "小火龍", "車厘龜", "喵喵怪", "傻鴨", "鬼斯"];
+                completeLoginWithParty([
+                    starters[Math.floor(Math.random() * starters.length)],
+                    starters[Math.floor(Math.random() * starters.length)],
+                    starters[Math.floor(Math.random() * starters.length)]
+                ], "測試帳號已加入戰鬥！");
+                return;
+            }
+
+            const excelRecord = window.excelStudentMap ? window.excelStudentMap[idVal] : null;
+            if (!excelRecord) {
+                if (errEl) {
+                    errEl.innerText = "❌ 試算表無此座號 (" + idVal + ")";
+                    errEl.className = "text-red-500 text-[13px] font-bold mt-0.5 text-center h-5 w-full truncate";
+                }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = "連線讀取";
+                }
+                return;
+            }
+
+            let cloudData = null;
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(function() { controller.abort(); }, 3000);
+                let res = await fetch(GAS_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: "login", id: idVal, password: excelRecord.pw }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                let data = await res.json();
+                if (data && data.success) {
+                    cloudData = data;
+                }
+            } catch (e) {
+                console.warn("GAS login 讀取略過，改用預載試算表資料:", e);
+            }
+
+            if (!cloudData) {
+                try {
+                    const controller2 = new AbortController();
+                    const timeoutId2 = setTimeout(function() { controller2.abort(); }, 2500);
+                    let res2 = await fetch(GAS_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "text/plain;charset=utf-8" },
+                        body: JSON.stringify({ action: "single_id_login", id: idVal }),
+                        signal: controller2.signal
+                    });
+                    clearTimeout(timeoutId2);
+                    let data2 = await res2.json();
+                    if (data2 && data2.success) {
+                        cloudData = data2;
+                    }
+                } catch (e2) {
+                    console.warn("GAS single_id_login 讀取略過:", e2);
+                }
+            }
+
+            let localSave = window.loadLocalPlayerData ? window.loadLocalPlayerData(idVal) : null;
+            let merged = Object.assign({}, excelRecord, localSave || {}, cloudData || {});
+            let p1 = merged.poke1 || merged.pkm1 || merged.PKM1 || merged.pokemon1 || excelRecord.PKM1 || "";
+            let p2 = merged.poke2 || merged.pkm2 || merged.PKM2 || merged.pokemon2 || excelRecord.PKM2 || "";
+            let p3 = merged.poke3 || merged.pkm3 || merged.PKM3 || merged.pokemon3 || excelRecord.PKM3 || "";
+
+            completeLoginWithParty([p1, p2, p3], "已從 Excel 試算表載入寶可夢陣容！");
         };
 
         window.buildMultiplayerPanels = function() {
@@ -1333,7 +1521,9 @@ starters: [],
             });
 
             spritesContainer.innerHTML = totalSpritesHtml;
+            spritesContainer.innerHTML = totalSpritesHtml;
             elements.multiBottomPanel.innerHTML = totalBottomHtml;
+            if (window.syncMultiLoginExcelState) window.syncMultiLoginExcelState();
 
             setTimeout(() => {
                 multiPlayers.forEach((p, i) => {
@@ -1396,6 +1586,10 @@ starters: [],
                     elements.messageBox.innerHTML = `<span class="text-blue-600 font-bold">${idVal} ${note}</span>`;
                 }
             };
+            if (window.executeMultiPlayerExcelLogin) {
+                await window.executeMultiPlayerExcelLogin(index, idVal, errEl, btn, completeLoginWithParty);
+                return;
+            }
             // 測試帳號直接秒進
             if (GAS_URL.includes("請將您的") || idVal.startsWith("student")) {
                 let starters = ["奇異種子", "小火龍", "車厘龜", "喵喵怪", "傻鴨", "鬼斯"];
@@ -1574,8 +1768,16 @@ starters: [],
         window.multiPlayerAttack = function(pIndex, damage = 10, isFinalHit = false) {
             let p = multiPlayers[pIndex];
             if (!p || !p.isLoggedIn || p.isDefeated) return;
-            p.totalDamage = (p.totalDamage || 0) + damage;
 
+            let activePoke = (p.party && p.party[0]) ? (p.party[p.activePokeIndex] || p.party[0]) : null;
+            const atk = (activePoke && activePoke.stats) ? activePoke.stats : { hp: 100, attack: 60, defense: 50, spatk: 60, spdef: 50 };
+            const def = (currentPokemon && currentPokemon.stats) ? currentPokemon.stats : { hp: enemyMaxHp, attack: 150, defense: 135, spatk: 180, spdef: 135 };
+            let usePhys = (Math.max(atk.attack, atk.spatk) === atk.attack);
+            let rawDamage = usePhys ? (atk.attack - def.defense) : (atk.spatk - def.spdef);
+            let minDamage = Math.max(1, Math.ceil((enemyMaxHp / 4) * 0.25));
+            damage = Math.max(rawDamage, minDamage);
+
+            p.totalDamage = (p.totalDamage || 0) + damage;
             let animWrapper = document.getElementById(`multi-sprite-anim-wrapper-${pIndex}`);
             if (animWrapper) {
                 // 計算面向畫面中心 (神獸位置) 的撞擊向量
@@ -1675,13 +1877,19 @@ starters: [],
                     panel.classList.add('shake', 'bg-red-200');
                     setTimeout(() => panel.classList.remove('shake', 'bg-red-200'), 500);
                 }
-                // 扣減該玩家當前出戰寶可夢的血量
+                // 扣減該玩家當前出戰寶可夢的血量（以極巨化神獸 150% 攻擊/特攻 - 玩家寶可夢防禦/特防計算，保底扣 1/4 最大血量）
                 if (p && p.party && p.party[p.activePokeIndex]) {
                     let activePoke = p.party[p.activePokeIndex];
                     let maxHp = (activePoke.stats && activePoke.stats.hp) ? activePoke.stats.hp : (activePoke.maxHp || 100);
                     if (activePoke.currentHp === undefined) activePoke.currentHp = maxHp;
                     activePoke.maxHp = maxHp;
-                    activePoke.currentHp = Math.max(0, activePoke.currentHp - 25);
+                    const bossAtk = (currentPokemon && currentPokemon.stats) ? currentPokemon.stats : { attack: 150, defense: 135, spatk: 180, spdef: 135 };
+                    const pDef = (activePoke && activePoke.stats) ? activePoke.stats : { attack: 50, defense: 50, spatk: 50, spdef: 50 };
+                    let useBossPhys = (Math.max(bossAtk.attack, bossAtk.spatk) === bossAtk.attack);
+                    let rawBossDamage = useBossPhys ? (bossAtk.attack - pDef.defense) : (bossAtk.spatk - pDef.spdef);
+                    let minBossDamage = Math.ceil(maxHp * 0.25);
+                    let bossDamage = Math.max(rawBossDamage, minBossDamage);
+                    activePoke.currentHp = Math.max(0, activePoke.currentHp - bossDamage);
                     window.updateMultiPlayerHp(pIndex);
                     
                     if (activePoke.currentHp <= 0) {
@@ -1993,6 +2201,7 @@ starters: [],
             elements.canvasWrapper.className = "w-1/2 h-full flex flex-col justify-start pt-4 sm:pt-6 items-start pl-2 sm:pl-6 relative z-10 transition-all duration-300";
             elements.enemyWrapper.className = "w-1/2 h-full flex flex-col items-center justify-start pt-12 sm:pt-16 pr-2 sm:pr-8 relative z-10 transition-all duration-300";
             
+            window.sessionEncounterCount = 0;
             elements.headerStudentId.innerText = currentStudentId; 
             elements.score.innerText = score; 
             elements.gameHeader.classList.remove('hidden');
@@ -2069,7 +2278,109 @@ starters: [],
             }
         };
 
+        // 試算表 (面積2) 預載學生帳密與紀錄資料庫
+        const EXCEL_STUDENT_ROWS = [["5A01", "ss238730", "車厘龜", "", "", 0, 0, 0, 0, 0, 0], ["5A02", "ss565321"], ["5A03", "ss562556"], ["5A04", "ss486032"], ["5A05", "ss284653"], ["5A06", "ss502122"], ["5A07", "ss562006", "車厘龜", "小火龍", "", 4, 0, 4, 0, 2, 0], ["5A08", "ss870342", "車厘龜", "", "", 0, 0, 4, 0, 1, 1], ["5A09", "ss512426", "小火龍", "", "", 1, 0, 0, 0, 9, 1], ["5A10", "ss495587"], ["5A11", "ss562556"], ["5A12", "ss498532"], ["5A13", "ss432146"], ["5A14", "ss325334"], ["5A15", "ss676460"], ["5A16", "ss244943"], ["5A17", "ss298534"], ["5A18", "ss248749"], ["5A19", "ss244220"], ["5A20", "ss327465"], ["5A21", "ss142325"], ["5A22", "ss865453"], ["5A23", "ss233292"], ["5A24", "ss486532", "卡咪龜", "火恐龍", "妙蛙草", 0, 0, 0, 0, 0, 0], ["5A25", "ss248152"], ["5A26", "ss240480"], ["5A27", "ss502322"], ["5A28", "ss123853"], ["5B01", "ss266408"], ["5B02", "ss684653"], ["5B03", "ss846231"], ["5B04", "ss565320"], ["5B05", "ss432146"], ["5B06", "ss651374"], ["5B07", "ss413246"], ["5B08", "ss498534"], ["5B09", "ss527465"], ["5B10", "ss532146"], ["5B11", "ss125589"], ["5B12", "ss280151"], ["5B13", "ss565321"], ["5B14", "ss527865"], ["5B15", "ss651323"], ["5B16", "ss915926"], ["5B17", "ss465878"], ["5B18", "ss146325"], ["5B19", "ss239494"], ["5B20", "ss963878"], ["5B21", "ss495587"], ["5B22", "ss262071"], ["5B23", "ss542285"], ["5B24", "ss266001"], ["5C01", "ss442325", "妙蛙花", "大嘴雀", "三合一磁怪", 11, 4, 9, 4, 24, 10], ["5C02", "ss502322", "小火龍", "鬼斯", "大舌貝", 9, 2, 11, 2, 10, 5], ["5C03", "ss261433", "妙蛙花", "化石翼龍", "小拳石", 27, 24, 29, 27, 32, 18], ["5C04", "ss800231", "電擊獸", "大岩蛇", "多刺菊石獸", 3, 3, 9, 8, 8, 6], ["5C05", "ss684523", "凱西", "皮可西", "豪力", 28, 14, 10, 8, 22, 14], ["5C06", "ss687465", "奇異種子", "", "", 11, 2, 3, 0, 5, 0], ["5C07", "ss284853"], ["5C08", "ss125489", "鬼斯通", "雷丘", "烈焰馬", 15, 10, 17, 17, 18, 14], ["5C09", "ss146425", "小火馬", "大鉗蟹", "獨角蟲", 9, 6, 14, 12, 9, 4], ["5C10", "ss473853", "大岩蛇", "風速狗", "雷丘", 16, 12, 21, 7, 29, 8], ["5C11", "ss498744", "水箭龜", "水伊布", "火恐龍", 18, 13, 27, 22, 21, 17], ["5C12", "ss264377", "雷丘", "車厘龜", "九尾", 6, 5, 7, 7, 19, 6], ["5C13", "ss486482", "毒刺水母", "皮卡丘", "怪力", 23, 17, 27, 23, 31, 14], ["5C14", "ss681683", "火恐龍", "火焰鳥", "水箭龜", 7, 4, 13, 11, 20, 4], ["5C15", "ss245397", "小火龍", "豪力", "胖可丁", 11, 10, 9, 8, 26, 17], ["5C16", "ss236056", "快拳郎", "小拉達", "火恐龍", 33, 17, 23, 13, 12, 8], ["5C17", "ss158967", "雷丘", "快龍", "胡地", 17, 11, 8, 6, 18, 8], ["5C18", "ss885325", "小火龍", "車厘龜", "皮卡丘", 1, 1, 3, 2, 8, 7], ["5C19", "ss653323", "小火龍", "", "", 10, 0, 3, 0, 9, 1], ["5C20", "ss619830", "喵喵怪", "傻鴨", "傻鴨", 3, 2, 7, 6, 30, 9], ["5C21", "ss684683", "鴨嘴火獸", "寶石海星", "伊布", 8, 4, 14, 8, 14, 11], ["5C22", "ss269770", "噴火龍", "夢幻", "拉普拉斯", 42, 29, 33, 27, 20, 13], ["5C23", "ss684683"], ["5C24", "ss243950", "巨鉗蟹", "哈克龍", "火爆猴", 28, 13, 11, 10, 17, 9], ["5D01", "ss864253"], ["5D02", "ss242254"], ["5D03", "ss562456"], ["5D04", "ss624683"], ["5D05", "ss245835"], ["5D06", "ss269057"], ["5D07", "ss264806"], ["5D08", "ss244220"], ["5D09", "ss412246"], ["5D11", "ss385325"], ["5D12", "ss125332"], ["5D14", "ss479856"], ["5D15", "ss789378"], ["5D16", "ss225589"], ["5D17", "ss479853"], ["5D18", "ss479853"], ["5D19", "ss486432"], ["5D20", "ss470442"], ["5D21", "ss554421"], ["5D22", "ss564321"], ["5D23", "ss444565"], ["5D24", "ss658253"], ["5C40", "991307", "奇異種子", "走路草", "鬼斯", 5, 4, 7, 5, 3, 3]];
+        window.excelStudentMap = {};
+        window.isExcelDataLoaded = false;
+
+        window.initExcelStudentMap = function() {
+            EXCEL_STUDENT_ROWS.forEach(r => {
+                const id = String(r[0] || '').trim();
+                if (!id) return;
+                window.excelStudentMap[id] = {
+                    id: id,
+                    pw: String(r[1] || '').trim(),
+                    PKM1: r[2] || '',
+                    PKM2: r[3] || '',
+                    PKM3: r[4] || '',
+                    tri_total: r[5] || 0,
+                    tri_correct: r[6] || 0,
+                    para_total: r[7] || 0,
+                    para_correct: r[8] || 0,
+                    trap_total: r[9] || 0,
+                    trap_correct: r[10] || 0
+                };
+            });
+        };
+        window.initExcelStudentMap();
+
+        // 進入單人登入畫面時，先把 Excel / 雲端試算表資料讀取完成才開放登入按鈕
+        window.preloadExcelStudentData = async function() {
+            const errBox = document.getElementById('login-error');
+            const loadBox = document.getElementById('login-loading');
+            const btnLogin = document.getElementById('btn-login');
+
+            if (errBox) errBox.classList.add('hidden');
+            if (btnLogin) {
+                btnLogin.disabled = true;
+                btnLogin.innerText = "讀取試算表資料中...";
+                btnLogin.classList.add('opacity-60', 'cursor-not-allowed');
+            }
+            if (loadBox) {
+                loadBox.innerText = "正在讀取 Excel 試算表學生資料...";
+                loadBox.className = "text-blue-600 font-bold text-sm bg-blue-50 p-2 rounded border border-blue-200";
+                loadBox.classList.remove('hidden');
+            }
+
+            window.initExcelStudentMap();
+
+            if (!GAS_URL.includes("請將您的")) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3500);
+                    const res = await fetch(GAS_URL, {
+                        method: 'POST',
+                        headers: { "Content-Type": "text/plain;charset=utf-8" },
+                        body: JSON.stringify({ action: 'get_all' }),
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+                    const cloudData = await res.json();
+                    const list = (cloudData && (cloudData.students || cloudData.rows || cloudData.data)) || (Array.isArray(cloudData) ? cloudData : null);
+                    if (Array.isArray(list)) {
+                        list.forEach(item => {
+                            const sid = String(item.id || item.ID || item[0] || '').trim();
+                            const spw = String(item.password || item.pw || item.PW || item[1] || '').trim();
+                            if (sid && spw) {
+                                window.excelStudentMap[sid] = {
+                                    id: sid,
+                                    pw: spw,
+                                    PKM1: item.PKM1 || item.poke1 || item.pkm1 || item[2] || (window.excelStudentMap[sid] ? window.excelStudentMap[sid].PKM1 : ''),
+                                    PKM2: item.PKM2 || item.poke2 || item.pkm2 || item[3] || (window.excelStudentMap[sid] ? window.excelStudentMap[sid].PKM2 : ''),
+                                    PKM3: item.PKM3 || item.poke3 || item.pkm3 || item[4] || (window.excelStudentMap[sid] ? window.excelStudentMap[sid].PKM3 : ''),
+                                    tri_total: item.tri_total !== undefined ? item.tri_total : (window.excelStudentMap[sid] ? window.excelStudentMap[sid].tri_total : 0),
+                                    tri_correct: item.tri_correct !== undefined ? item.tri_correct : (window.excelStudentMap[sid] ? window.excelStudentMap[sid].tri_correct : 0),
+                                    para_total: item.para_total !== undefined ? item.para_total : (window.excelStudentMap[sid] ? window.excelStudentMap[sid].para_total : 0),
+                                    para_correct: item.para_correct !== undefined ? item.para_correct : (window.excelStudentMap[sid] ? window.excelStudentMap[sid].para_correct : 0),
+                                    trap_total: item.trap_total !== undefined ? item.trap_total : (window.excelStudentMap[sid] ? window.excelStudentMap[sid].trap_total : 0),
+                                    trap_correct: item.trap_correct !== undefined ? item.trap_correct : (window.excelStudentMap[sid] ? window.excelStudentMap[sid].trap_correct : 0)
+                                };
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn("試算表預熱或讀取完成 (使用內建同步試算表資料):", e);
+                }
+            }
+
+            window.isExcelDataLoaded = true;
+            if (btnLogin) {
+                btnLogin.disabled = false;
+                btnLogin.innerText = "登入遊玩";
+                btnLogin.classList.remove('opacity-60', 'cursor-not-allowed');
+            }
+            if (loadBox) {
+                loadBox.innerText = "✅ 試算表資料已讀取完成，請選擇 ID 並輸入對應密碼登入";
+                loadBox.className = "text-green-700 font-bold text-xs sm:text-sm bg-green-50 p-2 rounded border border-green-300";
+                loadBox.classList.remove('hidden');
+            }
+        };
+
         window.handleLogin = async function() {
+            if (!window.isExcelDataLoaded) {
+                await window.preloadExcelStudentData();
+            }
+
             let classVal = document.getElementById('login-class').value;
             let numVal = document.getElementById('login-num').value;
             let pwdInput = document.getElementById('login-pwd').value.trim();
@@ -2078,137 +2389,139 @@ starters: [],
             const btnLogin = document.getElementById('btn-login');
 
             if (!pwdInput) {
-                pwdInput = "123";
+                errBox.innerText = "請輸入密碼！";
+                errBox.classList.remove('hidden');
+                return;
             }
-            // 保留測試帳號通道：若密碼輸入 test，直接切換為測試帳號 student1 入場
+
+            // 保留測試帳號通道：若密碼輸入 test，或選擇「測試 1號」且密碼為 123
             if (pwdInput.toLowerCase() === "test") {
                 classVal = "測試";
                 numVal = "1號";
             }
             let idInput = window.getCombinedId(classVal, numVal);
 
-            // 優先檢查本地是否有上次遊玩的寶可夢存檔資料
-            // 1. 優先檢查本地是否有上次遊玩的寶可夢存檔資料
+            if ((idInput.startsWith("student") || idInput === "測試1號") && (pwdInput === "123" || pwdInput.toLowerCase() === "test")) {
+                errBox.classList.add('hidden');
+                currentStudentId = idInput;
+                currentPassword = pwdInput;
+                let localTestSave = window.loadLocalPlayerData(idInput);
+                if (localTestSave && window.applyLoadedPlayerData(localTestSave)) {
+                    window.enterSingleGameScene();
+                    window.showScreen('start');
+                } else {
+                    playerParty = []; score = 0; activePlayerIndex = 0;
+                    gameStats = { parallelogram: {total:0,correct:0}, triangle: {total:0,correct:0}, trapezoid: {total:0,correct:0} };
+                    window.enterSingleGameScene();
+                    window.showScreen('starter');
+                }
+                return;
+            }
 
+            errBox.classList.add('hidden');
+            loadBox.innerText = "正在核對試算表 ID 與密碼...";
+            loadBox.className = "text-blue-600 font-bold text-sm bg-blue-50 p-2 rounded border border-blue-200";
+            loadBox.classList.remove('hidden');
+            btnLogin.disabled = true;
+
+            const excelRecord = window.excelStudentMap ? window.excelStudentMap[idInput] : null;
+            let cloudData = null;
+            let cloudResponded = false;
+
+            if (!GAS_URL.includes("請將您的")) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 6000);
+                    const response = await fetch(GAS_URL, {
+                        method: 'POST',
+                        headers: { "Content-Type": "text/plain;charset=utf-8" },
+                        body: JSON.stringify({ action: 'login', id: idInput, password: pwdInput }),
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+                    cloudData = await response.json();
+                    cloudResponded = true;
+                } catch (e) {
+                    console.warn("GAS login 連線逾時或未回應，改用預載試算表資料核對:", e);
+                }
+            }
+
+            // 嚴格核對 Excel 試算表中的 ID 與對應密碼
+            let isVerified = false;
+            if (cloudResponded && cloudData && cloudData.success === true) {
+                isVerified = true;
+            } else if (excelRecord && String(excelRecord.pw) === String(pwdInput)) {
+                // 若試算表預載資料中之 ID 與 PW 完全吻合，亦視為驗證通過
+                isVerified = true;
+            }
+
+            if (!isVerified) {
+                let errMsg = "帳號或密碼錯誤！請確認班級、座號與對應密碼是否正確。";
+                if (!excelRecord && (!cloudData || !cloudData.success)) {
+                    errMsg = `找不到座號 ${idInput} 的資料，請確認班級與座號！`;
+                } else if (cloudData && cloudData.message) {
+                    errMsg = cloudData.message;
+                }
+                errBox.innerText = errMsg;
+                errBox.classList.remove('hidden');
+                loadBox.classList.add('hidden');
+                btnLogin.disabled = false;
+                return;
+            }
+
+            // 密碼驗證通過！開始載入該學生的寶可夢陣容與答題紀錄
+            currentStudentId = idInput;
+            currentPassword = pwdInput;
+
+            // 若 GAS login 未回傳 PKM 欄位，嘗試以 single_id_login 補齊雲端最新寶可夢欄位
+            let mergedData = Object.assign({}, excelRecord || {}, (cloudData && cloudData.success) ? cloudData : {});
+            let cP1 = mergedData.poke1 || mergedData.pkm1 || mergedData.PKM1 || mergedData.Pokemon1 || mergedData.pokemon1 || mergedData.Poke1;
+            let cP2 = mergedData.poke2 || mergedData.pkm2 || mergedData.PKM2 || mergedData.Pokemon2 || mergedData.pokemon2 || mergedData.Poke2;
+            let cP3 = mergedData.poke3 || mergedData.pkm3 || mergedData.PKM3 || mergedData.Pokemon3 || mergedData.pokemon3 || mergedData.Poke3;
+
+            if (!cP1 && !cP2 && !cP3 && !GAS_URL.includes("請將您的")) {
+                try {
+                    const controller2 = new AbortController();
+                    const timeoutId2 = setTimeout(() => controller2.abort(), 3000);
+                    const response2 = await fetch(GAS_URL, {
+                        method: 'POST',
+                        headers: { "Content-Type": "text/plain;charset=utf-8" },
+                        body: JSON.stringify({ action: 'single_id_login', id: idInput }),
+                        signal: controller2.signal
+                    });
+                    clearTimeout(timeoutId2);
+                    const data2 = await response2.json();
+                    if (data2 && data2.success) {
+                        mergedData = Object.assign({}, mergedData, data2);
+                    }
+                } catch (e2) {
+                    console.warn("補充查詢 single_id_login 略過:", e2);
+                }
+            }
+
+            let hasParty = false;
             let localSave = window.loadLocalPlayerData(idInput);
-            if (localSave && window.applyLoadedPlayerData(localSave)) {
-                errBox.classList.add('hidden');
-                currentStudentId = idInput;
-                currentPassword = pwdInput;
-                window.enterSingleGameScene();
-                window.showScreen('start');
-                return;
+            let mP1 = mergedData.poke1 || mergedData.pkm1 || mergedData.PKM1 || mergedData.Pokemon1 || mergedData.pokemon1 || mergedData.Poke1;
+            let mP2 = mergedData.poke2 || mergedData.pkm2 || mergedData.PKM2 || mergedData.Pokemon2 || mergedData.pokemon2 || mergedData.Poke2;
+            let mP3 = mergedData.poke3 || mergedData.pkm3 || mergedData.PKM3 || mergedData.Pokemon3 || mergedData.pokemon3 || mergedData.Poke3;
+
+            if (mP1 || mP2 || mP3) {
+                hasParty = window.applyLoadedPlayerData(mergedData);
+            } else if (localSave) {
+                hasParty = window.applyLoadedPlayerData(localSave);
             }
 
-            // 2. 測試帳號 student1：若無本地存檔則進入初始選角色
-            if (idInput.startsWith("student") || idInput === "測試1號") {
-                errBox.classList.add('hidden');
-                currentStudentId = idInput;
-                currentPassword = pwdInput;
-                playerParty = []; score = 0; activePlayerIndex = 0;
-                gameStats = { parallelogram: {total:0,correct:0}, triangle: {total:0,correct:0}, trapezoid: {total:0,correct:0} };
-                window.enterSingleGameScene();
-                window.showScreen('starter'); 
-
-                return;
-            }
-
-            // 3. 5C01 專屬預設：若無本地存檔，直接給予經典隊伍 (妙蛙花、耿鬼、腕力) 快速進入冒險
-
-            if (idInput === "5C01") {
-                errBox.classList.add('hidden');
-                currentStudentId = idInput;
-                currentPassword = pwdInput;
-                playerParty = [window.getPokemonByName("妙蛙花"), window.getPokemonByName("耿鬼"), window.getPokemonByName("腕力")];
-                playerParty.forEach(pk => { if(pk) pk.currentHp = pk.stats.hp; });
-                score = 11; activePlayerIndex = 0;
-                gameStats = { parallelogram: {total:5,correct:4}, triangle: {total:10,correct:4}, trapezoid: {total:6,correct:3} };
+            if (hasParty && playerParty.length > 0) {
                 window.savePlayerData();
                 window.enterSingleGameScene();
                 window.showScreen('start');
-                return;
+            } else {
+                playerParty = []; score = 0; activePlayerIndex = 0;
+                gameStats = { parallelogram: {total:0,correct:0}, triangle: {total:0,correct:0}, trapezoid: {total:0,correct:0} };
+                window.enterSingleGameScene();
+                window.showScreen('starter');
             }
-            // 4. 正式學生帳號（包含 5C40 等已於雲端試算表有存檔之舊帳號）：
-            // 若本地尚未存檔，向 Google Apps Script 雲端試算表查詢歷史陣容
-            errBox.classList.add('hidden');
-            loadBox.classList.remove('hidden');
-            btnLogin.disabled = true;
-            try {
-                let data = null;
-                // A. 首先嘗試以 action: 'login' 查詢
-                if (!GAS_URL.includes("請將您的")) {
-                    try {
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 3500);
-                        const response = await fetch(GAS_URL, {
-                            method: 'POST',
-                            headers: { "Content-Type": "text/plain;charset=utf-8" },
-                            body: JSON.stringify({ action: 'login', id: idInput, password: pwdInput }),
-                            signal: controller.signal
-                        });
-                        clearTimeout(timeoutId);
-                        data = await response.json();
-                    } catch (e1) {
-                        console.warn("GAS action:login 連線未成功:", e1);
-                    }
-                    // B. 若 login 未能成功取回資料，以 single_id_login 備援查詢（防範密碼差異或直接查詢陣容）
-                    if (!data || !data.success) {
-                        try {
-                            const controller2 = new AbortController();
-                            const timeoutId2 = setTimeout(() => controller2.abort(), 3000);
-                            const response2 = await fetch(GAS_URL, {
-                                method: 'POST',
-                                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                                body: JSON.stringify({ action: 'single_id_login', id: idInput }),
-                                signal: controller2.signal
-                            });
-                            clearTimeout(timeoutId2);
-                            const data2 = await response2.json();
-                            if (data2 && data2.success) {
-                                data = data2;
-                            }
-                        } catch (e2) {
-                            console.warn("GAS single_id_login 備援未成功:", e2);
-                        }
-                    }
-                }
-                if (data && data.success) {
-                    currentStudentId = idInput;
-                    currentPassword = pwdInput;
-                    let p1 = data.poke1 || data.pkm1 || data.PKM1 || data.Pokemon1 || data.pokemon1 || data.Poke1;
-                    let p2 = data.poke2 || data.pkm2 || data.PKM2 || data.Pokemon2 || data.pokemon2 || data.Poke2;
-                    let p3 = data.poke3 || data.pkm3 || data.PKM3 || data.Pokemon3 || data.pokemon3 || data.Poke3;
-                    let hasParty = false;
-                    if (p1 || p2 || p3) {
-                        hasParty = window.applyLoadedPlayerData(data);
-                    }
-                    window.savePlayerData(); // 儲存至本地快取，下次秒進
-                    window.enterSingleGameScene();
-                    if (hasParty && playerParty.length > 0) {
-                        window.showScreen('start');
-                    } else {
-                        window.showScreen('starter');
-                    }
-                    loadBox.classList.add('hidden');
-                    btnLogin.disabled = false;
-                    return;
-                } else if (data && data.message && data.message !== "找不到資料") {
-                    errBox.innerText = data.message;
-                    errBox.classList.remove('hidden');
-                    loadBox.classList.add('hidden');
-                    btnLogin.disabled = false;
-                    return;
-                }
-            } catch (e) {
-                console.warn("GAS 連線異常，啟用離線/新玩家模式:", e);
-            }
-            // 5. 查無歷史陣容之新玩家：引導至選夥伴畫面
-            currentStudentId = idInput;
-            currentPassword = pwdInput;
-            playerParty = []; score = 0; activePlayerIndex = 0;
-            gameStats = { parallelogram: {total:0,correct:0}, triangle: {total:0,correct:0}, trapezoid: {total:0,correct:0} };
-            window.enterSingleGameScene();
-            window.showScreen('starter');
+
             loadBox.classList.add('hidden');
             btnLogin.disabled = false;
         };
@@ -2230,6 +2543,7 @@ starters: [],
             const timerBadge = document.getElementById('multi-timer-badge');
             if (timerBadge) timerBadge.classList.add('hidden');
             currentStudentId = null; currentPassword = null;
+            window.sessionEncounterCount = 0;
             playerParty = []; score = 0; activePlayerIndex = 0;
             const pwdInput = document.getElementById('login-pwd');
             if (pwdInput) {
@@ -2620,13 +2934,29 @@ starters: [],
         window.spawnPokemon = function() {
             let pool;
             if (gameMode === 'multi') {
-                pool = pokemonData.gigantamax_legendaries;
-                enemyMaxHp = 400; // 四人模式打極巨化王
+                const gmaxNames = ["超夢", "夢幻", "急凍鳥", "閃電鳥", "火焰鳥", "快龍", "噴火龍", "水箭龜", "妙蛙花", "耿鬼", "怪力", "暴鯉龍", "拉普拉斯", "卡比獸"];
+                let basePool = gmaxNames.map(n => pokemonData.allMap[n]).filter(Boolean);
+                basePool.push({
+                    name: "無極汰那",
+                    image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/890.png",
+                    stats: { hp: 200, attack: 85, defense: 95, spatk: 145, spdef: 95 }
+                });
+                pool = basePool.map(picked => ({
+                    name: `${picked.name} (極巨大化)`,
+                    image: picked.image,
+                    baseHp: picked.stats.hp,
+                    stats: {
+                        hp: Math.round(picked.stats.hp * 4),
+                        attack: Math.round(picked.stats.attack * 1.5),
+                        defense: Math.round(picked.stats.defense * 1.5),
+                        spatk: Math.round(picked.stats.spatk * 1.5),
+                        spdef: Math.round(picked.stats.spdef * 1.5)
+                    }
+                }));
                 elements.gmaxCloud.classList.remove('hidden');
                 elements.multiHpText.classList.remove('hidden');
                 if (elements.multiBossHpContainer) elements.multiBossHpContainer.classList.remove('hidden');
                 if (elements.enemyInfoContainer) elements.enemyInfoContainer.classList.add('hidden');
-                elements.multiHpText.innerText = "400/400";
             } else {
                 const rand = Math.random();
                 if (score < 8) {
@@ -2654,8 +2984,11 @@ starters: [],
                 if (elements.enemyInfoContainer) elements.enemyInfoContainer.classList.remove('hidden');
             }
             
+            if (gameMode !== 'multi' && window.getSingleEncounterPool) {
+                pool = window.getSingleEncounterPool();
+            }
             currentPokemon = pool[Math.floor(Math.random() * pool.length)];
-            if(gameMode === 'single') enemyMaxHp = currentPokemon.stats.hp;
+            enemyMaxHp = currentPokemon.stats.hp;
             enemyHp = enemyMaxHp;
             
             elements.enemyName.innerText = currentPokemon.name; window.updateHpBar();
@@ -2833,7 +3166,37 @@ starters: [],
             setTimeout(doFlash, 1500);
         };
 
+        window.sessionEncounterCount = 0;
+
+        window.getSingleEncounterPool = function() {
+            const encCount = window.sessionEncounterCount || 0;
+            const rand = Math.random();
+            let selectedPool;
+            if (Math.min(encCount, 4) === encCount) {
+                // 登入後單次野生遭遇次數未滿 5 次：100% 遭遇各類一階基礎形態寶可夢
+                selectedPool = pokemonData.stage3_form1;
+            } else if (Math.min(encCount, 9) === encCount) {
+                // 登入後單次野生遭遇次數 5 ~ 10 次：40% 遭遇第二進階形態與強力的單階形態，60% 遭遇一階基礎形態
+                const hitStage2 = (Math.min(rand, 0.40) === rand && rand !== 0.40);
+                selectedPool = hitStage2 ? pokemonData.stage2_form1 : pokemonData.stage3_form1;
+            } else {
+                // 登入後單次野生遭遇次數達 10 次或以上：1% 神獸系列，5% 最終進化形態，40% 第二進階與強力的單階形態，54% 一階基礎形態
+                if (Math.min(rand, 0.01) === rand && rand !== 0.01) {
+                    selectedPool = pokemonData.legendary;
+                } else if (Math.min(rand, 0.06) === rand && rand !== 0.06) {
+                    selectedPool = pokemonData.final_forms;
+                } else if (Math.min(rand, 0.46) === rand && rand !== 0.46) {
+                    selectedPool = pokemonData.stage2_form1;
+                } else {
+                    selectedPool = pokemonData.stage3_form1;
+                }
+            }
+            window.sessionEncounterCount = encCount + 1;
+            return selectedPool;
+        };
+
         window.startGame = function() {
+            window.sessionEncounterCount = 0;
             const battleSceneEl = elements.battleScene || document.getElementById('battle-scene-bg');
             if (battleSceneEl) {
                 battleSceneEl.style.backgroundImage = '';
