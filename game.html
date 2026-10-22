@@ -505,7 +505,7 @@
                     </div>
                     <div class="flex gap-1 sm:gap-1.5 mt-1 sm:mt-1.5 h-8 sm:h-10">
                         <button onclick="window.numpadPress('DEL')" class="flex-1 bg-yellow-400 text-yellow-900 font-black rounded text-xs sm:text-sm shadow-[0_3px_0_#a16207] active:translate-y-[3px] active:shadow-none transition-all select-none">退格</button>
-                        <button onclick="currentPhase === 1 ? window.checkFormula() : window.checkAnswer()" class="flex-[2] bg-green-500 text-white font-black rounded text-sm sm:text-base shadow-[0_3px_0_#166534] active:translate-y-[3px] active:shadow-none transition-all select-none">確認</button>
+                        <button onclick="window.singleSubmit()" class="flex-[2] bg-green-500 text-white font-black rounded text-sm sm:text-base shadow-[0_3px_0_#166534] active:translate-y-[3px] active:shadow-none transition-all select-none">確認</button>
                     </div>
                 </div>
 
@@ -1009,11 +1009,10 @@ starters: [],
                 const battleSceneEl = elements.battleScene || document.getElementById('battle-scene-bg');
                 if (mode === 'single') {
                     if (battleSceneEl) {
-                        battleSceneEl.style.backgroundImage = '';
-                        battleSceneEl.style.backgroundSize = '';
-                        battleSceneEl.style.backgroundPosition = '';
-                        battleSceneEl.style.backgroundRepeat = '';
-                        battleSceneEl.style.backgroundRepeat = '';
+                        battleSceneEl.style.backgroundImage = "url('https://pmath-lab.github.io/p5area/bg.jpg')";
+                        battleSceneEl.style.backgroundSize = "cover";
+                        battleSceneEl.style.backgroundPosition = "center";
+                        battleSceneEl.style.backgroundRepeat = "no-repeat";
                     }
                     document.querySelectorAll('.single-player-element').forEach(el => el.classList.remove('hidden'));
                     if (elements.playerSpriteContainer) {
@@ -1053,13 +1052,20 @@ starters: [],
 
         window.addEventListener('orientationchange', window.resizeGame);
         let multiTimerInterval = null;
-        let multiTimeLeft = 300; // 5分鐘 (300秒)
+        let multiTimeLeft = 180; // 3分鐘 (180秒)
+        let multiTimerStarted = false; // 是否已觸發計時（BOSS受到攻擊後才開始）
 
         window.stopMultiTimer = function() {
             if (multiTimerInterval) {
                 clearInterval(multiTimerInterval);
                 multiTimerInterval = null;
             }
+        };
+        window.resetMultiTimer = function(seconds = 180) {
+            window.stopMultiTimer();
+            multiTimeLeft = seconds;
+            multiTimerStarted = false;
+            window.updateMultiTimerDisplay();
         };
 
         window.updateMultiTimerDisplay = function() {
@@ -1073,7 +1079,12 @@ starters: [],
             timerBadge.classList.remove('hidden');
             let mins = Math.floor(Math.max(0, multiTimeLeft) / 60);
             let secs = Math.max(0, multiTimeLeft) % 60;
-            let timeStr = `${mins < 10 ? '0' + mins : mins}:${secs < 10 ? '0' + secs : secs}`;
+            let timeStr = (mins < 10 ? '0' + mins : mins) + ':' + (secs < 10 ? '0' + secs : secs);
+            if (!multiTimerStarted) {
+                timerBadge.innerText = `⏱️ 限時 ${timeStr} (待開戰)`;
+                timerBadge.className = "font-black bg-blue-100 text-blue-900 px-2.5 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm rounded-full border-2 border-blue-400 shadow-inner flex items-center gap-1";
+                return;
+            }
             timerBadge.innerText = `⏱️ 限時 ${timeStr}`;
             if (multiTimeLeft <= 30) {
                 timerBadge.className = "font-black bg-red-900 text-yellow-300 px-2.5 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm rounded-full border-2 border-yellow-400 shadow-inner flex items-center gap-1 animate-bounce";
@@ -1092,7 +1103,7 @@ starters: [],
             elements.pokemonSprite.classList.add('pokemon-attack');
             setTimeout(() => elements.pokemonSprite.classList.remove('pokemon-attack'), 800);
 
-            elements.messageBox.innerText = `⚠️ 5分鐘時間到！${bossName} 發動毀滅性全體攻擊，秒殺了所有寶可夢！`;
+            elements.messageBox.innerText = `⚠️ 3分鐘時間到！${bossName} 發動毀滅性全體攻擊，秒殺了所有寶可夢！`;
 
             setTimeout(() => {
                 for (let i = 0; i < 4; i++) {
@@ -1119,15 +1130,16 @@ starters: [],
                     window.buildMultiplayerPanels();
                     elements.messageBox.innerText = `全體玩家的寶可夢皆被秒殺... 討伐失敗！GAME OVER！`;
                     setTimeout(() => {
-                        window.showMultiEndScreen(false, `5分鐘限時已到！${bossName} 秒殺了所有寶可夢...`);
+                        window.showMultiEndScreen(false, `3分鐘限時已到！${bossName} 秒殺了所有寶可夢...`);
                     }, 1800);
                 }, 500);
             }, 300);
         };
 
-        window.startMultiTimer = function(seconds = 300) {
+        window.startMultiTimer = function(seconds = 180) {
             window.stopMultiTimer();
             multiTimeLeft = seconds;
+            multiTimerStarted = true;
             window.updateMultiTimerDisplay();
             multiTimerInterval = setInterval(() => {
                 if (gameMode !== 'multi' || enemyHp <= 0) {
@@ -1180,7 +1192,7 @@ starters: [],
             if (window.connectExcelForMultiMode) {
                 window.connectExcelForMultiMode();
             } else {
-                window.startMultiTimer(300);
+                window.resetMultiTimer(180);
             }
         };
 
@@ -1277,7 +1289,7 @@ starters: [],
                 let bName = currentPokemon ? currentPokemon.name : "極巨化神獸";
                 elements.messageBox.innerText = "✅ 已成功連接 Excel 試算表！⚠️ 野生 Lv.50 " + bName + " 出現了！請 4 位學生選擇座號登入！";
             }
-            window.startMultiTimer(300);
+            window.resetMultiTimer(180);
         };
 
         window.executeMultiPlayerExcelLogin = async function(index, idVal, errEl, btn, completeLoginWithParty) {
@@ -1319,11 +1331,11 @@ starters: [],
             let cloudData = null;
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(function() { controller.abort(); }, 3000);
+                const timeoutId = setTimeout(function() { controller.abort(); }, 8000);
                 let res = await fetch(GAS_URL, {
                     method: "POST",
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify({ action: "login", id: idVal, password: excelRecord.pw }),
+                    body: JSON.stringify({ action: "single_id_login", id: idVal }),
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
@@ -1332,17 +1344,16 @@ starters: [],
                     cloudData = data;
                 }
             } catch (e) {
-                console.warn("GAS login 讀取略過，改用預載試算表資料:", e);
+                console.warn("GAS single_id_login 讀取略過，改用 login 備援:", e);
             }
-
-            if (!cloudData) {
+            if (!cloudData && excelRecord && excelRecord.pw) {
                 try {
                     const controller2 = new AbortController();
-                    const timeoutId2 = setTimeout(function() { controller2.abort(); }, 2500);
+                    const timeoutId2 = setTimeout(function() { controller2.abort(); }, 8000);
                     let res2 = await fetch(GAS_URL, {
                         method: "POST",
                         headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        body: JSON.stringify({ action: "single_id_login", id: idVal }),
+                        body: JSON.stringify({ action: "login", id: idVal, password: excelRecord.pw }),
                         signal: controller2.signal
                     });
                     clearTimeout(timeoutId2);
@@ -1351,16 +1362,30 @@ starters: [],
                         cloudData = data2;
                     }
                 } catch (e2) {
-                    console.warn("GAS single_id_login 讀取略過:", e2);
+                    console.warn("GAS login 讀取略過，改用預載試算表資料:", e2);
                 }
             }
-
-            let localSave = window.loadLocalPlayerData ? window.loadLocalPlayerData(idVal) : null;
-            let merged = Object.assign({}, excelRecord, localSave || {}, cloudData || {});
-            let p1 = merged.poke1 || merged.pkm1 || merged.PKM1 || merged.pokemon1 || excelRecord.PKM1 || "";
-            let p2 = merged.poke2 || merged.pkm2 || merged.PKM2 || merged.pokemon2 || excelRecord.PKM2 || "";
-            let p3 = merged.poke3 || merged.pkm3 || merged.PKM3 || merged.pokemon3 || excelRecord.PKM3 || "";
-
+            let p1 = "";
+            let p2 = "";
+            let p3 = "";
+            if (cloudData) {
+                p1 = cloudData.poke1 || cloudData.pkm1 || cloudData.PKM1 || cloudData.pokemon1 || "";
+                p2 = cloudData.poke2 || cloudData.pkm2 || cloudData.PKM2 || cloudData.pokemon2 || "";
+                p3 = cloudData.poke3 || cloudData.pkm3 || cloudData.PKM3 || cloudData.pokemon3 || "";
+            }
+            if (!p1 && !p2 && !p3 && excelRecord && (excelRecord.PKM1 || excelRecord.PKM2 || excelRecord.PKM3)) {
+                p1 = excelRecord.PKM1 || "";
+                p2 = excelRecord.PKM2 || "";
+                p3 = excelRecord.PKM3 || "";
+            }
+            if (!p1 && !p2 && !p3) {
+                let localSave = window.loadLocalPlayerData ? window.loadLocalPlayerData(idVal) : null;
+                if (localSave) {
+                    p1 = localSave.poke1 || localSave.pkm1 || localSave.PKM1 || (localSave.party && localSave.party[0] ? localSave.party[0].name : "") || "";
+                    p2 = localSave.poke2 || localSave.pkm2 || localSave.PKM2 || (localSave.party && localSave.party[1] ? localSave.party[1].name : "") || "";
+                    p3 = localSave.poke3 || localSave.pkm3 || localSave.PKM3 || (localSave.party && localSave.party[2] ? localSave.party[2].name : "") || "";
+                }
+            }
             completeLoginWithParty([p1, p2, p3], "已從 Excel 試算表載入寶可夢陣容！");
         };
 
@@ -1588,8 +1613,8 @@ starters: [],
                 multiPlayers[index].isLoggedIn = true;
                 multiPlayers[index].isDefeated = false;
                 multiPlayers[index].totalDamage = 0;
-                if (multiPlayers.filter(pl => pl.isLoggedIn).length === 1 && enemyHp === enemyMaxHp) {
-                    window.startMultiTimer(300);
+                if (!multiTimerStarted) {
+                    window.resetMultiTimer(180);
                 }
                 multiPlayers[index].isDefeated = false;
                 multiPlayers[index].totalDamage = 0;
@@ -1781,12 +1806,16 @@ starters: [],
             let p = multiPlayers[pIndex];
             if (!p || !p.isLoggedIn || p.isDefeated) return;
 
+            if (!multiTimerStarted) {
+                window.startMultiTimer(180);
+            }
+
             let activePoke = (p.party && p.party[0]) ? (p.party[p.activePokeIndex] || p.party[0]) : null;
             const atk = (activePoke && activePoke.stats) ? activePoke.stats : { hp: 100, attack: 60, defense: 50, spatk: 60, spdef: 50 };
             const def = (currentPokemon && currentPokemon.stats) ? currentPokemon.stats : { hp: enemyMaxHp, attack: 150, defense: 135, spatk: 180, spdef: 135 };
             let usePhys = (Math.max(atk.attack, atk.spatk) === atk.attack);
             let rawDamage = usePhys ? (atk.attack - def.defense) : (atk.spatk - def.spdef);
-            let minDamage = Math.max(1, Math.ceil((enemyMaxHp / 4) * 0.25));
+            let minDamage = Math.max(1, Math.ceil((enemyMaxHp / 6) * 0.25));
             damage = Math.max(rawDamage, minDamage);
 
             p.totalDamage = (p.totalDamage || 0) + damage;
@@ -1938,7 +1967,7 @@ starters: [],
 
         window.multiSubmit = function(pIndex) {
             let p = multiPlayers[pIndex];
-            if (!p.isLoggedIn || p.phase === 3 || p.isDefeated) return;
+            if (!p || !p.isLoggedIn || p.phase === 3 || p.phase === 4 || p.isDefeated || p.isAttacking) return;
             if (p.phase === 1) {
                 if (!p.formula || p.formula.trim() === '') {
                     elements.messageBox.innerHTML = `<span class="text-orange-600 font-bold">${p.name}：請先列出面積算式！</span>`;
@@ -1961,7 +1990,10 @@ starters: [],
                         setTimeout(() => panel.classList.remove('bg-green-100'), 400);
                     }
                     // 學生列式正確時讓 POKEMON 進行攻擊 (累積傷害)
+                    // 學生列式正確時讓 POKEMON 進行攻擊 (累積傷害)
+                    p.isAttacking = true;
                     window.multiPlayerAttack(pIndex, 10);
+                    setTimeout(function() { p.isAttacking = false; }, 600);
                 } else {
                     let hint = "";
                     if (p.question.type === 0) hint = "底 × 高";
@@ -1993,6 +2025,7 @@ starters: [],
                         setTimeout(() => panel.classList.remove('bg-green-100'), 400);
                     }
                     // 答案正確發動強力攻擊 (累積傷害)
+                    p.isAttacking = true;
                     window.multiPlayerAttack(pIndex, 20, true);
                     setTimeout(() => {
                         if (enemyHp > 0 && !p.isDefeated) {
@@ -2001,6 +2034,7 @@ starters: [],
                             p.formula = '';
                             p.answer = '';
                             p.phase = 1;
+                            p.isAttacking = false;
                             window.updateMultiDisplay(pIndex);
                         }
                     }, 700);
@@ -2234,7 +2268,6 @@ starters: [],
                     })),
                     poke1: playerParty[0] ? playerParty[0].name : "",
                     pkm1: playerParty[0] ? playerParty[0].name : "",
-                    pkm2: playerParty[1] ? playerParty[1].name : "",
                     pkm3: playerParty[2] ? playerParty[2].name : "",
                     PKM1: playerParty[0] ? playerParty[0].name : "",
                     PKM2: playerParty[1] ? playerParty[1].name : "",
@@ -2291,20 +2324,19 @@ starters: [],
         };
 
         // 試算表 (面積2) 預載學生帳密與紀錄資料庫
-        const EXCEL_STUDENT_ROWS = [["5A01", "ss238730", "車厘龜", "", "", 0, 0, 0, 0, 0, 0], ["5A02", "ss565321"], ["5A03", "ss562556"], ["5A04", "ss486032"], ["5A05", "ss284653"], ["5A06", "ss502122"], ["5A07", "ss562006", "車厘龜", "小火龍", "", 4, 0, 4, 0, 2, 0], ["5A08", "ss870342", "車厘龜", "", "", 0, 0, 4, 0, 1, 1], ["5A09", "ss512426", "小火龍", "", "", 1, 0, 0, 0, 9, 1], ["5A10", "ss495587"], ["5A11", "ss562556"], ["5A12", "ss498532"], ["5A13", "ss432146"], ["5A14", "ss325334"], ["5A15", "ss676460"], ["5A16", "ss244943"], ["5A17", "ss298534"], ["5A18", "ss248749"], ["5A19", "ss244220"], ["5A20", "ss327465"], ["5A21", "ss142325"], ["5A22", "ss865453"], ["5A23", "ss233292"], ["5A24", "ss486532", "卡咪龜", "火恐龍", "妙蛙草", 0, 0, 0, 0, 0, 0], ["5A25", "ss248152"], ["5A26", "ss240480"], ["5A27", "ss502322"], ["5A28", "ss123853"], ["5B01", "ss266408"], ["5B02", "ss684653"], ["5B03", "ss846231"], ["5B04", "ss565320"], ["5B05", "ss432146"], ["5B06", "ss651374"], ["5B07", "ss413246"], ["5B08", "ss498534"], ["5B09", "ss527465"], ["5B10", "ss532146"], ["5B11", "ss125589"], ["5B12", "ss280151"], ["5B13", "ss565321"], ["5B14", "ss527865"], ["5B15", "ss651323"], ["5B16", "ss915926"], ["5B17", "ss465878"], ["5B18", "ss146325"], ["5B19", "ss239494"], ["5B20", "ss963878"], ["5B21", "ss495587"], ["5B22", "ss262071"], ["5B23", "ss542285"], ["5B24", "ss266001"], ["5C01", "ss442325", "妙蛙花", "大嘴雀", "三合一磁怪", 11, 4, 9, 4, 24, 10], ["5C02", "ss502322", "小火龍", "鬼斯", "大舌貝", 9, 2, 11, 2, 10, 5], ["5C03", "ss261433", "妙蛙花", "化石翼龍", "小拳石", 27, 24, 29, 27, 32, 18], ["5C04", "ss800231", "電擊獸", "大岩蛇", "多刺菊石獸", 3, 3, 9, 8, 8, 6], ["5C05", "ss684523", "凱西", "皮可西", "豪力", 28, 14, 10, 8, 22, 14], ["5C06", "ss687465", "奇異種子", "", "", 11, 2, 3, 0, 5, 0], ["5C07", "ss284853"], ["5C08", "ss125489", "鬼斯通", "雷丘", "烈焰馬", 15, 10, 17, 17, 18, 14], ["5C09", "ss146425", "小火馬", "大鉗蟹", "獨角蟲", 9, 6, 14, 12, 9, 4], ["5C10", "ss473853", "大岩蛇", "風速狗", "雷丘", 16, 12, 21, 7, 29, 8], ["5C11", "ss498744", "水箭龜", "水伊布", "火恐龍", 18, 13, 27, 22, 21, 17], ["5C12", "ss264377", "雷丘", "車厘龜", "九尾", 6, 5, 7, 7, 19, 6], ["5C13", "ss486482", "毒刺水母", "皮卡丘", "怪力", 23, 17, 27, 23, 31, 14], ["5C14", "ss681683", "火恐龍", "火焰鳥", "水箭龜", 7, 4, 13, 11, 20, 4], ["5C15", "ss245397", "小火龍", "豪力", "胖可丁", 11, 10, 9, 8, 26, 17], ["5C16", "ss236056", "快拳郎", "小拉達", "火恐龍", 33, 17, 23, 13, 12, 8], ["5C17", "ss158967", "雷丘", "快龍", "胡地", 17, 11, 8, 6, 18, 8], ["5C18", "ss885325", "小火龍", "車厘龜", "皮卡丘", 1, 1, 3, 2, 8, 7], ["5C19", "ss653323", "小火龍", "", "", 10, 0, 3, 0, 9, 1], ["5C20", "ss619830", "喵喵怪", "傻鴨", "傻鴨", 3, 2, 7, 6, 30, 9], ["5C21", "ss684683", "鴨嘴火獸", "寶石海星", "伊布", 8, 4, 14, 8, 14, 11], ["5C22", "ss269770", "噴火龍", "夢幻", "拉普拉斯", 42, 29, 33, 27, 20, 13], ["5C23", "ss684683"], ["5C24", "ss243950", "巨鉗蟹", "哈克龍", "火爆猴", 28, 13, 11, 10, 17, 9], ["5D01", "ss864253"], ["5D02", "ss242254"], ["5D03", "ss562456"], ["5D04", "ss624683"], ["5D05", "ss245835"], ["5D06", "ss269057"], ["5D07", "ss264806"], ["5D08", "ss244220"], ["5D09", "ss412246"], ["5D11", "ss385325"], ["5D12", "ss125332"], ["5D14", "ss479856"], ["5D15", "ss789378"], ["5D16", "ss225589"], ["5D17", "ss479853"], ["5D18", "ss479853"], ["5D19", "ss486432"], ["5D20", "ss470442"], ["5D21", "ss554421"], ["5D22", "ss564321"], ["5D23", "ss444565"], ["5D24", "ss658253"], ["5C40", "991307", "奇異種子", "走路草", "鬼斯", 5, 4, 7, 5, 3, 3]];
+        const EXCEL_STUDENT_ROWS = [["5A01", "ss238730"], ["5A02", "ss565321"], ["5A03", "ss562556"], ["5A04", "ss486032", "小火龍", "化石盔", "尼多朗", 1, 1, 3, 3, 3, 2], ["5A05", "ss284653"], ["5A06", "ss502122"], ["5A07", "ss562006"], ["5A08", "ss870342"], ["5A09", "ss512426"], ["5A10", "ss495587"], ["5A11", "ss562556"], ["5A12", "ss498532", "小火龍", "小火馬", "", 1, 1, 3, 2, 2, 0], ["5A13", "ss432146"], ["5A14", "ss325334"], ["5A15", "ss676460"], ["5A16", "ss244943", "妙蛙草", "伊布", "阿柏蛇", 7, 4, 2, 2, 2, 1], ["5A17", "ss298534"], ["5A18", "ss248749"], ["5A19", "ss244220", "小火龍", "卡蒂狗", "腕力", 3, 2, 11, 6, 6, 4], ["5A20", "ss327465", "小火龍", "蛋蛋", "小火馬", 3, 3, 8, 7, 14, 6], ["5A21", "ss142325"], ["5A22", "ss865453"], ["5A23", "ss233292"], ["5A24", "ss486532"], ["5A25", "ss248152"], ["5A26", "ss240480"], ["5A27", "ss502322"], ["5A28", "ss123853"], ["5B01", "ss266408", "小火龍", "皮卡丘", "妙蛙草", 11, 7, 21, 10, 9, 5], ["5B02", "ss684653"], ["5B03", "ss846231"], ["5B04", "ss565320"], ["5B05", "ss432146"], ["5B06", "ss651374"], ["5B07", "ss413246"], ["5B08", "ss498534"], ["5B09", "ss527465"], ["5B10", "ss532146"], ["5B11", "ss125589"], ["5B12", "ss280151"], ["5B13", "ss565321"], ["5B14", "ss527865"], ["5B15", "ss651323", "小火龍", "", "", 4, 0, 0, 0, 0, 0], ["5B16", "ss915926", "小火龍", "", "", 0, 0, 1, 1, 2, 0], ["5B17", "ss465878"], ["5B18", "ss146325"], ["5B19", "ss239494"], ["5B20", "ss963878"], ["5B21", "ss495587"], ["5B22", "ss262071", "小火龍", "", "", 0, 0, 0, 0, 0, 0], ["5B23", "ss542285", "噴火龍", "怪力", "哈克龍", 11, 11, 6, 6, 9, 7], ["5B24", "ss266001", "火恐龍", "暴鯉龍", "鐮刀盔", 10, 6, 3, 2, 8, 6], ["5C01", "ss442325", "妙蛙花", "暴鯉龍", "水箭龜", 21, 14, 33, 28, 37, 20], ["5C02", "ss502322", "小火龍", "鬼斯", "大舌貝", 9, 2, 11, 2, 10, 5], ["5C03", "ss261433", "妙蛙花", "卡比獸", "火恐龍", 40, 36, 39, 36, 42, 26], ["5C04", "ss800231", "皮卡丘", "鴨嘴火獸", "多刺菊石獸", 19, 19, 29, 27, 20, 16], ["5C05", "ss684523", "皮卡丘", "雷丘", "雷丘", 48, 31, 34, 31, 58, 38], ["5C06", "ss687465", "奇異種子", "", "", 11, 2, 3, 0, 5, 0], ["5C07", "ss284853"], ["5C08", "ss125489", "耿鬼", "雷丘", "烈焰馬", 23, 18, 30, 30, 30, 23], ["5C09", "ss146425", "小火馬", "大鉗蟹", "獨角蟲", 9, 6, 14, 12, 9, 4], ["5C10", "ss473853", "拉普拉斯", "肯泰羅", "雷丘", 35, 28, 28, 13, 45, 19], ["5C11", "ss498744", "超夢", "三合一磁怪", "超夢", 3914, 3838, 2968, 2904, 850, 791], ["5C12", "ss264377", "雷丘", "車厘龜", "九尾", 6, 5, 7, 7, 19, 6], ["5C13", "ss486482", "毒刺水母", "雷丘", "怪力", 33, 27, 34, 29, 42, 23], ["5C14", "ss681683", "袋獸", "火焰鳥", "快龍", 72, 54, 64, 57, 68, 46], ["5C15", "ss245397", "噴火龍", "怪力", "胖可丁", 31, 24, 32, 30, 48, 30], ["5C16", "ss236056", "迷你龍", "奇異種子", "火恐龍", 35, 19, 26, 16, 15, 11], ["5C17", "ss158967", "快龍", "凱西", "袋獸", 52, 42, 59, 53, 59, 43], ["5C18", "ss885325", "勇基拉", "卡咪龜", "雷丘", 7, 4, 15, 13, 21, 18], ["5C19", "ss653323", "小火龍", "", "", 10, 0, 3, 0, 9, 1], ["5C20", "ss619830", "小火馬", "墨海馬", "大嘴蝠", 10, 8, 23, 18, 51, 21], ["5C21", "ss684683", "鴨嘴火獸", "寶石海星", "伊布", 8, 4, 14, 8, 14, 11], ["5C22", "ss269770", "噴火龍", "夢幻", "拉普拉斯", 44, 29, 33, 27, 20, 13], ["5C23", "ss684683"], ["5C24", "ss243950", "巨鉗蟹", "哈克龍", "火爆猴", 28, 13, 11, 10, 17, 9], ["5D01", "ss864253", "雷伊布", "快龍", "暴鯉龍", 99, 91, 143, 132, 79, 58], ["5D02", "ss242254"], ["5D03", "ss562456"], ["5D04", "ss624683"], ["5D05", "ss245835"], ["5D06", "ss269057"], ["5D07", "ss264806"], ["5D08", "ss244220"], ["5D09", "ss412246"], ["5D11", "ss385325"], ["5D12", "ss125332"], ["5D14", "ss479856"], ["5D15", "ss789378"], ["5D16", "ss225589"], ["5D17", "ss479853"], ["5D18", "ss479853"], ["5D19", "ss486432"], ["5D20", "ss470442"], ["5D21", "ss554421"], ["5D22", "ss564321"], ["5D23", "ss444565"], ["5D24", "ss658253"], ["5C40", "26422355", "奇異種子", "走路草", "鬼斯", 3, 3, 10, 5, 3, 2]];
         window.excelStudentMap = {};
         window.isExcelDataLoaded = false;
-
         window.initExcelStudentMap = function() {
-            EXCEL_STUDENT_ROWS.forEach(r => {
-                const id = String(r[0] || '').trim();
+            EXCEL_STUDENT_ROWS.forEach(function(r) {
+                const id = String(r[0] || "").trim();
                 if (!id) return;
                 window.excelStudentMap[id] = {
                     id: id,
-                    pw: String(r[1] || '').trim(),
-                    PKM1: r[2] || '',
-                    PKM2: r[3] || '',
-                    PKM3: r[4] || '',
+                    pw: String(r[1] || "").trim(),
+                    PKM1: r[2] || "",
+                    PKM2: r[3] || "",
+                    PKM3: r[4] || "",
                     tri_total: r[5] || 0,
                     tri_correct: r[6] || 0,
                     para_total: r[7] || 0,
@@ -2315,139 +2347,88 @@ starters: [],
             });
         };
         window.initExcelStudentMap();
-
         // 進入單人登入畫面時，先把 Excel / 雲端試算表資料讀取完成才開放登入按鈕
         window.preloadExcelStudentData = async function() {
-            const errBox = document.getElementById('login-error');
-            const loadBox = document.getElementById('login-loading');
-            const btnLogin = document.getElementById('btn-login');
-
-            if (errBox) errBox.classList.add('hidden');
+            const errBox = document.getElementById("login-error");
+            const loadBox = document.getElementById("login-loading");
+            const btnLogin = document.getElementById("btn-login");
+            if (errBox) errBox.classList.add("hidden");
             if (btnLogin) {
                 btnLogin.disabled = true;
                 btnLogin.innerText = "讀取試算表資料中...";
-                btnLogin.classList.add('opacity-60', 'cursor-not-allowed');
+                btnLogin.classList.add("opacity-60", "cursor-not-allowed");
             }
             if (loadBox) {
                 loadBox.innerText = "正在讀取 Excel 試算表學生資料...";
                 loadBox.className = "text-blue-600 font-bold text-sm bg-blue-50 p-2 rounded border border-blue-200";
-                loadBox.classList.remove('hidden');
+                loadBox.classList.remove("hidden");
             }
-
             window.initExcelStudentMap();
-
-            if (!GAS_URL.includes("請將您的")) {
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 3500);
-                    const res = await fetch(GAS_URL, {
-                        method: 'POST',
-                        headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        body: JSON.stringify({ action: 'get_all' }),
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeoutId);
-                    const cloudData = await res.json();
-                    const list = (cloudData && (cloudData.students || cloudData.rows || cloudData.data)) || (Array.isArray(cloudData) ? cloudData : null);
-                    if (Array.isArray(list)) {
-                        list.forEach(item => {
-                            const sid = String(item.id || item.ID || item[0] || '').trim();
-                            const spw = String(item.password || item.pw || item.PW || item[1] || '').trim();
-                            if (sid && spw) {
-                                window.excelStudentMap[sid] = {
-                                    id: sid,
-                                    pw: spw,
-                                    PKM1: item.PKM1 || item.poke1 || item.pkm1 || item[2] || (window.excelStudentMap[sid] ? window.excelStudentMap[sid].PKM1 : ''),
-                                    PKM2: item.PKM2 || item.poke2 || item.pkm2 || item[3] || (window.excelStudentMap[sid] ? window.excelStudentMap[sid].PKM2 : ''),
-                                    PKM3: item.PKM3 || item.poke3 || item.pkm3 || item[4] || (window.excelStudentMap[sid] ? window.excelStudentMap[sid].PKM3 : ''),
-                                    tri_total: item.tri_total !== undefined ? item.tri_total : (window.excelStudentMap[sid] ? window.excelStudentMap[sid].tri_total : 0),
-                                    tri_correct: item.tri_correct !== undefined ? item.tri_correct : (window.excelStudentMap[sid] ? window.excelStudentMap[sid].tri_correct : 0),
-                                    para_total: item.para_total !== undefined ? item.para_total : (window.excelStudentMap[sid] ? window.excelStudentMap[sid].para_total : 0),
-                                    para_correct: item.para_correct !== undefined ? item.para_correct : (window.excelStudentMap[sid] ? window.excelStudentMap[sid].para_correct : 0),
-                                    trap_total: item.trap_total !== undefined ? item.trap_total : (window.excelStudentMap[sid] ? window.excelStudentMap[sid].trap_total : 0),
-                                    trap_correct: item.trap_correct !== undefined ? item.trap_correct : (window.excelStudentMap[sid] ? window.excelStudentMap[sid].trap_correct : 0)
-                                };
-                            }
-                        });
-                    }
-                } catch (e) {
-                    console.warn("試算表預熱或讀取完成 (使用內建同步試算表資料):", e);
-                }
-            }
-
             window.isExcelDataLoaded = true;
             if (btnLogin) {
                 btnLogin.disabled = false;
                 btnLogin.innerText = "登入遊玩";
-                btnLogin.classList.remove('opacity-60', 'cursor-not-allowed');
+                btnLogin.classList.remove("opacity-60", "cursor-not-allowed");
             }
             if (loadBox) {
                 loadBox.innerText = "✅ 試算表資料已讀取完成，請選擇 ID 並輸入對應密碼登入";
                 loadBox.className = "text-green-700 font-bold text-xs sm:text-sm bg-green-50 p-2 rounded border border-green-300";
-                loadBox.classList.remove('hidden');
+                loadBox.classList.remove("hidden");
             }
         };
-
         window.handleLogin = async function() {
             if (!window.isExcelDataLoaded) {
                 await window.preloadExcelStudentData();
             }
-
-            let classVal = document.getElementById('login-class').value;
-            let numVal = document.getElementById('login-num').value;
-            let pwdInput = document.getElementById('login-pwd').value.trim();
-            const errBox = document.getElementById('login-error');
-            const loadBox = document.getElementById('login-loading');
-            const btnLogin = document.getElementById('btn-login');
-
+            let classVal = document.getElementById("login-class").value;
+            let numVal = document.getElementById("login-num").value;
+            let pwdInput = document.getElementById("login-pwd").value.trim();
+            const errBox = document.getElementById("login-error");
+            const loadBox = document.getElementById("login-loading");
+            const btnLogin = document.getElementById("btn-login");
             if (!pwdInput) {
                 errBox.innerText = "請輸入密碼！";
-                errBox.classList.remove('hidden');
+                errBox.classList.remove("hidden");
                 return;
             }
-
             // 保留測試帳號通道：若密碼輸入 test，或選擇「測試 1號」且密碼為 123
             if (pwdInput.toLowerCase() === "test") {
                 classVal = "測試";
                 numVal = "1號";
             }
             let idInput = window.getCombinedId(classVal, numVal);
-
             if ((idInput.startsWith("student") || idInput === "測試1號") && (pwdInput === "123" || pwdInput.toLowerCase() === "test")) {
-                errBox.classList.add('hidden');
+                errBox.classList.add("hidden");
                 currentStudentId = idInput;
                 currentPassword = pwdInput;
                 let localTestSave = window.loadLocalPlayerData(idInput);
                 if (localTestSave && window.applyLoadedPlayerData(localTestSave)) {
                     window.enterSingleGameScene();
-                    window.showScreen('start');
+                    window.showScreen("start");
                 } else {
                     playerParty = []; score = 0; activePlayerIndex = 0;
                     gameStats = { parallelogram: {total:0,correct:0}, triangle: {total:0,correct:0}, trapezoid: {total:0,correct:0} };
                     window.enterSingleGameScene();
-                    window.showScreen('starter');
+                    window.showScreen("starter");
                 }
                 return;
             }
-
-            errBox.classList.add('hidden');
+            errBox.classList.add("hidden");
             loadBox.innerText = "正在核對試算表 ID 與密碼...";
             loadBox.className = "text-blue-600 font-bold text-sm bg-blue-50 p-2 rounded border border-blue-200";
-            loadBox.classList.remove('hidden');
+            loadBox.classList.remove("hidden");
             btnLogin.disabled = true;
-
             const excelRecord = window.excelStudentMap ? window.excelStudentMap[idInput] : null;
             let cloudData = null;
             let cloudResponded = false;
-
             if (!GAS_URL.includes("請將您的")) {
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 6000);
+                    const timeoutId = setTimeout(function() { controller.abort(); }, 8000);
                     const response = await fetch(GAS_URL, {
-                        method: 'POST',
+                        method: "POST",
                         headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        body: JSON.stringify({ action: 'login', id: idInput, password: pwdInput }),
+                        body: JSON.stringify({ action: "login", id: idInput, password: pwdInput }),
                         signal: controller.signal
                     });
                     clearTimeout(timeoutId);
@@ -2457,68 +2438,71 @@ starters: [],
                     console.warn("GAS login 連線逾時或未回應，改用預載試算表資料核對:", e);
                 }
             }
-
             // 嚴格核對 Excel 試算表中的 ID 與對應密碼
             let isVerified = false;
             if (cloudResponded && cloudData && cloudData.success === true) {
                 isVerified = true;
             } else if (excelRecord && String(excelRecord.pw) === String(pwdInput)) {
-                // 若試算表預載資料中之 ID 與 PW 完全吻合，亦視為驗證通過
                 isVerified = true;
             }
-
             if (!isVerified) {
                 let errMsg = "帳號或密碼錯誤！請確認班級、座號與對應密碼是否正確。";
                 if (!excelRecord && (!cloudData || !cloudData.success)) {
-                    errMsg = `找不到座號 ${idInput} 的資料，請確認班級與座號！`;
+                    errMsg = "找不到座號 " + idInput + " 的資料，請確認班級與座號！";
                 } else if (cloudData && cloudData.message) {
                     errMsg = cloudData.message;
                 }
                 errBox.innerText = errMsg;
-                errBox.classList.remove('hidden');
-                loadBox.classList.add('hidden');
+                errBox.classList.remove("hidden");
+                loadBox.classList.add("hidden");
                 btnLogin.disabled = false;
                 return;
             }
-
             // 密碼驗證通過！開始載入該學生的寶可夢陣容與答題紀錄
             currentStudentId = idInput;
             currentPassword = pwdInput;
-
-            // 若 GAS login 未回傳 PKM 欄位，嘗試以 single_id_login 補齊雲端最新寶可夢欄位
-            let mergedData = Object.assign({}, excelRecord || {}, (cloudData && cloudData.success) ? cloudData : {});
-            let cP1 = mergedData.poke1 || mergedData.pkm1 || mergedData.PKM1 || mergedData.Pokemon1 || mergedData.pokemon1 || mergedData.Poke1;
-            let cP2 = mergedData.poke2 || mergedData.pkm2 || mergedData.PKM2 || mergedData.Pokemon2 || mergedData.pokemon2 || mergedData.Poke2;
-            let cP3 = mergedData.poke3 || mergedData.pkm3 || mergedData.PKM3 || mergedData.Pokemon3 || mergedData.pokemon3 || mergedData.Poke3;
-
+            let cP1 = "";
+            let cP2 = "";
+            let cP3 = "";
+            if (cloudData && cloudData.success) {
+                cP1 = cloudData.poke1 || cloudData.pkm1 || cloudData.PKM1 || cloudData.Pokemon1 || cloudData.pokemon1 || cloudData.Poke1 || "";
+                cP2 = cloudData.poke2 || cloudData.pkm2 || cloudData.PKM2 || cloudData.Pokemon2 || cloudData.pokemon2 || cloudData.Poke2 || "";
+                cP3 = cloudData.poke3 || cloudData.pkm3 || cloudData.PKM3 || cloudData.Pokemon3 || cloudData.pokemon3 || cloudData.Poke3 || "";
+            }
             if (!cP1 && !cP2 && !cP3 && !GAS_URL.includes("請將您的")) {
                 try {
                     const controller2 = new AbortController();
-                    const timeoutId2 = setTimeout(() => controller2.abort(), 3000);
+                    const timeoutId2 = setTimeout(function() { controller2.abort(); }, 6000);
                     const response2 = await fetch(GAS_URL, {
-                        method: 'POST',
+                        method: "POST",
                         headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        body: JSON.stringify({ action: 'single_id_login', id: idInput }),
+                        body: JSON.stringify({ action: "single_id_login", id: idInput }),
                         signal: controller2.signal
                     });
                     clearTimeout(timeoutId2);
                     const data2 = await response2.json();
                     if (data2 && data2.success) {
-                        mergedData = Object.assign({}, mergedData, data2);
+                        cloudData = Object.assign({}, cloudData || {}, data2);
+                        cP1 = data2.poke1 || data2.pkm1 || data2.PKM1 || data2.Pokemon1 || data2.pokemon1 || data2.Poke1 || "";
+                        cP2 = data2.poke2 || data2.pkm2 || data2.PKM2 || data2.Pokemon2 || data2.pokemon2 || data2.Poke2 || "";
+                        cP3 = data2.poke3 || data2.pkm3 || data2.PKM3 || data2.Pokemon3 || data2.pokemon3 || data2.Poke3 || "";
                     }
                 } catch (e2) {
                     console.warn("補充查詢 single_id_login 略過:", e2);
                 }
             }
-
             let hasParty = false;
             let localSave = window.loadLocalPlayerData(idInput);
-            let mP1 = mergedData.poke1 || mergedData.pkm1 || mergedData.PKM1 || mergedData.Pokemon1 || mergedData.pokemon1 || mergedData.Poke1;
-            let mP2 = mergedData.poke2 || mergedData.pkm2 || mergedData.PKM2 || mergedData.Pokemon2 || mergedData.pokemon2 || mergedData.Poke2;
-            let mP3 = mergedData.poke3 || mergedData.pkm3 || mergedData.PKM3 || mergedData.Pokemon3 || mergedData.pokemon3 || mergedData.Poke3;
-
-            if (mP1 || mP2 || mP3) {
-                hasParty = window.applyLoadedPlayerData(mergedData);
+            if (cP1 || cP2 || cP3) {
+                let liveData = Object.assign({}, excelRecord || {}, cloudData || {}, {
+                    poke1: cP1, poke2: cP2, poke3: cP3,
+                    pkm1: cP1, pkm2: cP2, pkm3: cP3,
+                    PKM1: cP1, PKM2: cP2, PKM3: cP3
+                });
+                delete liveData.party;
+                hasParty = window.applyLoadedPlayerData(liveData);
+            } else if (excelRecord && (excelRecord.PKM1 || excelRecord.PKM2 || excelRecord.PKM3)) {
+                hasParty = window.applyLoadedPlayerData(excelRecord);
             } else if (localSave) {
                 hasParty = window.applyLoadedPlayerData(localSave);
             }
@@ -2576,6 +2560,115 @@ starters: [],
             window.showScreen('mode');
         };
 
+        window.singleQuestionCount = 0;
+        window.isRarePokemon = function(pk) {
+            if (!pk) return false;
+            if (gameMode === "multi") return true;
+            let checkLists = [pokemonData.legendary, pokemonData.final_forms, pokemonData.stage2_form1];
+            let isFound = false;
+            checkLists.forEach(function(list) {
+                if (Array.isArray(list) && list.some(function(p) { return p.name === pk.name; })) {
+                    isFound = true;
+                }
+            });
+            return isFound;
+        };
+
+        window.tryGenerateExteriorTriangle = function(q) {
+            let allowExterior = (Math.max(window.singleQuestionCount || 0, 5) === (window.singleQuestionCount || 0) || Math.max(score || 0, 5) === (score || 0) || window.isRarePokemon(currentPokemon));
+            if (!allowExterior) return false;
+            if (window.rand(0, 1) !== 1) return false;
+
+            q.subType = "exterior";
+            const exteriorConfigs = [
+                { base: 5, height: 6, ext: 3, side: 10, unit: "cm" },
+                { base: 4, height: 4, ext: 2, side: 7, unit: "cm" },
+                { base: 6, height: 4, ext: 2, side: 9, unit: "cm" },
+                { base: 6, height: 6, ext: 4, side: 12, unit: "cm" },
+                { base: 7, height: 6, ext: 2, side: 11, unit: "cm" },
+                { base: 6, height: 8, ext: 3, side: 12, unit: "cm" },
+                { base: 8, height: 6, ext: 3, side: 13, unit: "cm" },
+                { base: 5, height: 8, ext: 4, side: 12, unit: "cm" },
+                { base: 8, height: 8, ext: 4, side: 14, unit: "cm" },
+                { base: 10, height: 6, ext: 4, side: 15, unit: "cm" },
+                { base: 11, height: 12, ext: 5, side: 20, unit: "cm" }
+            ];
+            let cfg = exteriorConfigs[window.rand(0, exteriorConfigs.length - 1)];
+            q.base = cfg.base;
+            q.height = cfg.height;
+            q.ext = cfg.ext;
+            q.side1 = cfg.side;
+            q.unit = cfg.unit;
+            q.answer = (q.base * q.height) / 2;
+            return true;
+        };
+
+        window.drawExteriorTriangle = function(ctx, q, isMini, MAX_RADIUS_W, MAX_RADIUS_H, textOffset, drawText) {
+            let u = q.unit || "cm";
+            let logicalW = q.ext + q.base;
+            let logicalH = q.height;
+            let Xc = (q.base - q.ext) / 2;
+            let Yc = q.height / 2;
+            let currentRadius = Math.sqrt(Math.pow(logicalW / 2, 2) + Math.pow(logicalH / 2, 2));
+            let scale = Math.min(MAX_RADIUS_W, MAX_RADIUS_H) / currentRadius;
+
+            let V1 = { x: (0 - Xc) * scale, y: (0 - Yc) * scale };
+            let V2 = { x: (q.base - Xc) * scale, y: (0 - Yc) * scale };
+            let V3 = { x: (-q.ext - Xc) * scale, y: (q.height - Yc) * scale };
+            let Pext = { x: (-q.ext - Xc) * scale, y: (0 - Yc) * scale };
+
+            ctx.fillStyle = "#fef08a";
+            ctx.strokeStyle = "#ca8a04";
+            ctx.beginPath();
+            ctx.moveTo(V1.x, V1.y);
+            ctx.lineTo(V2.x, V2.y);
+            ctx.lineTo(V3.x, V3.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.setLineDash([isMini ? 3 : 5, isMini ? 3 : 5]);
+            ctx.strokeStyle = "#6b7280";
+            ctx.beginPath();
+            ctx.moveTo(V1.x, V1.y);
+            ctx.lineTo(Pext.x, Pext.y);
+            ctx.lineTo(V3.x, V3.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            let sq = isMini ? 6 : 10;
+            ctx.strokeStyle = "#4b5563";
+            ctx.strokeRect(Pext.x, Pext.y, sq, sq);
+
+            let arrowY = V1.y - (isMini ? 8 : 14);
+            let tickH = isMini ? 3 : 5;
+            ctx.strokeStyle = "#374151";
+            ctx.beginPath();
+            ctx.moveTo(V1.x, arrowY - tickH); ctx.lineTo(V1.x, arrowY + tickH);
+            ctx.moveTo(V2.x, arrowY - tickH); ctx.lineTo(V2.x, arrowY + tickH);
+            ctx.moveTo(V1.x, arrowY); ctx.lineTo(V2.x, arrowY);
+            ctx.stroke();
+
+            let ah = isMini ? 3 : 5;
+            ctx.beginPath();
+            ctx.moveTo(V1.x + ah, arrowY - ah); ctx.lineTo(V1.x, arrowY); ctx.lineTo(V1.x + ah, arrowY + ah);
+            ctx.moveTo(V2.x - ah, arrowY - ah); ctx.lineTo(V2.x, arrowY); ctx.lineTo(V2.x - ah, arrowY + ah);
+            ctx.stroke();
+
+            drawText(q.base + " " + u, (V1.x + V2.x) / 2, arrowY - (isMini ? 10 : 15));
+            drawText(q.height + " " + u, Pext.x - textOffset, (Pext.y + V3.y) / 2);
+
+            let midSlantX = (V3.x + V2.x) / 2;
+            let midSlantY = (V3.y + V2.y) / 2;
+            let dx = V2.x - V3.x;
+            let dy = V2.y - V3.y;
+            let len = Math.sqrt(dx * dx + dy * dy);
+            let normX = dy / len;
+            let normY = -dx / len;
+            let distOffset = isMini ? 14 : 22;
+            drawText(q.side1 + " " + u, midSlantX + normX * distOffset, midSlantY + normY * distOffset);
+        };
+
         /* STREAMING_CHUNK:Question Generation and Canvas Logic... */
         window.rand = function(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
         window.generateAreaQuestion = function() {
@@ -2593,6 +2686,9 @@ starters: [],
                 q.answer = q.base * q.height;
             } 
             else if (type === 1) { 
+                if (window.tryGenerateExteriorTriangle && window.tryGenerateExteriorTriangle(q)) {
+                    // 已生成外高鈍角三角形
+                } else {
                 q.height = window.rand(4, 8);
                 q.base = window.rand(6, 12);
                 if ((q.base * q.height) % 2 !== 0) q.base++; 
@@ -2604,6 +2700,7 @@ starters: [],
                 q.side1 = s1;
                 q.side2 = s2;
                 q.answer = (q.base * q.height) / 2;
+                }
             } 
             else { 
                 q.height = window.rand(4, 8);
@@ -2696,6 +2793,9 @@ starters: [],
                 drawText(q.side + " m", sX, sY);
             }
             else if (q.type === 1) { 
+                if (q.subType === "exterior") {
+                    window.drawExteriorTriangle(ctx, q, isMini, MAX_RADIUS_W, MAX_RADIUS_H, textOffset, drawText);
+                } else {
                 let logicalW = q.base;
                 let logicalH = q.height;
                 let currentRadius = Math.sqrt(Math.pow(logicalW/2, 2) + Math.pow(logicalH/2, 2));
@@ -2731,6 +2831,7 @@ starters: [],
                 drawText(q.height + " m", hX, hY);
                 drawText(q.side1 + " m", s1X, s1Y); 
                 drawText(q.side2 + " m", left + (topX + tBase)/2 + textOffset, 0);
+                }
             }
             else if (q.type === 2) { 
                 let visualOffset = q.height * 0.4;
@@ -2849,13 +2950,29 @@ starters: [],
         };
 
 
+        window.isSingleAttacking = false;
+
+        window.singleSubmit = function() {
+            if (window.isSingleAttacking) return;
+            if (currentPhase === 1) {
+                window.checkFormula();
+            } else if (currentPhase === 2) {
+                window.checkAnswer();
+            }
+        };
+
         window.checkFormula = function() {
+            if (currentPhase !== 1 || window.isSingleAttacking) return;
             let res = window.validateFormulaStrict(playerFormulaStr, currentQuestion);
             if (res.valid) {
+                window.isSingleAttacking = true;
                 currentPhase = 2; elements.phase2.classList.remove('hidden');
                 if (window.updateSingleAreaLabelsAndHint) window.updateSingleAreaLabelsAndHint("");
                 elements.messageBox.innerHTML = `<span class="text-green-600">列式正確！發動攻擊！</span> 請繼續計算答案！`;
                 window.attackPokemon(0.5);
+                setTimeout(function() {
+                    window.isSingleAttacking = false;
+                }, 600);
             } else { 
                 let hint = "";
                 if(currentQuestion.type === 0) hint = "底 × 高";
@@ -2870,12 +2987,16 @@ starters: [],
         };
 
         window.checkAnswer = function() {
+            if (currentPhase !== 2 || window.isSingleAttacking) return;
             let ans = parseInt(playerAnswerStr);
             if (isNaN(ans)) { elements.messageBox.innerHTML = `<span class="text-orange-600">提示：</span> 請輸入面積答案！`; return; }
             if (ans === currentQuestion.answer) {
+                window.isSingleAttacking = true;
+                currentPhase = 3;
                 window.recordAttempt(true);
                 window.attackPokemon(1.5, true);
             } else {
+                window.isSingleAttacking = true;
                 window.handleWrongAnswer(`計算錯誤！請再仔細算一次！`, 2);
             }
         };
@@ -2958,7 +3079,7 @@ starters: [],
                     image: picked.image,
                     baseHp: picked.stats.hp,
                     stats: {
-                        hp: Math.round(picked.stats.hp * 4),
+                        hp: Math.round(picked.stats.hp * 6),
                         attack: Math.round(picked.stats.attack * 1.5),
                         defense: Math.round(picked.stats.defense * 1.5),
                         spatk: Math.round(picked.stats.spatk * 1.5),
@@ -3072,11 +3193,14 @@ starters: [],
 
         window.generateNewTurn = function(newQuestion = true) {
             currentPhase = 1; 
+            window.isSingleAttacking = false;
+            currentPhase = 1; 
             if (gameMode === 'single') {
                 playerFormulaStr = ""; playerAnswerStr = "";
                 elements.formulaDisplay.innerText = ""; elements.answerDisplay.innerText = "";
                 elements.phase1.classList.remove('hidden'); elements.phase2.classList.add('hidden');
                 if (newQuestion) { 
+                    window.singleQuestionCount = (window.singleQuestionCount || 0) + 1;
                     currentQuestion = window.generateAreaQuestion(); 
                     window.drawShapeToCanvas('shape-canvas', currentQuestion, false); 
                 }
@@ -3211,11 +3335,10 @@ starters: [],
             window.sessionEncounterCount = 0;
             const battleSceneEl = elements.battleScene || document.getElementById('battle-scene-bg');
             if (battleSceneEl) {
-                battleSceneEl.style.backgroundImage = '';
-                battleSceneEl.style.backgroundSize = '';
-                battleSceneEl.style.backgroundPosition = '';
-                battleSceneEl.style.backgroundRepeat = '';
-                battleSceneEl.style.backgroundRepeat = '';
+                battleSceneEl.style.backgroundImage = "url('https://pmath-lab.github.io/p5area/bg.jpg')";
+                battleSceneEl.style.backgroundSize = "cover";
+                battleSceneEl.style.backgroundPosition = "center";
+                battleSceneEl.style.backgroundRepeat = "no-repeat";
             }
             document.querySelectorAll('.single-player-element').forEach(el => el.classList.remove('hidden'));
             if (elements.playerSpriteContainer) {
@@ -3242,6 +3365,13 @@ starters: [],
         };
 
         window.selectStarter = function(pokemonName) {
+            const battleSceneEl = elements.battleScene || document.getElementById('battle-scene-bg');
+            if (battleSceneEl) {
+                battleSceneEl.style.backgroundImage = "url('https://pmath-lab.github.io/p5area/bg.jpg')";
+                battleSceneEl.style.backgroundSize = "cover";
+                battleSceneEl.style.backgroundPosition = "center";
+                battleSceneEl.style.backgroundRepeat = "no-repeat";
+            }
             const pool = pokemonData.starters || pokemonData.starter || [];
             const starterTemplate = pool.find(p => p.name === pokemonName) || pool[0];
             const starter = { ...starterTemplate, currentHp: starterTemplate.stats.hp };
@@ -3314,6 +3444,8 @@ starters: [],
         };
 
         window.resumeTurn = function(phase) {
+            currentPhase = phase;
+            window.isSingleAttacking = false;
             currentPhase = phase;
             if (phase === 1) {
                 playerFormulaStr = ""; playerAnswerStr = "";
