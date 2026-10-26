@@ -1,0 +1,1881 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小五數學：多邊形面積 (分割與填補)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Noto+Sans+TC:wght@400;700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+            background-image: radial-gradient(#cbd5e1 2px, transparent 2px);
+            background-size: 24px 24px;
+            overscroll-behavior-y: contain; 
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .math-font { font-family: 'Nunito', 'Fredoka One', monospace; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(3px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+            40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+        .animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+
+        .eq-input-cell {
+            min-height: 56px;
+            padding: 4px 12px;
+            border: 3px solid #cbd5e1;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #4f46e5;
+            font-family: 'Nunito', monospace;
+            background-color: white;
+            transition: all 0.2s;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .eq-input-cell:empty::before {
+            content: attr(placeholder);
+            color: #94a3b8;
+            font-size: 1rem;
+            pointer-events: none;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        .eq-input-cell.active-cell {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.3);
+            background-color: #f5f3ff;
+            transform: scale(1.02);
+        }
+        .eq-input-cell.correct {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+            color: #166534;
+            pointer-events: none;
+        }
+        .eq-input-cell.incorrect {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #b91c1c;
+        }
+
+        .num-btn {
+            background-color: #ffffff;
+            border: 2px solid #bae6fd;
+            border-bottom: 6px solid #7dd3fc;
+            border-radius: 16px;
+            height: 60px;
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: #0284c7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.1s;
+            touch-action: none; 
+            user-select: none;
+        }
+        .num-btn:active {
+            border-bottom-width: 2px;
+            transform: translateY(4px);
+            background-color: #e0f2fe;
+        }
+        .num-btn.btn-op {
+            background-color: #ffffff;
+            border-color: #c7d2fe;
+            border-bottom-color: #818cf8;
+            color: #4f46e5;
+        }
+        .num-btn.btn-action {
+            background-color: #fff1f2;
+            border-color: #fecdd3;
+            border-bottom-color: #fb7185;
+            color: #e11d48;
+        }
+
+        .tab-split { border-color: #a855f7; background-color: #a855f7; color: white; }
+        .tab-split-inactive { border-color: #e9d5ff; background-color: #faf5ff; color: #c084fc; }
+        .tab-fill { border-color: #ec4899; background-color: #ec4899; color: white; }
+        .tab-fill-inactive { border-color: #fbcfe8; background-color: #fdf2f8; color: #f472b6; }
+        
+        .drop-slot { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .svg-piece { touch-action: none; cursor: grab; }
+        .svg-piece:active { cursor: grabbing; }
+        
+        #interactiveArea svg text, .drop-slot svg text, .fixed svg text {
+            font-size: 14px !important;
+            font-weight: 800;
+            paint-order: stroke;
+            stroke: #ffffff;
+            stroke-width: 3px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            user-select: none;
+            -webkit-user-select: none;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-4 px-2 md:py-8 md:px-4 text-gray-800">
+
+    <div class="w-full max-w-5xl mx-auto space-y-4 md:space-y-6">
+        
+        <div class="text-center bg-white p-4 md:p-6 rounded-[2rem] shadow-sm border-4 border-indigo-400 relative overflow-hidden">
+            <h1 class="text-2xl md:text-4xl font-black text-indigo-600 mb-4 tracking-wide math-font drop-shadow-sm">📐 多邊形面積 📐</h1>
+            
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 bg-indigo-50 p-4 rounded-3xl border-2 border-dashed border-indigo-300">
+                <img src="https://placehold.co/80x80/6366f1/ffffff?text=Teacher" alt="老師" class="w-20 h-20 rounded-full shadow-md animate-float border-2 border-white shrink-0">
+                <div class="text-left max-w-xl">
+                    <span class="font-black text-indigo-700 text-lg bg-white px-3 py-1 rounded-xl shadow-sm border border-indigo-200 inline-block">巴華拉老師話：</span>
+                    <p class="mt-2 font-bold text-gray-700 leading-relaxed text-sm md:text-base" id="teacherMsg">
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative">
+            <div class="flex items-end justify-center gap-2 px-2">
+                <button id="tabSplit" onclick="switchMode('split')" class="px-5 py-3 md:px-10 md:py-4 rounded-t-3xl font-black text-lg md:text-2xl border-4 transition-all flex items-center justify-center relative z-30 tab-split shadow-sm">
+                    ✂️ 分割法
+                </button>
+                <button id="tabFill" onclick="switchMode('fill')" class="px-5 py-2 md:px-10 md:py-3 rounded-t-3xl font-black text-lg md:text-2xl border-4 transition-all flex items-center justify-center relative z-10 hover:opacity-90 tab-fill-inactive">
+                    🧩 填補法
+                </button>
+            </div>
+
+            <div id="mainContentBox" class="bg-white p-4 md:p-6 rounded-[2rem] rounded-tl-none shadow-[0_8px_0_#a855f7] border-4 border-[#a855f7] relative z-20 -mt-[4px] flex flex-col lg:flex-row gap-6 lg:gap-8 transition-colors duration-300">
+                
+                <div class="w-full lg:w-3/5 flex flex-col gap-4">
+                    
+                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-2xl border-2 border-gray-200">
+                        <span id="instructionTxt" class="font-black text-indigo-700 text-sm md:text-base animate-pulse">
+                        </span>
+                        <div class="bg-amber-300 text-amber-900 px-4 py-1 rounded-xl font-black text-sm md:text-lg shadow-[0_3px_0_#d97706] border-2 border-amber-400 transform -rotate-2 whitespace-nowrap ml-2">
+                            得分: <span id="scoreDisplay" class="text-xl">0</span>
+                        </div>
+                    </div>
+
+                    <div class="relative w-full">
+                        <div id="interactiveArea" class="w-full bg-slate-50 border-4 border-slate-200 rounded-[2rem] p-2 flex flex-col items-center justify-center aspect-[5/3] relative overflow-hidden touch-none select-none shadow-inner">
+                            <div id="canvasContent" class="w-full h-full absolute inset-0 flex items-center justify-center select-none">
+                            </div>
+                            
+                            <svg id="sliceOverlay" class="absolute inset-0 w-full h-full pointer-events-none hidden" preserveAspectRatio="none">
+                                <polyline id="ninjaTrail" points="" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" filter="drop-shadow(0 0 2px #bae6fd)"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div id="equationArea" class="w-full bg-indigo-50 border-4 border-indigo-100 rounded-3xl p-3 md:p-5 flex flex-col items-start gap-3 transition-all opacity-50 pointer-events-none">
+                        
+                        <div id="graphicRow" class="flex items-center justify-start gap-1.5 md:gap-3 w-full flex-nowrap pl-7 md:pl-9">
+                            <div id="slot1" class="drop-slot flex-1 max-w-[130px] md:max-w-[144px] aspect-square border-4 border-dashed border-gray-400 rounded-2xl flex flex-col items-center justify-center bg-white shadow-sm overflow-hidden transition-all">
+                                <span class="text-sm md:text-base font-bold text-gray-400">圖形 1</span>
+                            </div>
+                            <span class="text-xl md:text-3xl font-black text-gray-500 pb-1 shrink-0" id="eqOperator">+</span>
+                            <div id="slot2" class="drop-slot flex-1 max-w-[130px] md:max-w-[144px] aspect-square border-4 border-dashed border-gray-400 rounded-2xl flex flex-col items-center justify-center bg-white shadow-sm overflow-hidden transition-all">
+                                <span class="text-sm md:text-base font-bold text-gray-400">圖形 2</span>
+                            </div>
+                            <span class="text-xl md:text-3xl font-black text-gray-500 pb-1 shrink-0 hidden" id="eqOperator2">+</span>
+                            <div id="slot3" class="drop-slot flex-1 max-w-[130px] md:max-w-[144px] aspect-square border-4 border-dashed border-gray-400 rounded-2xl flex flex-col items-center justify-center bg-white shadow-sm overflow-hidden transition-all hidden">
+                                <span class="text-sm md:text-base font-bold text-gray-400">圖形 3</span>
+                            </div>
+                        </div>
+
+                        <div id="numericRow" class="flex items-center justify-start gap-1.5 md:gap-3 w-full hidden flex-nowrap">
+                            <span class="text-xl md:text-2xl font-black text-indigo-500 w-5 md:w-6 text-center shrink-0">=</span>
+                            <div class="eq-input-cell flex-1 max-w-[130px] md:max-w-[144px] min-w-0 !px-1 !text-base md:!text-xl" id="inp-eq1" onclick="setActiveInput(this)" placeholder="算式 1"></div>
+                            <span class="text-xl md:text-2xl font-black text-gray-600 shrink-0" id="opNumeric">+</span>
+                            <div class="eq-input-cell flex-1 max-w-[130px] md:max-w-[144px] min-w-0 !px-1 !text-base md:!text-xl" id="inp-eq2" onclick="setActiveInput(this)" placeholder="算式 2"></div>
+                            <span class="text-xl md:text-2xl font-black text-gray-600 shrink-0 hidden" id="opNumeric2">+</span>
+                            <div class="eq-input-cell flex-1 max-w-[130px] md:max-w-[144px] min-w-0 !px-1 !text-base md:!text-xl hidden" id="inp-eq3" onclick="setActiveInput(this)" placeholder="算式 3"></div>
+                        </div>
+
+                        <div id="subAreaRow" class="flex items-center justify-start gap-1.5 md:gap-3 w-full hidden flex-nowrap">
+                            <span class="text-xl md:text-2xl font-black text-indigo-500 w-5 md:w-6 text-center shrink-0">=</span>
+                            <div class="eq-input-cell flex-1 max-w-[130px] md:max-w-[144px] min-w-0 !px-1 !text-base md:!text-xl" id="inp-area1" onclick="setActiveInput(this)" placeholder="面積 1"></div>
+                            <span class="text-xl md:text-2xl font-black text-gray-600 shrink-0" id="opSubArea">+</span>
+                            <div class="eq-input-cell flex-1 max-w-[130px] md:max-w-[144px] min-w-0 !px-1 !text-base md:!text-xl" id="inp-area2" onclick="setActiveInput(this)" placeholder="面積 2"></div>
+                            <span class="text-xl md:text-2xl font-black text-gray-600 shrink-0 hidden" id="opSubArea2">+</span>
+                            <div class="eq-input-cell flex-1 max-w-[130px] md:max-w-[144px] min-w-0 !px-1 !text-base md:!text-xl hidden" id="inp-area3" onclick="setActiveInput(this)" placeholder="面積 3"></div>
+                        </div>
+
+                        <div id="ansRow" class="flex items-center justify-start gap-2 md:gap-3 w-full hidden mt-1 p-2.5 md:p-3 bg-white rounded-2xl shadow-sm border-2 border-gray-100">
+                            <span class="text-xl md:text-2xl font-black text-indigo-500 w-5 md:w-6 text-center shrink-0">=</span>
+                            <div class="eq-input-cell !w-[130px] md:!w-[144px]" id="inp-ans" onclick="setActiveInput(this)" placeholder="總面積"></div>
+                            <span class="text-xl font-bold text-gray-500">m²</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="w-full lg:w-2/5 flex flex-col lg:justify-end gap-3 shrink-0">
+                    <div id="numpadContainer" class="grid grid-cols-4 gap-2 bg-slate-100 p-4 rounded-3xl border-4 border-slate-200 shadow-inner opacity-50 pointer-events-none transition-all duration-300">
+                        <button onclick="handleNumpad('7')" class="num-btn math-font">7</button>
+                        <button onclick="handleNumpad('8')" class="num-btn math-font">8</button>
+                        <button onclick="handleNumpad('9')" class="num-btn math-font">9</button>
+                        <button onclick="handleNumpad('÷')" class="num-btn btn-op math-font">÷</button>
+                        
+                        <button onclick="handleNumpad('4')" class="num-btn math-font">4</button>
+                        <button onclick="handleNumpad('5')" class="num-btn math-font">5</button>
+                        <button onclick="handleNumpad('6')" class="num-btn math-font">6</button>
+                        <button onclick="handleNumpad('×')" class="num-btn btn-op math-font">×</button>
+                        
+                        <button onclick="handleNumpad('1')" class="num-btn math-font">1</button>
+                        <button onclick="handleNumpad('2')" class="num-btn math-font">2</button>
+                        <button onclick="handleNumpad('3')" class="num-btn math-font">3</button>
+                        <button onclick="handleNumpad('-')" class="num-btn btn-op math-font">-</button>
+                        
+                        <button onclick="handleNumpad('(')" class="num-btn btn-op math-font">(</button>
+                        <button onclick="handleNumpad('0')" class="num-btn math-font">0</button>
+                        <button onclick="handleNumpad(')')" class="num-btn btn-op math-font">)</button>
+                        <button onclick="handleNumpad('+')" class="num-btn btn-op math-font">+</button>
+
+                        <button onclick="handleNumpad('.')" class="num-btn font-black text-2xl math-font text-gray-500 border-gray-300 border-b-gray-400">.</button>
+                        <button onclick="handleNumpad('Backspace')" class="num-btn btn-action text-xl col-span-3">⌫ 刪除</button>
+                    </div>
+
+                    <button onclick="checkAnswer()" id="submitBtn" class="w-full h-16 bg-green-500 hover:bg-green-400 text-white text-xl font-black rounded-2xl shadow-[0_6px_0_#16a34a] active:translate-y-[6px] active:shadow-none transition-all border-2 border-green-600 flex justify-center items-center opacity-50 pointer-events-none mt-2">
+                        提交算式 ✨
+                    </button>
+                    <button onclick="generateQuestion()" id="nextBtn" class="hidden w-full h-16 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 text-xl font-black rounded-2xl shadow-[0_6px_0_#d97706] active:translate-y-[6px] active:shadow-none transition-all border-2 border-yellow-500 flex justify-center items-center mt-2">
+                        下一題 ➡️
+                    </button>
+                    
+                    <div id="feedbackMessage" class="min-h-[48px] text-center text-sm md:text-base font-bold transition-all opacity-0 flex items-center justify-center w-full rounded-xl mt-2 px-2"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'split'; 
+        let score = 0;
+        let qData = {}; 
+        let currentStep = 0; 
+        let activeInput = null;
+        let activeListeners = [];
+        
+        const DOM = {
+            mainBox: document.getElementById('mainContentBox'),
+            tabSplit: document.getElementById('tabSplit'),
+            tabFill: document.getElementById('tabFill'),
+            teacherMsg: document.getElementById('teacherMsg'),
+            instructionTxt: document.getElementById('instructionTxt'),
+            scoreDisplay: document.getElementById('scoreDisplay'),
+            canvasContent: document.getElementById('canvasContent'),
+            interactArea: document.getElementById('interactiveArea'),
+            sliceOverlay: document.getElementById('sliceOverlay'),
+            ninjaTrail: document.getElementById('ninjaTrail'),
+            equationArea: document.getElementById('equationArea'),
+            graphicRow: document.getElementById('graphicRow'),
+            numericRow: document.getElementById('numericRow'),
+            subAreaRow: document.getElementById('subAreaRow'),
+            ansRow: document.getElementById('ansRow'),
+            slot1: document.getElementById('slot1'),
+            slot2: document.getElementById('slot2'),
+            slot3: document.getElementById('slot3'),
+            eqOperator: document.getElementById('eqOperator'),
+            eqOperator2: document.getElementById('eqOperator2'),
+            opNumeric: document.getElementById('opNumeric'),
+            opNumeric2: document.getElementById('opNumeric2'),
+            opSubArea: document.getElementById('opSubArea'),
+            opSubArea2: document.getElementById('opSubArea2'),
+            inpEq1: document.getElementById('inp-eq1'),
+            inpEq2: document.getElementById('inp-eq2'),
+            inpEq3: document.getElementById('inp-eq3'),
+            inpArea1: document.getElementById('inp-area1'),
+            inpArea2: document.getElementById('inp-area2'),
+            inpArea3: document.getElementById('inp-area3'),
+            inpAns: document.getElementById('inp-ans'),
+            numpad: document.getElementById('numpadContainer'),
+            submitBtn: document.getElementById('submitBtn'),
+            nextBtn: document.getElementById('nextBtn'),
+            feedback: document.getElementById('feedbackMessage')
+        };
+
+        function genMul(a, b) { return [`${a}×${b}`, `${b}×${a}`]; }
+        function genTri(a, b) { return [`${a}×${b}÷2`, `${b}×${a}÷2`, `(${a}×${b})÷2`, `(${b}×${a})÷2`]; }
+        function genTrap(a, b, h) {
+            return [
+                `(${a}+${b})×${h}÷2`, `(${b}+${a})×${h}÷2`,
+                `${h}×(${a}+${b})÷2`, `${h}×(${b}+${a})÷2`,
+                `((${a}+${b})×${h})÷2`, `((${b}+${a})×${h})÷2`
+            ];
+        }
+        const VB = "-20 -20 380 280"; 
+
+        function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+        function drawRA(x, y, dx, dy, color = "#64748b", size = 7) {
+            return `<polyline points="${x + dx * size},${y} ${x + dx * size},${y + dy * size} ${x},${y + dy * size}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="miter" />`;
+        }
+
+        function drawVecRA(vx, vy, ux1, uy1, ux2, uy2, color = "#64748b", size = 8) {
+            let p1x = vx + ux1 * size, p1y = vy + uy1 * size;
+            let p2x = vx + (ux1 + ux2) * size, p2y = vy + (uy1 + uy2) * size;
+            let p3x = vx + ux2 * size, p3y = vy + uy2 * size;
+            return `<polyline points="${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="miter" />`;
+        }
+
+        function clearActiveListeners() {
+            activeListeners.forEach(function(item) {
+                var target = item[0], type = item[1], fn = item[2];
+                target.removeEventListener(type, fn);
+            });
+            activeListeners = [];
+        }
+
+        function addManagedListener(target, type, fn) {
+            target.addEventListener(type, fn);
+            activeListeners.push([target, type, fn]);
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            const baseClass = "px-5 md:px-10 rounded-t-3xl font-black text-lg md:text-2xl border-4 transition-all flex items-center justify-center relative shadow-sm cursor-pointer";
+            DOM.tabSplit.className = `${baseClass} z-10 py-2 md:py-3 hover:opacity-90 tab-split-inactive`;
+            DOM.tabFill.className = `${baseClass} z-10 py-2 md:py-3 hover:opacity-90 tab-fill-inactive`;
+
+            if (mode === 'split') {
+                DOM.tabSplit.className = `${baseClass} z-30 py-3 md:py-4 tab-split`;
+                DOM.mainBox.className = "bg-white p-4 md:p-6 rounded-[2rem] rounded-tl-none shadow-[0_8px_0_#a855f7] border-4 border-[#a855f7] relative z-20 -mt-[4px] flex flex-col lg:flex-row gap-6 lg:gap-8 transition-colors duration-300";
+                DOM.teacherMsg.innerHTML = '「遇到旋轉左角度嘅多邊形唔使驚！用手指畫線將佢<strong class="text-purple-600 text-xl">分割</strong>成基本圖形，再加埋一齊！」';
+                DOM.eqOperator.innerText = '+';
+                DOM.eqOperator2.innerText = '+';
+                DOM.opNumeric.innerText = '+';
+                DOM.opNumeric2.innerText = '+';
+                DOM.opSubArea.innerText = '+';
+                DOM.opSubArea2.innerText = '+';
+            } else {
+                DOM.tabFill.className = `${baseClass} z-30 py-3 md:py-4 tab-fill`;
+                DOM.mainBox.className = "bg-white p-4 md:p-6 rounded-[2rem] shadow-[0_8px_0_#ec4899] border-4 border-[#ec4899] relative z-20 -mt-[4px] flex flex-col lg:flex-row gap-6 lg:gap-8 transition-colors duration-300";
+                DOM.teacherMsg.innerHTML = '「旋轉咗嘅圖形缺咗一角？跟住粉紅色虛線劃線，補成完整嘅大圖形，再減去多出嘅部分！」';
+                DOM.eqOperator.innerText = '−';
+                DOM.eqOperator2.innerText = '−';
+                DOM.opNumeric.innerText = '−';
+                DOM.opNumeric2.innerText = '−';
+                DOM.opSubArea.innerText = '−';
+                DOM.opSubArea2.innerText = '−';
+            }
+
+            generateQuestion();
+        }
+
+        function resetUI() {
+            currentStep = 0; 
+            activeInput = null;
+            qData = {};
+            clearActiveListeners();
+            
+            DOM.canvasContent.innerHTML = ''; 
+            
+            DOM.equationArea.classList.add('opacity-50', 'pointer-events-none');
+            DOM.numericRow.classList.add('hidden');
+            DOM.subAreaRow.classList.add('hidden');
+            DOM.ansRow.classList.add('hidden');
+            
+            [DOM.slot1, DOM.slot2, DOM.slot3].forEach(function(slot, idx) {
+                let slotLabel = currentMode === 'split' ? `圖形 ${idx + 1}` : (idx === 0 ? '【 大圖形 】' : '【 填補部分 】');
+                slot.innerHTML = `<span class="text-sm md:text-base font-black ${currentMode === 'split' ? 'text-gray-400' : (idx===0?'text-purple-500':'text-pink-500')}">${slotLabel}</span>`;
+                slot.className = `drop-slot flex-1 max-w-[130px] md:max-w-[144px] aspect-square border-4 border-dashed ${currentMode==='split'?'border-gray-400 bg-white':(idx===0?'border-purple-300 bg-purple-50/50':'border-pink-300 bg-pink-50/50')} rounded-2xl flex flex-col items-center justify-center shadow-sm overflow-hidden transition-all cursor-pointer`;
+                if (idx === 2) slot.classList.add('hidden');
+                delete slot.dataset.filled;
+            });
+
+            DOM.eqOperator2.classList.add('hidden');
+            DOM.opNumeric2.classList.add('hidden');
+            DOM.inpEq3.classList.add('hidden');
+            DOM.opSubArea2.classList.add('hidden');
+            DOM.inpArea3.classList.add('hidden');
+
+            [DOM.inpEq1, DOM.inpEq2, DOM.inpEq3, DOM.inpArea1, DOM.inpArea2, DOM.inpArea3, DOM.inpAns].forEach(function(inp) {
+                inp.innerText = '';
+                inp.classList.remove('active-cell', 'correct', 'incorrect');
+            });
+            
+            DOM.numpad.classList.add('opacity-50', 'pointer-events-none');
+            DOM.submitBtn.className = "w-full h-16 bg-green-500 hover:bg-green-400 text-white text-xl font-black rounded-2xl shadow-[0_6px_0_#16a34a] active:translate-y-[6px] active:shadow-none transition-all border-2 border-green-600 flex justify-center items-center opacity-50 pointer-events-none mt-2";
+            DOM.submitBtn.innerText = "提交算式 ✨";
+            DOM.nextBtn.classList.add('hidden');
+            
+            showFeedback('', false);
+        }
+
+        function generateQuestion() {
+            resetUI();
+            
+            // 隨機選擇旋轉角度 (0度, 90度, 180度, 270度)
+            const rotAngles = [0, 90, 180, 270];
+            let chosenAngle = rotAngles[rnd(0, rotAngles.length - 1)];
+
+            if (currentMode === 'split') {
+                let variant = rnd(0, 4);
+                if (variant === 0) { 
+                    // 例子 1 (圖2): 長方形 + 頂部直角三角形 (標示兩條直角邊，例如 6,8,10 或 9,12,15)
+                    let k = rnd(1, 2);
+                    let leg1 = 4 * (k + 1); // 8 或 12
+                    let leg2 = 3 * (k + 1); // 6 或 9
+                    let w = 5 * (k + 1);    // 10 或 15
+                    let h2 = rnd(6, 10);
+                    let aA = (leg1 * leg2) / 2;
+                    let aB = w * h2;
+                    qData = {
+                        rotAngle: chosenAngle,
+                        numPieces: 2,
+                        area: aA + aB,
+                        shapeA: { id: 'A', name: '直角三角形', eqs: genTri(leg1, leg2), area: aA },
+                        shapeB: { id: 'B', name: '長方形', eqs: genMul(w, h2), area: aB }
+                    };
+                    buildSplitVariant0(w, leg1, leg2, h2);
+                } else if (variant === 1) { 
+                    // 例子 2 (圖3): 左側直角三角形 + 右側延伸長方形 (需自己相減求底或高)
+                    let bTri = rnd(5, 8);
+                    let wRect = rnd(4, 7);
+                    let totalBot = bTri + wRect;
+                    let hRect = rnd(2, 4);
+                    let hDiff = rnd(4, 6);
+                    if (((hDiff + hRect) * bTri) % 2 !== 0) bTri += 1;
+                    totalBot = bTri + wRect;
+                    let totalLeftH = hDiff + hRect;
+                    let aA = (bTri * totalLeftH) / 2;
+                    let aB = wRect * hRect;
+                    qData = {
+                        rotAngle: chosenAngle,
+                        numPieces: 2,
+                        area: aA + aB,
+                        shapeA: { id: 'A', name: '直角三角形', eqs: genTri(bTri, totalLeftH), area: aA },
+                        shapeB: { id: 'B', name: '長方形', eqs: genMul(wRect, hRect), area: aB }
+                    };
+                    buildSplitVariant1(totalBot, wRect, hDiff, hRect);
+                } else if (variant === 2) {
+                    // 平行四邊形 + 三角形
+                    let w = rnd(8, 12); let h1 = rnd(5, 7); let h2 = rnd(4, 6);
+                    if ((w * h2) % 2 !== 0) h2 += 1;
+                    let aA = w * h2 / 2; let aB = w * h1;
+                    qData = {
+                        rotAngle: chosenAngle,
+                        numPieces: 2,
+                        area: aA + aB,
+                        shapeA: { id: 'A', name: '三角形', eqs: genTri(w, h2), area: aA },
+                        shapeB: { id: 'B', name: '平行四邊形', eqs: genMul(w, h1), area: aB }
+                    };
+                    buildSplitVariant3(w, h1, h2);
+                } else if (variant === 3) {
+                    // 3圖形：頂部直角三角形(兩直角邊 6,8,10) + 中間長方形 + 底部梯形
+                    let leg1 = 8, leg2 = 6, w = 10;
+                    let botW = w + rnd(4, 6);
+                    let h2 = rnd(5, 7); 
+                    let h3 = rnd(4, 6); 
+                    if (((w + botW) * h3) % 2 !== 0) h3 += 1;
+                    let aA = (leg1 * leg2) / 2;
+                    let aB = w * h2;
+                    let aC = (w + botW) * h3 / 2;
+                    qData = {
+                        rotAngle: chosenAngle,
+                        numPieces: 3,
+                        area: aA + aB + aC,
+                        shapeA: { id: 'A', name: '直角三角形', eqs: genTri(leg1, leg2), area: aA },
+                        shapeB: { id: 'B', name: '長方形', eqs: genMul(w, h2), area: aB },
+                        shapeC: { id: 'C', name: '梯形', eqs: genTrap(w, botW, h3), area: aC }
+                    };
+                    buildSplitVariant4(w, leg1, leg2, botW, h2, h3);
+                } else {
+                    // 3圖形：火箭/鉛筆型（頂部直角三角形 兩直角邊 6,8,10 + 中間長方形 + 底部斜向平行四邊形）
+                    let leg1 = 8, leg2 = 6, w = 10;
+                    let h2 = rnd(5, 8);
+                    let h3 = rnd(5, 8);
+                    let aA = (leg1 * leg2) / 2;
+                    let aB = w * h2;
+                    let aC = w * h3;
+                    qData = {
+                        rotAngle: chosenAngle,
+                        numPieces: 3,
+                        area: aA + aB + aC,
+                        shapeA: { id: 'A', name: '直角三角形', eqs: genTri(leg1, leg2), area: aA },
+                        shapeB: { id: 'B', name: '長方形', eqs: genMul(w, h2), area: aB },
+                        shapeC: { id: 'C', name: '平行四邊形', eqs: genMul(w, h3), area: aC }
+                    };
+                    buildSplitVariant5(w, leg1, leg2, h2, h3);
+                }
+
+                if (qData.numPieces === 3) {
+                    DOM.instructionTxt.innerHTML = `👉 多邊形旋轉了 ${qData.rotAngle}°！請畫線切開<strong class='text-red-500'>兩條紅色虛線</strong>！`;
+                    DOM.slot3.classList.remove('hidden');
+                    DOM.eqOperator2.classList.remove('hidden');
+                } else {
+                    DOM.instructionTxt.innerHTML = `👉 多邊形旋轉了 ${qData.rotAngle}°！請找出紅色虛線，畫一條線分割圖形！`;
+                }
+                initSliceInteraction();
+                
+            } else { 
+                let variant = rnd(0, 3);
+                DOM.instructionTxt.innerHTML = `👉 圖形旋轉了 ${chosenAngle}° 且缺了一角！請跟著粉紅色虛線劃線補齊！`;
+                if (variant === 0) { 
+                    // 例子 3 (圖4): 缺角平行四邊形 (大平行四邊形 - 左上直角三角形)
+                    let baseW = rnd(10, 14);
+                    let totalH = rnd(12, 16);
+                    let cutLegV = rnd(6, 9);
+                    let cutLegH = rnd(4, 6);
+                    if ((cutLegV * cutLegH) % 2 !== 0) cutLegH += 1;
+                    let aA = baseW * totalH;
+                    let aB = (cutLegV * cutLegH) / 2;
+                    qData = {
+                        rotAngle: chosenAngle,
+                        numPieces: 2,
+                        area: aA - aB,
+                        mainName: '大平行四邊形',
+                        subName: '小三角形',
+                        shapeA: { id: 'A', eqs: genMul(baseW, totalH), area: aA }, 
+                        shapeB: { id: 'B', eqs: genTri(cutLegH, cutLegV), area: aB } 
+                    };
+                    buildFillVariant0(baseW, totalH, cutLegV, cutLegH);
+                } else if (variant === 1) { 
+                    // 例子 4 (圖5 填補版): 大長方形 - 左下直角梯形
+                    let W = rnd(14, 18);
+                    let H = rnd(12, 16);
+                    let hLeft = rnd(7, 9);
+                    let wBotLeft = rnd(5, 7);
+                    let hTrap = H - hLeft;
+                    if (((wBotLeft + W) * hTrap) % 2 !== 0) {
+                        H += 1;
+                        hTrap = H - hLeft;
+                    }
+                    let aA = W * H;
+                    let aB = (wBotLeft + W) * hTrap / 2;
+                    qData = {
+                        rotAngle: chosenAngle,
+                        numPieces: 2,
+                        area: aA - aB,
+                        mainName: '大長方',
+                        subName: '小梯形',
+                        shapeA: { id: 'A', eqs: genMul(W, H), area: aA }, 
+                        shapeB: { id: 'B', eqs: genTrap(wBotLeft, W, hTrap), area: aB }
+                    };
+                    buildFillVariant1(W, H, hLeft, wBotLeft);
+                } else if (variant === 2) {
+                    let W = rnd(14, 18); let H = rnd(10, 12);
+                    let a = rnd(4, 6); let b = a + rnd(2, 4); let hc = rnd(4, 5);
+                    if (((a + b) * hc) % 2 !== 0) hc += 1;
+                    let aA = W * H; let aB = (a + b) * hc / 2;
+                    qData = {
+                        rotAngle: chosenAngle,
+                        numPieces: 2,
+                        area: aA - aB,
+                        mainName: '大長方',
+                        subName: '小梯形',
+                        shapeA: { id: 'A', eqs: genMul(W, H), area: aA },
+                        shapeB: { id: 'B', eqs: genTrap(a, b, hc), area: aB }
+                    };
+                    buildFillVariant2(W, H, a, b, hc);
+                } else {
+                    let topW = rnd(10, 12); let botW = topW + rnd(4, 6);
+                    let H = rnd(8, 10);
+                    let wc = rnd(4, 5); let hc = rnd(3, 4);
+                    if (((topW + botW) * H) % 2 !== 0) H += 1;
+                    let aA = (topW + botW) * H / 2; let aB = wc * hc;
+                    qData = {
+                        rotAngle: chosenAngle,
+                        numPieces: 2,
+                        area: aA - aB,
+                        mainName: '大梯形',
+                        subName: '小長方',
+                        shapeA: { id: 'A', eqs: genTrap(topW, botW, H), area: aA },
+                        shapeB: { id: 'B', eqs: genMul(wc, hc), area: aB }
+                    };
+                    buildFillVariant3(topW, botW, H, wc, hc);
+                }
+            }
+        }
+
+        /* ---------------- 圖形旋轉與文字正向輔助函式 ---------------- */
+        function uprightText(svgStr) {
+            if (!qData.rotAngle || qData.rotAngle === 0) return svgStr;
+            return svgStr.replace(/<text\s+([^>]*?)x="([^"]+)"\s+y="([^"]+)"([^>]*)>/g, function(match, pre, x, y, post) {
+                return `<text ${pre}x="${x}" y="${y}" transform="rotate(${-qData.rotAngle}, ${x}, ${y})"${post}>`;
+            });
+        }
+
+        function wrapWithRotation(svgInnerHtml) {
+            let processed = uprightText(svgInnerHtml);
+            if (!qData.rotAngle || qData.rotAngle === 0) return `<g id="rotGroup">${processed}</g>`;
+            // 以畫布中心點 (170, 120) 進行旋轉
+            return `<g id="rotGroup" transform="rotate(${qData.rotAngle}, 170, 120)">${processed}</g>`;
+        }
+
+        /* ---------------- 分割法 (Split Mode) ---------------- */
+        function buildSplitVariant0(w, leg1, leg2, h2) {
+            // 例子 1 (圖2): 五邊形屋仔，頂部為直角三角形 (直角在頂點)，底部為長方形
+            let scale = 11;
+            let pw = w * scale;
+            let ph2 = h2 * scale;
+            let pLeg1 = leg1 * scale;
+            let pLeg2 = leg2 * scale;
+
+            let cx = 170;
+            let x1 = Math.round(cx - pw / 2);
+            let x2 = x1 + pw;
+            let yBase = 205;
+            let yMid = yBase - ph2;
+
+            // 直角三角形頂點座標計算: 距離 x1 為 pLeg1，距離 x2 為 pLeg2
+            let dProj = (pLeg1 * pLeg1) / pw;
+            let hTriPx = (pLeg1 * pLeg2) / pw;
+            let xPeak = Math.round(x1 + dProj);
+            let yTop = Math.round(yMid - hTriPx);
+
+            // 頂點直角符號單位向量
+            let ux1 = (x1 - xPeak) / pLeg1, uy1 = (yMid - yTop) / pLeg1;
+            let ux2 = (x2 - xPeak) / pLeg2, uy2 = (yMid - yTop) / pLeg2;
+            let peakRA = drawVecRA(xPeak, yTop, ux1, uy1, ux2, uy2, "#64748b", 8);
+            let peakRAAmber = drawVecRA(xPeak, yTop, ux1, uy1, ux2, uy2, "#ca8a04", 8);
+
+            let unifiedPoints = `${x1},${yBase} ${x2},${yBase} ${x2},${yMid} ${xPeak},${yTop} ${x1},${yMid}`;
+            let triPoints = `${x1},${yMid} ${x2},${yMid} ${xPeak},${yTop}`;
+            let rectPoints = `${x1},${yMid} ${x2},${yMid} ${x2},${yBase} ${x1},${yBase}`;
+
+            let lbl1X = Math.round((x1 + xPeak) / 2 - 14);
+            let lbl1Y = Math.round((yMid + yTop) / 2 - 6);
+            let lbl2X = Math.round((x2 + xPeak) / 2 + 14);
+            let lbl2Y = Math.round((yMid + yTop) / 2 - 6);
+
+            qData.shapeASVG = `<polygon points="${triPoints}" fill="#fef08a" stroke="#eab308" stroke-width="4" stroke-linejoin="round"/>
+                               ${peakRAAmber}
+                               <text x="${lbl1X}" y="${lbl1Y}" text-anchor="end" class="fill-amber-900">${leg1}m</text>
+                               <text x="${lbl2X}" y="${lbl2Y}" text-anchor="start" class="fill-amber-900">${leg2}m</text>`;
+            qData.shapeBSVG = `<polygon points="${rectPoints}" fill="#bfdbfe" stroke="#3b82f6" stroke-width="4" stroke-linejoin="round"/>
+                               ${drawRA(x1, yBase, 1, -1, "#2563eb")}
+                               ${drawRA(x2, yBase, -1, -1, "#2563eb")}
+                               <text x="${cx}" y="${yBase + 18}" text-anchor="middle" class="fill-blue-900">${w}m</text>
+                               <text x="${x1 - 10}" y="${yBase - ph2/2 + 5}" text-anchor="end" class="fill-blue-900">${h2}m</text>
+                               <text x="${x2 + 10}" y="${yBase - ph2/2 + 5}" text-anchor="start" class="fill-blue-900">${h2}m</text>`;
+
+            delete qData.sharedLabelSVG;
+
+            let innerSvg = `
+                <g id="unslicedLayer">
+                    <polygon points="${unifiedPoints}" fill="#faf5ff" stroke="#a855f7" stroke-width="4" stroke-linejoin="round"/>
+                    ${peakRA}
+                    ${drawRA(x1, yBase, 1, -1, "#a855f7")}
+                    ${drawRA(x2, yBase, -1, -1, "#a855f7")}
+                    <line id="visLine1" x1="${x1}" y1="${yMid}" x2="${x2}" y2="${yMid}" stroke="#ef4444" stroke-width="3" stroke-dasharray="6,6" class="animate-pulse" />
+                    <text x="${lbl1X}" y="${lbl1Y}" text-anchor="end" class="fill-gray-800">${leg1}m</text>
+                    <text x="${lbl2X}" y="${lbl2Y}" text-anchor="start" class="fill-gray-800">${leg2}m</text>
+                    <text x="${cx}" y="${yBase + 18}" text-anchor="middle" class="fill-gray-800">${w}m</text>
+                    <text x="${x1 - 10}" y="${yBase - ph2/2 + 5}" text-anchor="end" class="fill-gray-800">${h2}m</text>
+                    <text x="${x2 + 10}" y="${yBase - ph2/2 + 5}" text-anchor="start" class="fill-gray-800">${h2}m</text>
+                </g>
+                <line id="sliceTarget1" data-line="1" x1="${x1-20}" y1="${yMid}" x2="${x2+20}" y2="${yMid}" stroke="transparent" stroke-width="36" pointer-events="stroke" class="cursor-crosshair" />
+            `;
+
+            DOM.canvasContent.innerHTML = `
+                <svg viewBox="${VB}" class="w-full h-full drop-shadow-md overflow-visible" id="mainTargetSvg">
+                    ${wrapWithRotation(innerSvg)}
+                </svg>
+            `;
+        }
+
+        function buildSplitVariant1(totalBot, wRect, hDiff, hRect) {
+            // 例子 2 (圖3): 左側直角三角形 + 右側長方形，標示總底長 totalBot、內側高 hDiff、內側長 wRect、右側高 hRect
+            let scale = 12;
+            let bTri = totalBot - wRect;
+            let pBot = totalBot * scale;
+            let pbTri = bTri * scale;
+            let pwRect = wRect * scale;
+            let phDiff = hDiff * scale;
+            let phRect = hRect * scale;
+
+            let x1 = Math.round(170 - pBot / 2);
+            let xMid = x1 + pbTri;
+            let x2 = x1 + pBot;
+            let yBase = 195;
+            let yStep = yBase - phRect;
+            let yTop = yStep - phDiff;
+
+            let unifiedPoints = `${x1},${yBase} ${xMid},${yTop} ${xMid},${yStep} ${x2},${yStep} ${x2},${yBase}`;
+            let triPoints = `${x1},${yBase} ${xMid},${yTop} ${xMid},${yBase}`;
+            let rectPoints = `${xMid},${yStep} ${x2},${yStep} ${x2},${yBase} ${xMid},${yBase}`;
+
+            // 分割後碎片只保留原本外圍有的尺寸，不自動幫學生算出三角形的底或總高
+            qData.shapeASVG = `<polygon points="${triPoints}" fill="#fed7aa" stroke="#f97316" stroke-width="4" stroke-linejoin="round"/>
+                               ${drawRA(xMid, yBase, -1, -1, "#ea580c")}
+                               <text x="${xMid + 8}" y="${(yTop + yStep)/2 + 4}" text-anchor="start" class="fill-orange-900">${hDiff}m</text>`;
+            qData.shapeBSVG = `<polygon points="${rectPoints}" fill="#bfdbfe" stroke="#3b82f6" stroke-width="4" stroke-linejoin="round"/>
+                               ${drawRA(x2, yStep, -1, 1, "#2563eb")}
+                               ${drawRA(x2, yBase, -1, -1, "#2563eb")}
+                               <text x="${(xMid + x2)/2}" y="${yStep - 8}" text-anchor="middle" class="fill-blue-900">${wRect}m</text>
+                               <text x="${x2 + 8}" y="${(yStep + yBase)/2 + 4}" text-anchor="start" class="fill-blue-900">${hRect}m</text>`;
+
+            qData.sharedLabelSVG = `
+                <text x="${(x1 + x2)/2}" y="${yBase + 18}" text-anchor="middle" class="fill-slate-800">${totalBot}m</text>
+            `;
+
+            let innerSvg = `
+                <g id="unslicedLayer">
+                    <polygon points="${unifiedPoints}" fill="#faf5ff" stroke="#a855f7" stroke-width="4" stroke-linejoin="round"/>
+                    ${drawRA(xMid, yStep, 1, -1, "#64748b")}
+                    ${drawRA(x2, yStep, -1, 1, "#a855f7")}
+                    ${drawRA(x2, yBase, -1, -1, "#a855f7")}
+                    <line id="visLine1" x1="${xMid}" y1="${yStep}" x2="${xMid}" y2="${yBase}" stroke="#ef4444" stroke-width="3" stroke-dasharray="6,6" class="animate-pulse" />
+                    <text x="${xMid + 8}" y="${(yTop + yStep)/2 + 4}" text-anchor="start" class="fill-gray-800">${hDiff}m</text>
+                    <text x="${(xMid + x2)/2}" y="${yStep - 8}" text-anchor="middle" class="fill-gray-800">${wRect}m</text>
+                    <text x="${x2 + 8}" y="${(yStep + yBase)/2 + 4}" text-anchor="start" class="fill-gray-800">${hRect}m</text>
+                    <text x="${(x1 + x2)/2}" y="${yBase + 18}" text-anchor="middle" class="fill-gray-800">${totalBot}m</text>
+                </g>
+                <line id="sliceTarget1" data-line="1" x1="${xMid}" y1="${yStep-15}" x2="${xMid}" y2="${yBase+15}" stroke="transparent" stroke-width="36" pointer-events="stroke" class="cursor-crosshair" />
+            `;
+
+            DOM.canvasContent.innerHTML = `
+                <svg viewBox="${VB}" class="w-full h-full drop-shadow-md overflow-visible" id="mainTargetSvg">
+                    ${wrapWithRotation(innerSvg)}
+                </svg>
+            `;
+        }
+
+        function buildSplitVariant3(w, h1, h2) {
+            let pw = w * 10; let ph1 = h1 * 10; let ph2 = h2 * 10;
+            let shift = 25;
+            let x1 = 95; let yBase = 205;
+            let x2 = x1 + pw;
+            let yMid = yBase - ph1;
+            let xMid1 = x1 + shift; let xMid2 = x2 + shift;
+            let cxTop = (xMid1 + xMid2) / 2;
+            let yTop = yMid - ph2;
+
+            let unifiedPoints = `${x1},${yBase} ${x2},${yBase} ${xMid2},${yMid} ${cxTop},${yTop} ${xMid1},${yMid}`;
+            let triPoints = `${xMid1},${yMid} ${xMid2},${yMid} ${cxTop},${yTop}`;
+            let paraPoints = `${x1},${yBase} ${x2},${yBase} ${xMid2},${yMid} ${xMid1},${yMid}`;
+
+            qData.shapeASVG = `<polygon points="${triPoints}" fill="#fef08a" stroke="#eab308" stroke-width="4" stroke-linejoin="round"/>
+                               <line x1="${cxTop}" y1="${yTop}" x2="${cxTop}" y2="${yMid}" stroke="#ca8a04" stroke-width="2" stroke-dasharray="4,4"/>
+                               ${drawRA(cxTop, yMid, 1, -1, "#ca8a04")}
+                               <text x="${cxTop + 8}" y="${yMid - ph2/2 + 4}" class="fill-amber-900">${h2}m</text>`;
+
+            qData.shapeBSVG = `<polygon points="${paraPoints}" fill="#bbf7d0" stroke="#22c55e" stroke-width="4" stroke-linejoin="round"/>
+                               <line x1="${xMid1}" y1="${yMid}" x2="${xMid1}" y2="${yBase}" stroke="#15803d" stroke-width="2" stroke-dasharray="4,4"/>
+                               ${drawRA(xMid1, yBase, 1, -1, "#15803d")}
+                               <text x="${(x1+x2)/2}" y="${yBase + 18}" text-anchor="middle" class="fill-green-900">${w}m</text>
+                               <text x="${xMid1 + 6}" y="${yBase - ph1/2 + 4}" class="fill-green-900">${h1}m</text>`;
+
+            delete qData.sharedLabelSVG;
+
+            let innerSvg = `
+                <g id="unslicedLayer">
+                    <polygon points="${unifiedPoints}" fill="#faf5ff" stroke="#a855f7" stroke-width="4" stroke-linejoin="round"/>
+                    <line x1="${cxTop}" y1="${yTop}" x2="${cxTop}" y2="${yMid}" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4" />
+                    ${drawRA(cxTop, yMid, 1, -1, "#64748b")}
+                    <line x1="${xMid1}" y1="${yMid}" x2="${xMid1}" y2="${yBase}" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4" />
+                    ${drawRA(xMid1, yBase, 1, -1, "#64748b")}
+                    <line id="visLine1" x1="${xMid1}" y1="${yMid}" x2="${xMid2}" y2="${yMid}" stroke="#ef4444" stroke-width="3" stroke-dasharray="6,6" class="animate-pulse" />
+                    <text x="${cxTop + 8}" y="${yMid - ph2/2 + 4}" class="fill-gray-800">${h2}m</text>
+                    <text x="${(x1+x2)/2}" y="${yBase + 18}" text-anchor="middle" class="fill-gray-800">${w}m</text>
+                    <text x="${xMid1 + 6}" y="${yBase - ph1/2 + 4}" class="fill-gray-800">${h1}m</text>
+                </g>
+                <line id="sliceTarget1" data-line="1" x1="${xMid1-20}" y1="${yMid}" x2="${xMid2+20}" y2="${yMid}" stroke="transparent" stroke-width="36" pointer-events="stroke" class="cursor-crosshair" />
+            `;
+
+            DOM.canvasContent.innerHTML = `
+                <svg viewBox="${VB}" class="w-full h-full drop-shadow-md overflow-visible" id="mainTargetSvg">
+                    ${wrapWithRotation(innerSvg)}
+                </svg>
+            `;
+        }
+
+        function buildSplitVariant4(w, leg1, leg2, botW, h2, h3) {
+            // 3圖形：頂部直角三角形(兩直角邊 leg1, leg2) + 中間長方形 + 底部梯形
+            let scale = 9;
+            let pw = w * scale; let pBot = botW * scale;
+            let pLeg1 = leg1 * scale; let pLeg2 = leg2 * scale;
+            let ph2 = h2 * scale; let ph3 = h3 * scale;
+            let cx = 170;
+            let yBase = 215;
+            let yMid2 = yBase - ph3;
+            let yMid1 = yMid2 - ph2;
+
+            let xMid1 = Math.round(cx - pw/2); let xMid2 = xMid1 + pw;
+            let xBot1 = Math.round(cx - pBot/2); let xBot2 = xBot1 + pBot;
+
+            let dProj = (pLeg1 * pLeg1) / pw;
+            let hTriPx = (pLeg1 * pLeg2) / pw;
+            let xPeak = Math.round(xMid1 + dProj);
+            let yTop = Math.round(yMid1 - hTriPx);
+
+            let ux1 = (xMid1 - xPeak) / pLeg1, uy1 = (yMid1 - yTop) / pLeg1;
+            let ux2 = (xMid2 - xPeak) / pLeg2, uy2 = (yMid1 - yTop) / pLeg2;
+            let peakRA = drawVecRA(xPeak, yTop, ux1, uy1, ux2, uy2, "#64748b", 7);
+            let peakRAAmber = drawVecRA(xPeak, yTop, ux1, uy1, ux2, uy2, "#ca8a04", 7);
+
+            let unifiedPoints = `${xPeak},${yTop} ${xMid2},${yMid1} ${xMid2},${yMid2} ${xBot2},${yBase} ${xBot1},${yBase} ${xMid1},${yMid2} ${xMid1},${yMid1}`;
+            let triPoints = `${xMid1},${yMid1} ${xMid2},${yMid1} ${xPeak},${yTop}`;
+            let rectPoints = `${xMid1},${yMid1} ${xMid2},${yMid1} ${xMid2},${yMid2} ${xMid1},${yMid2}`;
+            let trapPoints = `${xMid1},${yMid2} ${xMid2},${yMid2} ${xBot2},${yBase} ${xBot1},${yBase}`;
+
+            let lbl1X = Math.round((xMid1 + xPeak) / 2 - 10);
+            let lbl1Y = Math.round((yMid1 + yTop) / 2 - 4);
+            let lbl2X = Math.round((xMid2 + xPeak) / 2 + 10);
+            let lbl2Y = Math.round((yMid1 + yTop) / 2 - 4);
+
+            qData.shapeASVG = `<polygon points="${triPoints}" fill="#fef08a" stroke="#eab308" stroke-width="3" stroke-linejoin="round"/>
+                               ${peakRAAmber}
+                               <text x="${lbl1X}" y="${lbl1Y}" text-anchor="end" class="fill-amber-900">${leg1}m</text>
+                               <text x="${lbl2X}" y="${lbl2Y}" text-anchor="start" class="fill-amber-900">${leg2}m</text>`;
+
+            qData.shapeBSVG = `<polygon points="${rectPoints}" fill="#bfdbfe" stroke="#3b82f6" stroke-width="3" stroke-linejoin="round"/>
+                               ${drawRA(xMid1, yMid2, 1, -1, "#2563eb")}
+                               ${drawRA(xMid2, yMid1, -1, 1, "#2563eb")}
+                               <text x="${xMid1 - 8}" y="${yMid1 + ph2/2 + 5}" text-anchor="end" class="fill-blue-900">${h2}m</text>`;
+
+            qData.shapeCSVG = `<polygon points="${trapPoints}" fill="#fed7aa" stroke="#f97316" stroke-width="3" stroke-linejoin="round"/>
+                               <line x1="${xMid1}" y1="${yMid2}" x2="${xMid1}" y2="${yBase}" stroke="#ea580c" stroke-width="2" stroke-dasharray="3,3"/>
+                               ${drawRA(xMid1, yBase, 1, -1, "#ea580c")}
+                               <text x="${cx}" y="${yBase + 16}" text-anchor="middle" class="fill-orange-900">${botW}m</text>
+                               <text x="${xMid1 + 6}" y="${yBase - ph3/2 + 4}" class="fill-orange-900">${h3}m</text>`;
+
+            let dimY = yTop - 12;
+            qData.sharedLabelSVG = `
+                <line x1="${xMid1}" y1="${yMid1}" x2="${xMid1}" y2="${dimY}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="2,2" />
+                <line x1="${xMid2}" y1="${yMid1}" x2="${xMid2}" y2="${dimY}" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="2,2" />
+                <line x1="${xMid1}" y1="${dimY+4}" x2="${xMid2}" y2="${dimY+4}" stroke="#475569" stroke-width="1.5" />
+                <text x="${cx}" y="${dimY - 2}" text-anchor="middle" class="fill-slate-800">${w}m</text>
+            `;
+
+            let innerSvg = `
+                <g id="unslicedLayer">
+                    <polygon points="${unifiedPoints}" fill="#faf5ff" stroke="#a855f7" stroke-width="4" stroke-linejoin="round"/>
+                    ${peakRA}
+                    <line x1="${xMid1}" y1="${yMid2}" x2="${xMid1}" y2="${yBase}" stroke="#64748b" stroke-width="2" stroke-dasharray="3,3" />
+                    ${drawRA(xMid1, yBase, 1, -1, "#64748b")}
+                    ${drawRA(xMid1, yMid2, 1, -1, "#a855f7")}
+                    ${drawRA(xMid2, yMid1, -1, 1, "#a855f7")}
+                    <line id="visLine1" x1="${xMid1}" y1="${yMid1}" x2="${xMid2}" y2="${yMid1}" stroke="#ef4444" stroke-width="3" stroke-dasharray="6,6" class="animate-pulse" />
+                    <line id="visLine2" x1="${xMid1}" y1="${yMid2}" x2="${xMid2}" y2="${yMid2}" stroke="#ef4444" stroke-width="3" stroke-dasharray="6,6" class="animate-pulse" />
+                    ${qData.sharedLabelSVG}
+                    <text x="${lbl1X}" y="${lbl1Y}" text-anchor="end" class="fill-gray-800">${leg1}m</text>
+                    <text x="${lbl2X}" y="${lbl2Y}" text-anchor="start" class="fill-gray-800">${leg2}m</text>
+                    <text x="${xMid1 - 10}" y="${yMid1 + ph2/2 + 4}" text-anchor="end" class="fill-gray-800">${h2}m</text>
+                    <text x="${xMid1 + 6}" y="${yBase - ph3/2 + 4}" class="fill-gray-800">${h3}m</text>
+                    <text x="${cx}" y="${yBase + 16}" text-anchor="middle" class="fill-gray-800">${botW}m</text>
+                </g>
+                <line id="sliceTarget1" data-line="1" x1="${xMid1-20}" y1="${yMid1}" x2="${xMid2+20}" y2="${yMid1}" stroke="transparent" stroke-width="30" pointer-events="stroke" class="cursor-crosshair" />
+                <line id="sliceTarget2" data-line="2" x1="${xMid1-20}" y1="${yMid2}" x2="${xMid2+20}" y2="${yMid2}" stroke="transparent" stroke-width="30" pointer-events="stroke" class="cursor-crosshair" />
+            `;
+
+            DOM.canvasContent.innerHTML = `
+                <svg viewBox="${VB}" class="w-full h-full drop-shadow-md overflow-visible" id="mainTargetSvg">
+                    ${wrapWithRotation(innerSvg)}
+                </svg>
+            `;
+        }
+
+        function buildSplitVariant5(w, leg1, leg2, h2, h3) {
+            // 3圖形：頂部直角三角形(兩直角邊 leg1, leg2) + 中間長方形 + 底部斜向平行四邊形
+            let scale = 9;
+            let pw = w * scale;
+            let pLeg1 = leg1 * scale;
+            let pLeg2 = leg2 * scale;
+            let ph2 = h2 * scale;
+            let ph3 = h3 * scale;
+            let shift = 24;
+
+            let cx = 175;
+            let yBase = 215;
+            let yMid2 = yBase - ph3;
+            let yMid1 = yMid2 - ph2;
+
+            let xMid1 = Math.round(cx - pw / 2);
+            let xMid2 = xMid1 + pw;
+            let xBot1 = xMid1 - shift;
+            let xBot2 = xMid2 - shift;
+
+            let dProj = (pLeg1 * pLeg1) / pw;
+            let hTriPx = (pLeg1 * pLeg2) / pw;
+            let xPeak = Math.round(xMid1 + dProj);
+            let yTop = Math.round(yMid1 - hTriPx);
+
+            let ux1 = (xMid1 - xPeak) / pLeg1, uy1 = (yMid1 - yTop) / pLeg1;
+            let ux2 = (xMid2 - xPeak) / pLeg2, uy2 = (yMid1 - yTop) / pLeg2;
+            let peakRA = drawVecRA(xPeak, yTop, ux1, uy1, ux2, uy2, "#64748b", 7);
+            let peakRAAmber = drawVecRA(xPeak, yTop, ux1, uy1, ux2, uy2, "#ca8a04", 7);
+
+            let unifiedPoints = `${xPeak},${yTop} ${xMid2},${yMid1} ${xMid2},${yMid2} ${xBot2},${yBase} ${xBot1},${yBase} ${xMid1},${yMid2} ${xMid1},${yMid1}`;
+            let triPoints = `${xMid1},${yMid1} ${xMid2},${yMid1} ${xPeak},${yTop}`;
+            let rectPoints = `${xMid1},${yMid1} ${xMid2},${yMid1} ${xMid2},${yMid2} ${xMid1},${yMid2}`;
+            let paraPoints = `${xMid1},${yMid2} ${xMid2},${yMid2} ${xBot2},${yBase} ${xBot1},${yBase}`;
+
+            let lbl1X = Math.round((xMid1 + xPeak) / 2 - 10);
+            let lbl1Y = Math.round((yMid1 + yTop) / 2 - 4);
+            let lbl2X = Math.round((xMid2 + xPeak) / 2 + 10);
+            let lbl2Y = Math.round((yMid1 + yTop) / 2 - 4);
+
+            qData.shapeASVG = `<polygon points="${triPoints}" fill="#fef08a" stroke="#eab308" stroke-width="3" stroke-linejoin="round"/>
+                               ${peakRAAmber}
+                               <text x="${lbl1X}" y="${lbl1Y}" text-anchor="end" class="fill-amber-900">${leg1}m</text>
+                               <text x="${lbl2X}" y="${lbl2Y}" text-anchor="start" class="fill-amber-900">${leg2}m</text>`;
+
+            qData.shapeBSVG = `<polygon points="${rectPoints}" fill="#bfdbfe" stroke="#3b82f6" stroke-width="3" stroke-linejoin="round"/>
+                               ${drawRA(xMid1, yMid2, 1, -1, "#2563eb")}
+                               ${drawRA(xMid2, yMid1, -1, 1, "#2563eb")}
+                               <text x="${xMid1 - 8}" y="${yMid1 + ph2/2 + 5}" text-anchor="end" class="fill-blue-900">${h2}m</text>`;
+
+            qData.shapeCSVG = `<polygon points="${paraPoints}" fill="#bbf7d0" stroke="#22c55e" stroke-width="3" stroke-linejoin="round"/>
+                               <line x1="${xMid1}" y1="${yMid2}" x2="${xMid1}" y2="${yBase}" stroke="#15803d" stroke-width="2" stroke-dasharray="3,3"/>
+                               ${drawRA(xMid1, yBase, 1, -1, "#15803d")}
+                               <text x="${(xBot1+xBot2)/2}" y="${yBase + 16}" text-anchor="middle" class="fill-green-900">${w}m</text>
+                               <text x="${xMid1 + 6}" y="${yBase - ph3/2 + 4}" class="fill-green-900">${h3}m</text>`;
+
+            delete qData.sharedLabelSVG;
+
+            let innerSvg = `
+                <g id="unslicedLayer">
+                    <polygon points="${unifiedPoints}" fill="#faf5ff" stroke="#a855f7" stroke-width="4" stroke-linejoin="round"/>
+                    ${peakRA}
+                    <line x1="${xMid1}" y1="${yMid2}" x2="${xMid1}" y2="${yBase}" stroke="#64748b" stroke-width="2" stroke-dasharray="3,3" />
+                    ${drawRA(xMid1, yBase, 1, -1, "#64748b")}
+                    ${drawRA(xMid1, yMid2, 1, -1, "#a855f7")}
+                    ${drawRA(xMid2, yMid1, -1, 1, "#a855f7")}
+                    <line id="visLine1" x1="${xMid1}" y1="${yMid1}" x2="${xMid2}" y2="${yMid1}" stroke="#ef4444" stroke-width="3" stroke-dasharray="6,6" class="animate-pulse" />
+                    <line id="visLine2" x1="${xMid1}" y1="${yMid2}" x2="${xMid2}" y2="${yMid2}" stroke="#ef4444" stroke-width="3" stroke-dasharray="6,6" class="animate-pulse" />
+                    <text x="${lbl1X}" y="${lbl1Y}" text-anchor="end" class="fill-gray-800">${leg1}m</text>
+                    <text x="${lbl2X}" y="${lbl2Y}" text-anchor="start" class="fill-gray-800">${leg2}m</text>
+                    <text x="${xMid1 - 10}" y="${yMid1 + ph2/2 + 4}" text-anchor="end" class="fill-gray-800">${h2}m</text>
+                    <text x="${xMid1 + 6}" y="${yBase - ph3/2 + 4}" class="fill-gray-800">${h3}m</text>
+                    <text x="${(xBot1+xBot2)/2}" y="${yBase + 16}" text-anchor="middle" class="fill-gray-800">${w}m</text>
+                </g>
+                <line id="sliceTarget1" data-line="1" x1="${xMid1-20}" y1="${yMid1}" x2="${xMid2+20}" y2="${yMid1}" stroke="transparent" stroke-width="30" pointer-events="stroke" class="cursor-crosshair" />
+                <line id="sliceTarget2" data-line="2" x1="${xMid1-20}" y1="${yMid2}" x2="${xMid2+20}" y2="${yMid2}" stroke="transparent" stroke-width="30" pointer-events="stroke" class="cursor-crosshair" />
+            `;
+
+            DOM.canvasContent.innerHTML = `
+                <svg viewBox="${VB}" class="w-full h-full drop-shadow-md overflow-visible" id="mainTargetSvg">
+                    ${wrapWithRotation(innerSvg)}
+                </svg>
+            `;
+        }
+
+        function initSliceInteraction() {
+            let isSwiping = false;
+            let slicedSet = new Set();
+            let totalTargets = qData.numPieces === 3 ? 2 : 1;
+
+            DOM.sliceOverlay.classList.remove('hidden');
+            DOM.ninjaTrail.setAttribute('points', '');
+            DOM.ninjaTrail.setAttribute('stroke', '#38bdf8');
+            DOM.ninjaTrail.setAttribute('filter', 'drop-shadow(0 0 2px #bae6fd)');
+
+            function downHandler(e) {
+                if(currentStep !== 0 || currentMode !== 'split') return;
+                e.preventDefault();
+                if (window.getSelection) { window.getSelection().removeAllRanges(); }
+                isSwiping = true;
+                DOM.ninjaTrail.setAttribute('points', '');
+                updateTrail(e);
+            }
+
+            function moveHandler(e) {
+                if(!isSwiping) return;
+                e.preventDefault();
+                updateTrail(e);
+                let el = document.elementFromPoint(e.clientX, e.clientY);
+                if (el && (el.id === 'sliceTarget1' || el.id === 'sliceTarget2')) {
+                    let lineNum = el.dataset.line;
+                    if (!slicedSet.has(lineNum)) {
+                        slicedSet.add(lineNum);
+                        let visLine = document.getElementById('visLine' + lineNum);
+                        if (visLine) {
+                            visLine.setAttribute('stroke', '#22c55e');
+                            visLine.setAttribute('stroke-dasharray', 'none');
+                            visLine.classList.remove('animate-pulse');
+                        }
+                        if (totalTargets === 2 && slicedSet.size === 1) {
+                            showFeedback('✂️ 成功切開第一刀！請再畫線切開另一條紅色虛線！', true);
+                        }
+                    }
+                }
+            }
+
+            function upHandler() {
+                if(!isSwiping) return;
+                isSwiping = false;
+                DOM.ninjaTrail.setAttribute('points', ''); 
+                if (slicedSet.size >= totalTargets) {
+                    onSliceSuccess();
+                }
+            }
+
+            addManagedListener(DOM.interactArea, 'pointerdown', downHandler);
+            addManagedListener(DOM.interactArea, 'pointermove', moveHandler);
+            addManagedListener(window, 'pointerup', upHandler);
+            addManagedListener(window, 'pointercancel', upHandler);
+
+            function updateTrail(e) {
+                let rect = DOM.sliceOverlay.getBoundingClientRect();
+                let px = e.clientX - rect.left;
+                let py = e.clientY - rect.top;
+                let pts = DOM.ninjaTrail.getAttribute('points');
+                DOM.ninjaTrail.setAttribute('points', pts + ` ${px},${py}`);
+            }
+        }
+
+        function onSliceSuccess() {
+            currentStep = 0.5;
+            DOM.sliceOverlay.classList.add('hidden');
+            
+            const unsliced = document.getElementById('unslicedLayer');
+            if(unsliced) unsliced.style.display = 'none';
+
+            const rotGroup = document.getElementById('rotGroup') || document.getElementById('mainTargetSvg');
+            rotGroup.insertAdjacentHTML('beforeend', `<g id="pieceA" class="svg-piece transition-all">${uprightText(qData.shapeASVG)}</g>`);
+            rotGroup.insertAdjacentHTML('beforeend', `<g id="pieceB" class="svg-piece transition-all">${uprightText(qData.shapeBSVG)}</g>`);
+            if (qData.numPieces === 3 && qData.shapeCSVG) {
+                rotGroup.insertAdjacentHTML('beforeend', `<g id="pieceC" class="svg-piece transition-all">${uprightText(qData.shapeCSVG)}</g>`);
+            }
+            if (qData.sharedLabelSVG) {
+                rotGroup.insertAdjacentHTML('beforeend', `<g class="pointer-events-none">${uprightText(qData.sharedLabelSVG)}</g>`);
+            }
+
+            setTimeout(function() {
+                setupGraphicEquationStep();
+            }, 500);
+        }
+
+        function distToSegment(px, py, x1, y1, x2, y2) {
+            let dx = x2 - x1;
+            let dy = y2 - y1;
+            let lenSq = dx * dx + dy * dy;
+            if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+            let t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lenSq));
+            let projX = x1 + t * dx;
+            let projY = y1 + t * dy;
+            return Math.hypot(px - projX, py - projY);
+        }
+
+        function minDistanceToSegments(px, py, segments) {
+            let minD = Infinity;
+            for (let i = 0; i < segments.length; i++) {
+                let s = segments[i];
+                let d = distToSegment(px, py, s[0], s[1], s[2], s[3]);
+                if (d < minD) minD = d;
+            }
+            return minD;
+        }
+
+        function evaluateAgainstTarget(strokePoints, segments, tol) {
+            if (strokePoints.length < 6) return false;
+            tol = tol || 20;
+
+            let validCount = 0;
+            for (let i = 0; i < strokePoints.length; i++) {
+                let p = strokePoints[i];
+                let d = minDistanceToSegments(p.x, p.y, segments);
+                if (d <= tol) validCount++;
+            }
+            let accuracy = validCount / strokePoints.length;
+            if (accuracy < 0.90) return false;
+
+            let checkpoints = [];
+            for (let i = 0; i < segments.length; i++) {
+                let s = segments[i];
+                let segLen = Math.hypot(s[2] - s[0], s[3] - s[1]);
+                let steps = Math.max(4, Math.floor(segLen / 12));
+                for (let j = 0; j <= steps; j++) {
+                    let t = j / steps;
+                    checkpoints.push({
+                        x: s[0] + t * (s[2] - s[0]),
+                        y: s[1] + t * (s[3] - s[1])
+                    });
+                }
+            }
+
+            let coveredCount = 0;
+            for (let i = 0; i < checkpoints.length; i++) {
+                let cp = checkpoints[i];
+                let isHit = false;
+                for (let j = 0; j < strokePoints.length; j++) {
+                    let p = strokePoints[j];
+                    if (Math.hypot(p.x - cp.x, p.y - cp.y) <= tol) {
+                        isHit = true;
+                        break;
+                    }
+                }
+                if (isHit) coveredCount++;
+            }
+            let coverage = coveredCount / checkpoints.length;
+            return coverage >= 0.80;
+        }
+
+        function getSvgPoint(clientX, clientY) {
+            const targetEl = document.getElementById('rotGroup') || document.getElementById('mainTargetSvg');
+            const svg = document.getElementById('mainTargetSvg');
+            if (!svg || !svg.createSVGPoint || !targetEl) return { x: clientX, y: clientY };
+            let pt = svg.createSVGPoint();
+            pt.x = clientX;
+            pt.y = clientY;
+            let ctm = targetEl.getScreenCTM();
+            if (!ctm) return { x: clientX, y: clientY };
+            let transformed = pt.matrixTransform(ctm.inverse());
+            return { x: transformed.x, y: transformed.y };
+        }
+
+        /* ---------------- 填補法 (Fill Mode) ---------------- */
+        function buildFillVariant0(baseW, totalH, cutLegV, cutLegH) {
+            // 例子 3 (圖4): 缺角平行四邊形 (大平行四邊形 底baseW 高totalH - 左上角直角三角形 直角邊cutLegV, cutLegH)
+            let scale = 9;
+            let pBase = baseW * scale;
+            let pH = totalH * scale;
+            let pLegV = cutLegV * scale;
+            let pLegH = cutLegH * scale;
+
+            // 斜率一致: 水平偏移與高度成比例
+            let totalShift = Math.round((pLegH * pH) / pLegV);
+            let xBot1 = Math.round(165 - (pBase + totalShift) / 2);
+            let xBot2 = xBot1 + pBase;
+            let yBot = 200;
+            let yTop = yBot - pH;
+
+            let xTop1 = xBot1 + totalShift;
+            let xTop2 = xBot2 + totalShift;
+
+            let xNotchL = xTop1 - pLegH;
+            let yNotch = yTop + pLegV;
+
+            let incPoints = `${xTop1},${yTop} ${xTop2},${yTop} ${xBot2},${yBot} ${xBot1},${yBot} ${xNotchL},${yNotch} ${xTop1},${yNotch}`;
+            let cutPoints = `${xTop1},${yTop} ${xTop1},${yNotch} ${xNotchL},${yNotch}`;
+            let fullPoints = `${xTop1},${yTop} ${xTop2},${yTop} ${xBot2},${yBot} ${xBot1},${yBot}`;
+
+            qData.incPoints = incPoints;
+            qData.cutPoints = cutPoints;
+            qData.fullPoints = fullPoints;
+
+            qData.targetCornerSegments = [
+                [xNotchL, yNotch, xTop1, yTop]
+            ];
+            qData.targetBoxSegments = [
+                [xTop1, yTop, xTop2, yTop],
+                [xTop2, yTop, xBot2, yBot],
+                [xBot2, yBot, xBot1, yBot],
+                [xBot1, yBot, xTop1, yTop]
+            ];
+
+            qData.extraSVG = `
+                <line x1="${xTop2}" y1="${yTop}" x2="${xTop2}" y2="${yBot}" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4" />
+                <line x1="${xBot2}" y1="${yBot}" x2="${xTop2}" y2="${yBot}" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4" />
+                ${drawRA(xTop2, yBot, -1, -1, "#64748b")}
+                ${drawRA(xTop1, yTop, 1, 1, "#334155")}
+                ${drawRA(xTop1, yNotch, -1, -1, "#ec4899")}
+                <text x="${(xTop1+xTop2)/2}" y="${yTop - 8}" text-anchor="middle" class="fill-slate-800">${baseW}m</text>
+                <text x="${(xBot1+xBot2)/2}" y="${yBot + 18}" text-anchor="middle" class="fill-slate-800">${baseW}m</text>
+                <text x="${xTop2 + 8}" y="${(yTop+yBot)/2 + 4}" text-anchor="start" class="fill-slate-800">${totalH}m</text>
+                <text x="${xTop1 + 6}" y="${(yTop+yNotch)/2 + 4}" text-anchor="start" class="fill-pink-700">${cutLegV}m</text>
+                <text x="${(xNotchL+xTop1)/2}" y="${yNotch + 16}" text-anchor="middle" class="fill-pink-700">${cutLegH}m</text>
+            `;
+
+            qData.shapeASVG = `
+                <polygon points="${fullPoints}" fill="#fdf4ff" stroke="#ec4899" stroke-width="4" stroke-linejoin="round" />
+                <polygon points="${incPoints}" fill="#bfdbfe" stroke="#2563eb" stroke-width="2" />
+                <polygon points="${cutPoints}" fill="#fbcfe8" stroke="#ec4899" stroke-width="2" stroke-dasharray="4,4" />
+                <line x1="${xTop2}" y1="${yTop}" x2="${xTop2}" y2="${yBot}" stroke="#2563eb" stroke-width="2" stroke-dasharray="4,4" />
+                <line x1="${xBot2}" y1="${yBot}" x2="${xTop2}" y2="${yBot}" stroke="#2563eb" stroke-width="2" stroke-dasharray="4,4" />
+                ${drawRA(xTop2, yBot, -1, -1, "#2563eb")}
+                <text x="${(xBot1+xBot2)/2}" y="${yBot + 18}" text-anchor="middle" class="fill-slate-800">${baseW}m</text>
+                <text x="${xTop2 + 8}" y="${(yTop+yBot)/2 + 4}" text-anchor="start" class="fill-slate-800">${totalH}m</text>
+            `;
+            
+            qData.shapeBSVG = `
+                <polygon points="${cutPoints}" fill="#fbcfe8" stroke="#ec4899" stroke-width="4" stroke-linejoin="round" />
+                ${drawRA(xTop1, yNotch, -1, -1, "#ec4899")}
+                <text x="${xTop1 + 6}" y="${(yTop+yNotch)/2 + 4}" text-anchor="start" class="fill-pink-800">${cutLegV}m</text>
+                <text x="${(xNotchL+xTop1)/2}" y="${yNotch + 16}" text-anchor="middle" class="fill-pink-800">${cutLegH}m</text>
+            `;
+
+            let innerSvg = `
+                <g id="layerStep0">
+                    <polygon points="${incPoints}" fill="#ffffff" stroke="#334155" stroke-width="4" stroke-linejoin="round" />
+                    ${qData.extraSVG}
+                    <polygon points="${fullPoints}" fill="none" stroke="#ec4899" stroke-width="3" stroke-dasharray="6,6" class="animate-pulse" />
+                    <path d="M ${xNotchL} ${yNotch} L ${xTop1} ${yTop}" stroke="#ec4899" stroke-width="4" stroke-dasharray="6,6" fill="none" />
+                </g>
+            `;
+
+            DOM.canvasContent.innerHTML = `
+                <svg viewBox="${VB}" class="w-full h-full drop-shadow-md overflow-visible" id="mainTargetSvg">
+                    ${wrapWithRotation(innerSvg)}
+                </svg>
+            `;
+
+            initOuterTraceInteraction();
+        }
+
+        function buildFillVariant1(W, H, hLeft, wBotLeft) {
+            // 例子 4 (圖5 填補版): 大長方形 (W × H) - 左下角缺去的直角梯形 (上底 wBotLeft, 下底 W, 高 H - hLeft)
+            let scale = 9;
+            let pW = W * scale;
+            let pH = H * scale;
+            let phLeft = hLeft * scale;
+            let pwBotLeft = wBotLeft * scale;
+
+            let x1 = Math.round(170 - pW / 2);
+            let x2 = x1 + pW;
+            let xStep = x1 + pwBotLeft;
+            let y1 = Math.round(120 - pH / 2);
+            let yMid = y1 + phLeft;
+            let y2 = y1 + pH;
+
+            let incPoints = `${x1},${y1} ${x2},${y1} ${x2},${y2} ${xStep},${yMid} ${x1},${yMid}`;
+            let cutPoints = `${x1},${yMid} ${xStep},${yMid} ${x2},${y2} ${x1},${y2}`;
+            let fullPoints = `${x1},${y1} ${x2},${y1} ${x2},${y2} ${x1},${y2}`;
+
+            qData.incPoints = incPoints;
+            qData.cutPoints = cutPoints;
+            qData.fullPoints = fullPoints;
+
+            qData.targetCornerSegments = [
+                [x1, yMid, x1, y2],
+                [x1, y2, x2, y2]
+            ];
+            qData.targetBoxSegments = [
+                [x1, y1, x2, y1],
+                [x2, y1, x2, y2],
+                [x2, y2, x1, y2],
+                [x1, y2, x1, y1]
+            ];
+
+            qData.extraSVG = `
+                ${drawRA(x1, y1, 1, 1, "#334155")}
+                ${drawRA(x2, y1, -1, 1, "#334155")}
+                ${drawRA(x1, yMid, 1, -1, "#334155")}
+                ${drawRA(x1, y2, 1, -1, "#ec4899")}
+                <text x="${(x1+x2)/2}" y="${y1 - 8}" text-anchor="middle" class="fill-slate-800">${W}m</text>
+                <text x="${x1 - 8}" y="${(y1+yMid)/2 + 4}" text-anchor="end" class="fill-slate-800">${hLeft}m</text>
+                <text x="${(x1+xStep)/2}" y="${yMid - 6}" text-anchor="middle" class="fill-pink-700">${wBotLeft}m</text>
+                <text x="${x2 + 8}" y="${(y1+y2)/2 + 4}" text-anchor="start" class="fill-slate-800">${H}m</text>
+            `;
+
+            qData.shapeASVG = `
+                <polygon points="${fullPoints}" fill="#fdf4ff" stroke="#ec4899" stroke-width="4" stroke-linejoin="round" />
+                <polygon points="${incPoints}" fill="#bfdbfe" stroke="#2563eb" stroke-width="2" />
+                <polygon points="${cutPoints}" fill="#fbcfe8" stroke="#ec4899" stroke-width="2" stroke-dasharray="4,4" />
+                ${drawRA(x1, y1, 1, 1, "#2563eb")}
+                ${drawRA(x2, y1, -1, 1, "#2563eb")}
+                <text x="${(x1+x2)/2}" y="${y1 - 8}" text-anchor="middle" class="fill-slate-800">${W}m</text>
+                <text x="${x2 + 8}" y="${(y1+y2)/2 + 4}" text-anchor="start" class="fill-slate-800">${H}m</text>
+            `;
+            
+            qData.shapeBSVG = `
+                <polygon points="${cutPoints}" fill="#fbcfe8" stroke="#ec4899" stroke-width="4" stroke-linejoin="round" />
+                ${drawRA(x1, y2, 1, -1, "#ec4899")}
+                <text x="${(x1+xStep)/2}" y="${yMid - 6}" text-anchor="middle" class="fill-pink-800">${wBotLeft}m</text>
+            `;
+
+            let innerSvg = `
+                <g id="layerStep0">
+                    <polygon points="${incPoints}" fill="#ffffff" stroke="#334155" stroke-width="4" stroke-linejoin="round" />
+                    ${qData.extraSVG}
+                    <polygon points="${fullPoints}" fill="none" stroke="#ec4899" stroke-width="3" stroke-dasharray="6,6" class="animate-pulse" />
+                    <path d="M ${x1} ${yMid} L ${x1} ${y2} L ${x2} ${y2}" stroke="#ec4899" stroke-width="4" stroke-dasharray="6,6" fill="none" />
+                </g>
+            `;
+
+            DOM.canvasContent.innerHTML = `
+                <svg viewBox="${VB}" class="w-full h-full drop-shadow-md overflow-visible" id="mainTargetSvg">
+                    ${wrapWithRotation(innerSvg)}
+                </svg>
+            `;
+
+            initOuterTraceInteraction();
+        }
+
+        function buildFillVariant2(W, H, a, b, hc) {
+            let pW = W * 10; let pH = H * 10;
+            let pa = a * 10; let pb = b * 10; let phc = hc * 10;
+            let x1 = Math.round(170 - pW/2);
+            let y1 = Math.round(120 - pH/2);
+            let x2 = x1 + pW;
+            let y2 = y1 + pH;
+            let cx = Math.round((x1 + x2) / 2);
+            let cy = Math.round((y1 + y2) / 2);
+
+            let xb1 = cx - pb/2; let xb2 = cx + pb/2;
+            let xa1 = cx - pa/2; let xa2 = cx + pa/2;
+            let yc = y1 + phc;
+
+            let incPoints = `${x1},${y1} ${xb1},${y1} ${xa1},${yc} ${xa2},${yc} ${xb2},${y1} ${x2},${y1} ${x2},${y2} ${x1},${y2}`;
+            let cutPoints = `${xb1},${y1} ${xb2},${y1} ${xa2},${yc} ${xa1},${yc}`;
+            let fullPoints = `${x1},${y1} ${x2},${y1} ${x2},${y2} ${x1},${y2}`;
+
+            qData.incPoints = incPoints;
+            qData.cutPoints = cutPoints;
+            qData.fullPoints = fullPoints;
+
+            qData.targetCornerSegments = [
+                [xb1, y1, xb2, y1]
+            ];
+            qData.targetBoxSegments = [
+                [x1, y1, x2, y1],
+                [x2, y1, x2, y2],
+                [x2, y2, x1, y2],
+                [x1, y2, x1, y1]
+            ];
+
+            qData.extraSVG = `
+                ${drawRA(x1, y2, 1, -1, "#334155")}
+                <line x1="${xa1}" y1="${y1}" x2="${xa1}" y2="${yc}" stroke="#ec4899" stroke-width="2" stroke-dasharray="3,3" />
+                ${drawRA(xa1, y1, 1, 1, "#ec4899")}
+                <text x="${cx}" y="${y2 + 18}" text-anchor="middle" class="fill-slate-800">${W}m</text>
+                <text x="${x1 - 10}" y="${cy + 4}" text-anchor="end" class="fill-slate-800">${H}m</text>
+                <text x="${cx}" y="${y1 - 8}" text-anchor="middle" class="fill-pink-700">${b}m</text>
+                <text x="${cx}" y="${yc + 16}" text-anchor="middle" class="fill-pink-700">${a}m</text>
+                <text x="${xa1 - 6}" y="${y1 + phc/2 + 4}" text-anchor="end" class="fill-pink-700">${hc}m</text>
+            `;
+
+            qData.shapeASVG = `
+                <polygon points="${fullPoints}" fill="#fdf4ff" stroke="#ec4899" stroke-width="4" stroke-linejoin="round" />
+                <polygon points="${incPoints}" fill="#bfdbfe" stroke="#2563eb" stroke-width="2" />
+                <polygon points="${cutPoints}" fill="#fbcfe8" stroke="#ec4899" stroke-width="2" stroke-dasharray="4,4" />
+                ${drawRA(x1, y2, 1, -1, "#2563eb")}
+                <text x="${cx}" y="${y2 + 18}" text-anchor="middle" class="fill-slate-800">${W}m</text>
+                <text x="${x1 - 10}" y="${cy + 4}" text-anchor="end" class="fill-slate-800">${H}m</text>
+            `;
+
+            qData.shapeBSVG = `
+                <polygon points="${cutPoints}" fill="#fbcfe8" stroke="#ec4899" stroke-width="4" stroke-linejoin="round" />
+                <line x1="${xa1}" y1="${y1}" x2="${xa1}" y2="${yc}" stroke="#ec4899" stroke-width="2" stroke-dasharray="3,3" />
+                ${drawRA(xa1, y1, 1, 1, "#ec4899")}
+                <text x="${cx}" y="${y1 - 8}" text-anchor="middle" class="fill-pink-800">${b}m</text>
+                <text x="${cx}" y="${yc + 16}" text-anchor="middle" class="fill-pink-800">${a}m</text>
+                <text x="${xa1 - 6}" y="${y1 + phc/2 + 4}" text-anchor="end" class="fill-pink-800">${hc}m</text>
+            `;
+
+            let innerSvg = `
+                <g id="layerStep0">
+                    <polygon points="${incPoints}" fill="#ffffff" stroke="#334155" stroke-width="4" stroke-linejoin="round" />
+                    ${qData.extraSVG}
+                    <polygon points="${fullPoints}" fill="none" stroke="#ec4899" stroke-width="3" stroke-dasharray="6,6" class="animate-pulse" />
+                    <path d="M ${xb1} ${y1} L ${xb2} ${y1}" stroke="#ec4899" stroke-width="4" stroke-dasharray="6,6" fill="none" />
+                </g>
+            `;
+
+            DOM.canvasContent.innerHTML = `
+                <svg viewBox="${VB}" class="w-full h-full drop-shadow-md overflow-visible" id="mainTargetSvg">
+                    ${wrapWithRotation(innerSvg)}
+                </svg>
+            `;
+
+            initOuterTraceInteraction();
+        }
+
+        function buildFillVariant3(topW, botW, H, wc, hc) {
+            let pTop = topW * 10; let pBot = botW * 10; let pH = H * 10;
+            let pwc = wc * 10; let phc = hc * 10;
+            let cx = 170;
+            let y1 = Math.round(120 - pH/2);
+            let y2 = y1 + pH;
+            let xTop1 = cx - pTop/2; let xTop2 = cx + pTop/2;
+            let xBot1 = cx - pBot/2; let xBot2 = cx + pBot/2;
+
+            let xc1 = cx - pwc/2; let xc2 = cx + pwc/2;
+            let yc = y2 - phc;
+
+            let incPoints = `${xTop1},${y1} ${xTop2},${y1} ${xBot2},${y2} ${xc2},${y2} ${xc2},${yc} ${xc1},${yc} ${xc1},${y2} ${xBot1},${y2}`;
+            let cutPoints = `${xc1},${yc} ${xc2},${yc} ${xc2},${y2} ${xc1},${y2}`;
+            let fullPoints = `${xTop1},${y1} ${xTop2},${y1} ${xBot2},${y2} ${xBot1},${y2}`;
+
+            qData.topW = topW; qData.botW = botW; qData.H = H; qData.wc = wc; qData.hc = hc;
+            qData.incPoints = incPoints;
+            qData.cutPoints = cutPoints;
+            qData.fullPoints = fullPoints;
+
+            qData.targetCornerSegments = [
+                [xc1, y2, xc2, y2]
+            ];
+            qData.targetBoxSegments = [
+                [xTop1, y1, xTop2, y1],
+                [xTop2, y1, xBot2, y2],
+                [xBot2, y2, xBot1, y2],
+                [xBot1, y2, xTop1, y1]
+            ];
+
+            qData.extraSVG = `
+                <line x1="${xTop1}" y1="${y1}" x2="${xTop1}" y2="${y2}" stroke="#64748b" stroke-width="2" stroke-dasharray="4,4" />
+                ${drawRA(xTop1, y2, 1, -1, "#64748b")}
+                ${drawRA(xc1, yc, 1, 1, "#ec4899")}
+                <text x="${cx}" y="${y1 - 8}" text-anchor="middle" class="fill-slate-800">${topW}m</text>
+                <text x="${xTop1 - 8}" y="${y1 + pH/2 + 4}" text-anchor="end" class="fill-slate-800">${H}m</text>
+                <text x="${cx}" y="${yc - 6}" text-anchor="middle" class="fill-pink-700">${wc}m</text>
+                <text x="${xc2 + 8}" y="${yc + phc/2 + 4}" text-anchor="start" class="fill-pink-700">${hc}m</text>
+                <text x="${cx}" y="${y2 + 18}" text-anchor="middle" class="fill-slate-800">${botW}m</text>
+            `;
+
+            qData.shapeASVG = `
+                <polygon points="${fullPoints}" fill="#fdf4ff" stroke="#ec4899" stroke-width="4" stroke-linejoin="round" />
+                <polygon points="${incPoints}" fill="#bfdbfe" stroke="#2563eb" stroke-width="2" />
+                <polygon points="${cutPoints}" fill="#fbcfe8" stroke="#ec4899" stroke-width="2" stroke-dasharray="4,4" />
+                <line x1="${xTop1}" y1="${y1}" x2="${xTop1}" y2="${y2}" stroke="#2563eb" stroke-width="2" stroke-dasharray="4,4" />
+                ${drawRA(xTop1, y2, 1, -1, "#2563eb")}
+                <text x="${cx}" y="${y1 - 8}" text-anchor="middle" class="fill-slate-800">${topW}m</text>
+                <text x="${xTop1 - 8}" y="${y1 + pH/2 + 4}" text-anchor="end" class="fill-slate-800">${H}m</text>
+                <text x="${cx}" y="${y2 + 18}" text-anchor="middle" class="fill-slate-800">${botW}m</text>
+            `;
+
+            qData.shapeBSVG = `
+                <polygon points="${cutPoints}" fill="#fbcfe8" stroke="#ec4899" stroke-width="4" stroke-linejoin="round" />
+                ${drawRA(xc1, yc, 1, 1, "#ec4899")}
+                <text x="${cx}" y="${yc - 6}" text-anchor="middle" class="fill-pink-800">${wc}m</text>
+                <text x="${xc2 + 8}" y="${yc + phc/2 + 4}" text-anchor="start" class="fill-pink-800">${hc}m</text>
+            `;
+
+            let innerSvg = `
+                <g id="layerStep0">
+                    <polygon points="${incPoints}" fill="#ffffff" stroke="#334155" stroke-width="4" stroke-linejoin="round" />
+                    ${qData.extraSVG}
+                    <polygon points="${fullPoints}" fill="none" stroke="#ec4899" stroke-width="3" stroke-dasharray="6,6" class="animate-pulse" />
+                    <path d="M ${xc1} ${y2} L ${xc2} ${y2}" stroke="#ec4899" stroke-width="4" stroke-dasharray="6,6" fill="none" />
+                </g>
+            `;
+
+            DOM.canvasContent.innerHTML = `
+                <svg viewBox="${VB}" class="w-full h-full drop-shadow-md overflow-visible" id="mainTargetSvg">
+                    ${wrapWithRotation(innerSvg)}
+                </svg>
+            `;
+
+            initOuterTraceInteraction();
+        }
+
+        /* ---------------- 手指劃外圍手勢監聽 (嚴格判定：最多 10% 誤差) ---------------- */
+        function initOuterTraceInteraction() {
+            let isDrawing = false;
+            let allStrokePoints = [];
+            let currentStrokePoints = [];
+
+            DOM.sliceOverlay.classList.remove('hidden');
+            DOM.ninjaTrail.setAttribute('points', '');
+            DOM.ninjaTrail.setAttribute('stroke', '#ec4899');
+            DOM.ninjaTrail.setAttribute('stroke-width', '5');
+            DOM.ninjaTrail.setAttribute('filter', 'drop-shadow(0 0 3px #f472b6)');
+
+            function onDown(e) {
+                if (currentStep !== 0 || currentMode !== 'fill') return;
+                e.preventDefault();
+                if (window.getSelection) { window.getSelection().removeAllRanges(); }
+                isDrawing = true;
+                currentStrokePoints = [];
+                let pt = getSvgPoint(e.clientX, e.clientY);
+                currentStrokePoints.push(pt);
+                updateTrail(e);
+            }
+
+            function onMove(e) {
+                if (!isDrawing) return;
+                e.preventDefault();
+                let pt = getSvgPoint(e.clientX, e.clientY);
+                currentStrokePoints.push(pt);
+                updateTrail(e);
+            }
+
+            function onUp() {
+                if (!isDrawing) return;
+                isDrawing = false;
+                DOM.ninjaTrail.setAttribute('points', '');
+
+                if (currentStrokePoints.length < 3) return;
+                allStrokePoints = allStrokePoints.concat(currentStrokePoints);
+
+                let passCorner = evaluateAgainstTarget(allStrokePoints, qData.targetCornerSegments, 22);
+                let passBox = evaluateAgainstTarget(allStrokePoints, qData.targetBoxSegments, 22);
+
+                if (passCorner || passBox) {
+                    onOuterTraceSuccess();
+                } else {
+                    let strayCount = 0;
+                    for (let i = 0; i < allStrokePoints.length; i++) {
+                        let p = allStrokePoints[i];
+                        let d1 = minDistanceToSegments(p.x, p.y, qData.targetCornerSegments);
+                        let d2 = minDistanceToSegments(p.x, p.y, qData.targetBoxSegments);
+                        if (Math.min(d1, d2) > 22) {
+                            strayCount++;
+                        }
+                    }
+
+                    if (strayCount > allStrokePoints.length * 0.15 || allStrokePoints.length > 35) {
+                        showFeedback('❌ 請緊貼粉紅色虛線劃線喔！（請勿在其他地方亂畫）', false);
+                        allStrokePoints = [];
+                    }
+                }
+            }
+
+            addManagedListener(DOM.interactArea, 'pointerdown', onDown);
+            addManagedListener(DOM.interactArea, 'pointermove', onMove);
+            addManagedListener(window, 'pointerup', onUp);
+            addManagedListener(window, 'pointercancel', onUp);
+
+            function updateTrail(e) {
+                let rect = DOM.sliceOverlay.getBoundingClientRect();
+                let px = e.clientX - rect.left;
+                let py = e.clientY - rect.top;
+                let pts = DOM.ninjaTrail.getAttribute('points');
+                DOM.ninjaTrail.setAttribute('points', pts + ` ${px},${py}`);
+            }
+        }
+
+        function onOuterTraceSuccess() {
+            currentStep = 1;
+            clearActiveListeners();
+            DOM.sliceOverlay.classList.add('hidden');
+
+            const svg = document.getElementById('mainTargetSvg');
+            if (!svg) return;
+
+            let innerFilled = `
+                <polygon points="${qData.incPoints}" fill="#bfdbfe" stroke="#2563eb" stroke-width="3" stroke-linejoin="round" class="animate-pop" />
+                <polygon points="${qData.cutPoints}" fill="#fbcfe8" stroke="#ec4899" stroke-width="3" stroke-linejoin="round" class="animate-pop" />
+                <polygon points="${qData.fullPoints}" fill="none" stroke="#ec4899" stroke-width="4" stroke-linejoin="round" />
+                ${qData.extraSVG}
+            `;
+
+            svg.innerHTML = wrapWithRotation(innerFilled);
+
+            DOM.teacherMsg.innerHTML = `「好犀利！跟著虛線畫好${qData.mainName}並自動填色，一眼就睇到：原圖面積 ＝ ${qData.mainName} ➖ ${qData.subName}！」`;
+            DOM.instructionTxt.innerHTML = `👉 已自動填色！請將「${qData.mainName}」與「${qData.subName}」<strong class='text-pink-600'>拉入</strong>下方算式！`;
+            showFeedback(`✨ 畫得好準確！自動填色完成，原圖（藍色）與${qData.subName}（粉色）一清二楚！`, true);
+
+            setTimeout(function() {
+                setupGraphicEquationStep();
+            }, 500);
+        }
+
+        function setupGraphicEquationStep() {
+            currentStep = 1;
+            DOM.equationArea.classList.remove('opacity-50', 'pointer-events-none');
+            
+            if (currentMode === 'fill') {
+                DOM.instructionTxt.innerHTML = `👉 請將「${qData.mainName}」（整份大圖形）與「${qData.subName}」（粉色部分）<strong class='text-pink-600'>拉入</strong>下方算式！`;
+                DOM.slot1.innerHTML = `<span class="text-sm md:text-base font-black text-purple-600">【 ${qData.mainName} 】</span>`;
+                DOM.eqOperator.innerText = '−';
+                DOM.slot2.innerHTML = `<span class="text-sm md:text-base font-black text-pink-600">【 ${qData.subName} 】</span>`;
+
+                const svg = document.getElementById('mainTargetSvg');
+                let piecesHtml = `
+                    <g id="pieceA" class="svg-piece transition-all cursor-grab hover:brightness-105" title="${qData.mainName}">
+                        <polygon points="${qData.fullPoints}" fill="transparent" pointer-events="all" />
+                        ${qData.shapeASVG}
+                    </g>
+                    <g id="pieceB" class="svg-piece transition-all cursor-grab hover:brightness-105" title="${qData.subName}">
+                        <polygon points="${qData.cutPoints}" fill="transparent" pointer-events="all" />
+                        ${qData.shapeBSVG}
+                    </g>
+                `;
+                svg.innerHTML = wrapWithRotation(piecesHtml);
+            } else {
+                DOM.instructionTxt.innerHTML = "👉 成功分割！請直接點選上方圖形，<strong class='text-blue-600'>拉入</strong>下方的算式框框！";
+            }
+
+            ['pieceA', 'pieceB', 'pieceC'].forEach(function(id) {
+                let el = document.getElementById(id);
+                if(el) {
+                    el.classList.add('hover:brightness-110');
+                    let key = id.replace('piece', '');
+                    makeDraggableToSlot(el, key, qData[`shape${key}SVG`]);
+                }
+            });
+        }
+
+        function makeDraggableToSlot(el, pieceId, svgContent) {
+            let isDragging = false;
+            let clone = null;
+            let startX, startY;
+
+            el.addEventListener('pointerdown', function(e) {
+                if(currentStep !== 1 || el.dataset.dropped) return;
+                e.preventDefault();
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                
+                el.classList.add('brightness-110');
+
+                let bbox = el.getBBox();
+                let pad = 24; 
+                let tightViewBox = `${bbox.x - pad} ${bbox.y - pad} ${bbox.width + pad*2} ${bbox.height + pad*2}`;
+                let cx = bbox.x + bbox.width / 2;
+                let cy = bbox.y + bbox.height / 2;
+                let processedSvg = uprightText(svgContent);
+                let rotAttr = qData.rotAngle ? `transform="rotate(${qData.rotAngle}, ${cx}, ${cy})"` : '';
+
+                clone = document.createElement('div');
+                clone.className = "fixed z-50 pointer-events-none drop-shadow-2xl opacity-90 w-28 h-28 md:w-36 md:h-36 flex items-center justify-center bg-white border-4 border-indigo-200 rounded-2xl";
+                clone.innerHTML = `<svg viewBox="${tightViewBox}" class="w-full h-full p-2 overflow-visible"><g ${rotAttr}>${processedSvg}</g></svg>`;
+                document.body.appendChild(clone);
+
+                function moveClone(x, y) {
+                    let rect = clone.getBoundingClientRect();
+                    clone.style.left = (x - rect.width/2) + 'px';
+                    clone.style.top = (y - rect.height/2) + 'px';
+                }
+                moveClone(e.clientX, e.clientY);
+
+                function onMove(ev) { if(isDragging) moveClone(ev.clientX, ev.clientY); }
+
+                function onUp(ev) {
+                    if(!isDragging) return;
+                    isDragging = false;
+                    window.removeEventListener('pointermove', onMove);
+                    window.removeEventListener('pointerup', onUp);
+                    window.removeEventListener('pointercancel', onUp);
+                    if (clone && clone.remove) clone.remove();
+                    el.classList.remove('brightness-110');
+
+                    let dist = Math.hypot(ev.clientX - startX, ev.clientY - startY);
+                    let isClick = dist < 15;
+
+                    let dropped = false;
+                    let slotList = qData.numPieces === 3 ? ['slot1', 'slot2', 'slot3'] : ['slot1', 'slot2'];
+
+                    slotList.forEach(function(slotId) {
+                        let slot = document.getElementById(slotId);
+                        if (!slot.dataset.filled && !dropped) {
+                            let rect = slot.getBoundingClientRect();
+                            let isOverSlot = (ev.clientX >= rect.left && ev.clientX <= rect.right &&
+                                              ev.clientY >= rect.top && ev.clientY <= rect.bottom);
+                            
+                            let shouldDrop = isOverSlot;
+                            if (currentMode === 'fill') {
+                                if (isClick) {
+                                    if (pieceId === 'A' && slotId === 'slot1') shouldDrop = true;
+                                    if (pieceId === 'B' && slotId === 'slot2') shouldDrop = true;
+                                }
+                                if (isOverSlot) {
+                                    if (pieceId === 'B' && slotId === 'slot1') {
+                                        showFeedback(`⚠️ 填補法要用「${qData.mainName}」減去「${qData.subName}」，請將${qData.mainName}放在第一個框！`, false);
+                                        return;
+                                    }
+                                    if (pieceId === 'A' && slotId === 'slot2') {
+                                        showFeedback(`⚠️ 填補法要用「${qData.mainName}」減去「${qData.subName}」，請將${qData.subName}放在第二個框！`, false);
+                                        return;
+                                    }
+                                }
+                            } else {
+                                if (isClick) shouldDrop = true;
+                            }
+
+                            if (shouldDrop) {
+                                slot.dataset.filled = pieceId;
+                                slot.innerHTML = `<svg viewBox="${tightViewBox}" class="w-full h-full p-2 pointer-events-none overflow-visible"><g ${rotAttr}>${processedSvg}</g></svg>`;
+                                slot.classList.remove('border-dashed');
+                                slot.classList.add('border-solid');
+
+                                el.dataset.dropped = 'true';
+                                el.classList.add('opacity-40');
+                                el.style.pointerEvents = 'none';
+                                dropped = true;
+                                checkStep1Complete();
+                            }
+                        }
+                    });
+                }
+
+                window.addEventListener('pointermove', onMove);
+                window.addEventListener('pointerup', onUp);
+                window.addEventListener('pointercancel', onUp);
+            });
+        }
+
+        function checkStep1Complete() {
+            let allFilled = DOM.slot1.dataset.filled && DOM.slot2.dataset.filled && (qData.numPieces !== 3 || DOM.slot3.dataset.filled);
+            if (allFilled) {
+                currentStep = 2;
+                
+                qData.ansEq1 = qData['shape' + DOM.slot1.dataset.filled].eqs;
+                qData.ansEq2 = qData['shape' + DOM.slot2.dataset.filled].eqs;
+                qData.ansArea1 = qData['shape' + DOM.slot1.dataset.filled].area;
+                qData.ansArea2 = qData['shape' + DOM.slot2.dataset.filled].area;
+                if (qData.numPieces === 3) {
+                    qData.ansEq3 = qData['shape' + DOM.slot3.dataset.filled].eqs;
+                    qData.ansArea3 = qData['shape' + DOM.slot3.dataset.filled].area;
+                    DOM.opNumeric2.classList.remove('hidden');
+                    DOM.inpEq3.classList.remove('hidden');
+                }
+                
+                DOM.numericRow.classList.remove('hidden');
+                DOM.numericRow.classList.add('flex', 'animate-pop');
+                
+                if (currentMode === 'fill') {
+                    DOM.instructionTxt.innerHTML = `👉 配對成功！請在下方輸入「${qData.mainName}」與「${qData.subName}」的算式。`;
+                } else {
+                    DOM.instructionTxt.innerHTML = "👉 圖形配對成功！請觀察原圖的尺寸，在下方輸入對應的<strong class='text-blue-600'>數字算式</strong>。";
+                }
+                
+                DOM.numpad.classList.remove('opacity-50', 'pointer-events-none');
+                DOM.submitBtn.classList.remove('opacity-50', 'pointer-events-none');
+                setActiveInput(DOM.inpEq1);
+            }
+        }
+
+        function setActiveInput(el) {
+            if (activeInput) activeInput.classList.remove('active-cell');
+            activeInput = el;
+            if (activeInput) {
+                activeInput.classList.add('active-cell');
+                activeInput.classList.remove('incorrect');
+            }
+        }
+
+        function handleNumpad(key) {
+            if (!activeInput) return;
+            let val = activeInput.innerText;
+            if (key === 'Backspace') {
+                activeInput.innerText = val.slice(0, -1);
+            } else {
+                if (val.length < 18) activeInput.innerText += key;
+            }
+        }
+
+        // 支援實體鍵盤輸入
+        window.addEventListener('keydown', function(e) {
+            if (currentStep < 2) return;
+            if (e.key >= '0' && e.key <= '9') {
+                handleNumpad(e.key);
+            } else if (e.key === '+' || e.key === '-' || e.key === '(' || e.key === ')' || e.key === '.') {
+                handleNumpad(e.key);
+            } else if (e.key === '*') {
+                handleNumpad('×');
+            } else if (e.key === '/') {
+                e.preventDefault();
+                handleNumpad('÷');
+            } else if (e.key === 'Backspace') {
+                handleNumpad('Backspace');
+            } else if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        function showFeedback(html, isSuccess) {
+            DOM.feedback.innerHTML = html;
+            DOM.feedback.style.opacity = html ? 1 : 0;
+            if(html) {
+                DOM.feedback.className = `min-h-[48px] text-center text-sm md:text-base font-bold transition-all p-2 rounded-xl mt-2 flex items-center justify-center w-full ${isSuccess ? 'bg-green-100 text-green-700 border-2 border-green-300 shadow-sm' : 'bg-red-100 text-red-700 border-2 border-red-300 animate-shake shadow-sm'}`;
+            }
+        }
+
+        function checkAnswer() {
+            if (currentStep === 2) {
+                let v1 = DOM.inpEq1.innerText.trim().replace(/\s+/g, '');
+                let v2 = DOM.inpEq2.innerText.trim().replace(/\s+/g, '');
+                let eq1Valid = qData.ansEq1.includes(v1);
+                let eq2Valid = qData.ansEq2.includes(v2);
+                let eq3Valid = true;
+
+                DOM.inpEq1.classList.toggle('correct', eq1Valid);
+                DOM.inpEq1.classList.toggle('incorrect', !eq1Valid);
+                DOM.inpEq2.classList.toggle('correct', eq2Valid);
+                DOM.inpEq2.classList.toggle('incorrect', !eq2Valid);
+
+                if (qData.numPieces === 3) {
+                    let v3 = DOM.inpEq3.innerText.trim().replace(/\s+/g, '');
+                    eq3Valid = qData.ansEq3.includes(v3);
+                    DOM.inpEq3.classList.toggle('correct', eq3Valid);
+                    DOM.inpEq3.classList.toggle('incorrect', !eq3Valid);
+                }
+                
+                if (eq1Valid && eq2Valid && eq3Valid) {
+                    currentStep = 2.5;
+                    if (qData.numPieces === 3) {
+                        DOM.opSubArea2.classList.remove('hidden');
+                        DOM.inpArea3.classList.remove('hidden');
+                    }
+                    DOM.subAreaRow.classList.remove('hidden');
+                    DOM.subAreaRow.classList.add('flex', 'animate-pop');
+                    DOM.submitBtn.innerText = "提交各部分面積 ✨";
+                    DOM.instructionTxt.innerHTML = "👉 算式正確！請先計算並填上<strong class='text-purple-600'>各圖形的面積</strong>。";
+                    setActiveInput(DOM.inpArea1);
+                    showFeedback('✅ 算式完全正確！接著請算出每個圖形各自的面積。', true);
+                } else {
+                    let hint = currentMode === 'split' ? '加法' : `減法（${qData.mainName} ➖ ${qData.subName}）`;
+                    showFeedback(`❌ 算式有誤，記得呢個係${hint}，並仔細睇旋轉後圖形的底同高！`, false);
+                    if (!eq1Valid) setActiveInput(DOM.inpEq1);
+                    else if (!eq2Valid) setActiveInput(DOM.inpEq2);
+                    else if (!eq3Valid) setActiveInput(DOM.inpEq3);
+                }
+            } else if (currentStep === 2.5) {
+                let a1 = parseFloat(DOM.inpArea1.innerText.trim());
+                let a2 = parseFloat(DOM.inpArea2.innerText.trim());
+                let a1Valid = (a1 === qData.ansArea1);
+                let a2Valid = (a2 === qData.ansArea2);
+                let a3Valid = true;
+
+                DOM.inpArea1.classList.toggle('correct', a1Valid);
+                DOM.inpArea1.classList.toggle('incorrect', !a1Valid);
+                DOM.inpArea2.classList.toggle('correct', a2Valid);
+                DOM.inpArea2.classList.toggle('incorrect', !a2Valid);
+
+                if (qData.numPieces === 3) {
+                    let a3 = parseFloat(DOM.inpArea3.innerText.trim());
+                    a3Valid = (a3 === qData.ansArea3);
+                    DOM.inpArea3.classList.toggle('correct', a3Valid);
+                    DOM.inpArea3.classList.toggle('incorrect', !a3Valid);
+                }
+
+                if (a1Valid && a2Valid && a3Valid) {
+                    currentStep = 3;
+                    DOM.ansRow.classList.remove('hidden');
+                    DOM.ansRow.classList.add('flex', 'animate-pop');
+                    DOM.submitBtn.innerText = "提交總面積 ✨";
+                    DOM.submitBtn.classList.replace('bg-green-500', 'bg-blue-500');
+                    DOM.submitBtn.classList.replace('border-green-600', 'border-blue-600');
+                    DOM.instructionTxt.innerHTML = "👉 各部分面積正確！最後，請計算出<strong class='text-blue-600'>總面積</strong>。";
+                    setActiveInput(DOM.inpAns);
+                    showFeedback('✅ 各圖形面積完全正確！最後一步計埋總面積啦！', true);
+                } else {
+                    showFeedback('❌ 某個部分圖形的面積計錯咗，請檢查上面對應的算式再計一次！', false);
+                    if (!a1Valid) setActiveInput(DOM.inpArea1);
+                    else if (!a2Valid) setActiveInput(DOM.inpArea2);
+                    else if (!a3Valid) setActiveInput(DOM.inpArea3);
+                }
+            } else if (currentStep === 3) {
+                let ansVal = parseFloat(DOM.inpAns.innerText.trim());
+                if (ansVal === qData.area) {
+                    DOM.inpAns.classList.add('correct');
+                    score += 10;
+                    DOM.scoreDisplay.innerText = score;
+                    DOM.submitBtn.classList.add('hidden');
+                    DOM.nextBtn.classList.remove('hidden');
+                    DOM.numpad.classList.add('opacity-50', 'pointer-events-none');
+                    setActiveInput(null);
+                    showFeedback('🎉 太棒了！面積計算完全正確！', true);
+                } else {
+                    DOM.inpAns.classList.add('incorrect');
+                    showFeedback('❌ 總面積計錯咗，慢慢加/減多次！', false);
+                }
+            }
+        }
+
+        // Init
+        switchMode('split');
+    </script>
+</body>
+</html>
