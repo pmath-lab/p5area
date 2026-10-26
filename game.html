@@ -57,7 +57,6 @@
             font-size: 14px !important;
         }
 
-        /* STREAMING_CHUNK:Configuring animations... */
         @keyframes float {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-12px); }
@@ -227,7 +226,6 @@
             40% { opacity: 0; } 50% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; }
         }
 
-        /* STREAMING_CHUNK:Styling buttons and utilities... */
         .btn-game { box-shadow: 0 4px 0 rgba(0,0,0,0.3); transition: all 0.1s; }
         .btn-game:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 0px 0 rgba(0,0,0,0.3); }
         .btn-game:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -258,7 +256,6 @@
 
 <div id="game-container" class="game-container w-full h-full max-h-[100dvh] flex flex-col justify-between relative overflow-hidden border-0">
         
-        <!-- STREAMING_CHUNK:Mode Selection Screen... -->
         <!-- 模式選擇畫面 -->
         <div id="mode-screen" class="p-4 sm:p-6 text-center bg-green-50 flex-1 flex flex-col justify-center items-center overflow-y-auto z-50 absolute inset-0">
             <button onclick="window.toggleFullscreen()" class="absolute top-4 right-4 bg-white/90 hover:bg-white text-gray-700 hover:text-black font-black text-xs sm:text-sm px-3 py-1.5 rounded-xl border-2 border-gray-400 shadow-md flex items-center gap-1.5 z-50 transition-all hover:scale-105 active:scale-95">
@@ -278,7 +275,6 @@
             <p class="mt-8 text-gray-500 font-bold text-sm">請選擇遊玩模式</p>
         </div>
 
-        <!-- STREAMING_CHUNK:Building Login layer... -->
         <!-- 登入畫面 (單人專用) -->
         <div id="login-screen" class="hidden p-4 sm:p-6 text-center bg-green-50 flex-1 flex flex-col justify-center items-center overflow-y-auto z-50 absolute inset-0">
             <h2 onclick="window.revealTestAccount()" class="text-3xl sm:text-4xl font-black text-gray-800 mb-6 drop-shadow-sm flex items-center gap-2 select-none cursor-pointer" title="單人冒險登入">
@@ -327,7 +323,6 @@
 
         <div id="encounter-overlay" class="hidden absolute inset-0 z-50 pointer-events-none"></div>
 
-        <!-- STREAMING_CHUNK:Header & Message Box... -->
         <header id="game-header" class="hidden bg-red-600 text-white p-2 sm:p-3 border-b-4 border-red-800 flex justify-between items-center relative z-20 flex-none">
             <h1 class="text-lg sm:text-xl font-black tracking-wider flex items-center gap-1 sm:gap-2 text-shadow">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
@@ -346,7 +341,6 @@
             出現了！請在右方列出圖形的面積算式！
         </div>
 
-        <!-- STREAMING_CHUNK:Start screen... -->
         <div id="start-screen" class="hidden p-4 sm:p-6 text-center bg-green-50 flex-1 flex flex-col justify-center items-center overflow-y-auto z-50 absolute inset-0">
             <h2 class="text-3xl sm:text-4xl font-black text-gray-800 mb-4 sm:mb-6 drop-shadow-sm">寶可夢面積對戰！</h2>
             <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border-4 border-gray-300 max-w-lg mb-6 w-full">
@@ -385,7 +379,6 @@
             </div>
         </div>
 
-        <!-- STREAMING_CHUNK:Battle scene layout... -->
         <!-- 遊戲對戰畫面 -->
         <div id="battle-screen" class="hidden relative flex-1 flex flex-col min-h-0 overflow-hidden bg-gray-900">
             
@@ -423,12 +416,10 @@
                 </div>
 
                 <!-- 單人專屬：左下角資訊與正下方背影 -->
-                <!-- 單人專屬：左下角資訊與正下方背影 -->
                 <div class="single-player-element absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-30 flex flex-col items-end gap-1.5 pointer-events-auto">
                     <!-- 單人模式3隻POKEMON隊伍圈圈 (顯示在 player-box 上方紅圈位置，攻擊時保持固定不隨精靈移動) -->
                     <div id="player-party" class="flex gap-1.5 sm:gap-2 justify-end items-center w-full z-30 pointer-events-auto mb-0.5"></div>
                     <div id="player-box" class="bg-white/95 p-1.5 sm:p-2.5 rounded-lg shadow-md border-2 border-gray-400 min-w-[140px] sm:min-w-[180px]">
-
                         <div class="flex justify-between font-black text-xs sm:text-sm mb-1 text-blue-800">
                             <span id="player-name">寶可夢</span><span>Lv.50</span>
                         </div>
@@ -481,7 +472,6 @@
 
             </div>
 
-            <!-- STREAMING_CHUNK:Control Panel (Keypad & Formula)... -->
             <!-- 單人操作區 (下半部) -->
             <div id="single-bottom-panel" class="bg-gray-300 p-1.5 sm:p-3 flex-none z-10 flex flex-row items-stretch gap-1.5 sm:gap-3 h-48 sm:h-56 border-t-4 border-gray-800">
                 <div class="w-1/2 flex flex-col bg-gray-800 p-1.5 sm:p-2 rounded-xl border-2 border-gray-900 shadow-inner">
@@ -525,14 +515,12 @@
                 </div>
             </div>
 
-            <!-- STREAMING_CHUNK:Multiplayer Panel... -->
             <!-- 四人操作區 (下半部：玩家1放最左、玩家4放最右、玩家2和3平均間距居中) -->
             <div id="multi-bottom-panel" class="hidden bg-gray-800 px-1 sm:px-2 md:px-3 py-1.5 sm:py-2 flex-none z-10 flex flex-row items-stretch justify-between gap-1.5 sm:gap-2.5 md:gap-4 h-56 sm:h-64 w-full pt-6 sm:pt-8 border-t-4 border-gray-900">
                 <!-- 透過 JS 自動生成 4 個玩家區塊 -->
             </div>
         </div>
 
-        <!-- STREAMING_CHUNK:Evolution and End screens... -->
         <div id="evolution-screen" class="hidden absolute inset-0 z-[60] bg-black flex flex-col items-center justify-center">
             <h2 id="evo-message" class="text-xl sm:text-3xl font-black text-white mb-12 text-center animate-pulse px-4">什麼？樣子有點奇怪...</h2>
             <div class="relative flex justify-center items-center h-48 w-48 sm:h-64 sm:w-64 mb-8">
@@ -564,7 +552,6 @@
     </div>
 
     <script>
-        /* STREAMING_CHUNK:Initializing state and variables... */
         const GAS_URL = "https://script.google.com/macros/s/AKfycbyeyJBY7QLcF_qZMpvh3JQrgXn03xxPeJ054ImJob2pjmhXkvsxjEwVEKkkrHWoaT8_ng/exec";
         
         // 單人模式班級選項（隱藏測試選項，預設不顯示給學生）
@@ -658,7 +645,7 @@
             [5,"火恐龍","噴火龍",118,64,58,80,65],
             [6,"噴火龍",null,138,84,78,109,85],
             [7,"車厘龜","卡咪龜",104,48,65,50,64],
-[8,"卡咪龜","水箭龜",119,63,80,65,80],
+            [8,"卡咪龜","水箭龜",119,63,80,65,80],
             [9,"水箭龜",null,139,83,100,85,105],
             [10,"綠毛蟲","鐵甲蛹",105,30,35,20,20],
             [11,"鐵甲蛹","巴大蝶",110,20,55,25,25],
@@ -816,9 +803,9 @@
             "乘龍": "拉普拉斯", "3D龍": "多邊獸", "超夢夢": "超夢", "無極汰那": "無極汰那 (極巨大化)"
         };
 
-// 自動建立完整 pokemonData 結構 (相容 starters, stage3_form1, stage2_form1, final_forms, legendary, evolutions)
-const pokemonData = {
-starters: [],
+        // 自動建立完整 pokemonData 結構 (相容 starters, stage3_form1, stage2_form1, final_forms, legendary, evolutions)
+        const pokemonData = {
+            starters: [],
             stage3_form1: [],
             stage2_form1: [], // 進階形態與強力的單階形態寶可夢 (36隻)
             final_forms: [],  // 最終進化形態寶可夢 (56隻)
@@ -868,11 +855,10 @@ starters: [],
                 if (allEvolvedIds.includes(id)) {
                     pokemonData.evolutions[name] = pkm;
                 }
-});
-})();
+            });
+        })();
 
         pokemonData.starter = pokemonData.starters;
-
 
         // 全域圖片防破圖與 CDN 自動備援機制
         window.handleImageError = function(img) {
@@ -952,9 +938,9 @@ starters: [],
             let pool = pokemonData.starters || pokemonData.starter || [];
             return JSON.parse(JSON.stringify(pool[0]));
         };
+
         window.resizeGame = function() {
             const container = document.getElementById('game-container') || document.getElementById('game-app');
-            if (!container) return;
             if (!container) return;
             container.style.border = 'none';
             container.style.outline = 'none';
@@ -976,12 +962,6 @@ starters: [],
                 container.style.width = `${newW}px`;
                 container.style.height = `${newH}px`;
             }
-
-
-
-
-
-
         };
         window.addEventListener('resize', window.resizeGame);
 
@@ -1501,7 +1481,6 @@ starters: [],
                     let hpColorClass = hpPerc > 50 
                         ? 'bg-green-200/70 border-r-2 border-green-400' 
                         : (hpPerc > 25 ? 'bg-yellow-200/70 border-r-2 border-yellow-400' : 'bg-red-200/70 border-r-2 border-red-400');
-                    let hpTextColor = hpPerc > 50 ? 'text-green-700' : (hpPerc > 25 ? 'text-yellow-700' : 'text-red-700');
 
                     html = `
                     <div id="multi-panel-${i}" class="flex-1 flex flex-col bg-white rounded-lg p-1 sm:p-1.5 border-4 ${c.border} shadow-sm transition-colors relative justify-between">
@@ -1558,7 +1537,6 @@ starters: [],
             });
 
             spritesContainer.innerHTML = totalSpritesHtml;
-            spritesContainer.innerHTML = totalSpritesHtml;
             elements.multiBottomPanel.innerHTML = totalBottomHtml;
             if (window.syncMultiLoginExcelState) window.syncMultiLoginExcelState();
 
@@ -1570,7 +1548,6 @@ starters: [],
                 });
             }, 50);
         };
-
 
         window.multiPlayerLogin = async function(index) {
             let classVal = document.getElementById(`multi-login-class-${index}`).value;
@@ -1717,6 +1694,7 @@ starters: [],
                 }, 300);
             }
         };
+
         window.updateMultiDisplay = function(pIndex) {
             let p = multiPlayers[pIndex];
             if (!p || !p.isLoggedIn || p.isDefeated) return;
@@ -1774,10 +1752,9 @@ starters: [],
             if (!p.isLoggedIn || p.phase === 3 || p.isDefeated) return; 
             if (val === 'DEL') {
                 if (p.phase === 2) {
+                    // 修正：進入第二階段（計算答案）後，只允許退格答案數字，不能把「=」退格退回第一階段
                     if (p.answer && p.answer.length > 0) {
                         p.answer = p.answer.slice(0, -1);
-                    } else {
-                        p.phase = 1;
                     }
                 } else if (p.phase === 1) {
                     if (p.formula && p.formula.length > 0) {
@@ -1989,11 +1966,13 @@ starters: [],
                         panel.classList.add('bg-green-100');
                         setTimeout(() => panel.classList.remove('bg-green-100'), 400);
                     }
-                    // 學生列式正確時讓 POKEMON 進行攻擊 (累積傷害)
-                    // 學生列式正確時讓 POKEMON 進行攻擊 (累積傷害)
-                    p.isAttacking = true;
-                    window.multiPlayerAttack(pIndex, 10);
-                    setTimeout(function() { p.isAttacking = false; }, 600);
+                    // 學生列式正確時讓 POKEMON 進行攻擊 (累積傷害)，並鎖定該題已發動過列式攻擊
+                    if (!p.formulaAttacked) {
+                        p.formulaAttacked = true;
+                        p.isAttacking = true;
+                        window.multiPlayerAttack(pIndex, 10);
+                        setTimeout(function() { p.isAttacking = false; }, 600);
+                    }
                 } else {
                     let hint = "";
                     if (p.question.type === 0) hint = "底 × 高";
@@ -2034,6 +2013,7 @@ starters: [],
                             p.formula = '';
                             p.answer = '';
                             p.phase = 1;
+                            p.formulaAttacked = false;
                             p.isAttacking = false;
                             window.updateMultiDisplay(pIndex);
                         }
@@ -2148,7 +2128,7 @@ starters: [],
             
             window.showScreen('multiEnd');
         };
-        // 讀取本地寶可夢存檔資料
+
         // 讀取本地寶可夢存檔資料
         window.loadLocalPlayerData = function(studentId) {
             try {
@@ -2170,6 +2150,7 @@ starters: [],
             }
             return null;
         };
+
         // 將存檔資料套用至遊戲狀態
         window.applyLoadedPlayerData = function(savedData) {
             if (!savedData) return false;
@@ -2219,6 +2200,7 @@ starters: [],
                 : 0;
             return playerParty.length > 0;
         };
+
         // 進入單人對戰畫面之統一介面初始化
         window.enterSingleGameScene = function() {
             if (window.stopMultiTimer) window.stopMultiTimer();
@@ -2669,7 +2651,6 @@ starters: [],
             drawText(q.side1 + " " + u, midSlantX + normX * distOffset, midSlantY + normY * distOffset);
         };
 
-        /* STREAMING_CHUNK:Question Generation and Canvas Logic... */
         window.rand = function(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
         window.generateAreaQuestion = function() {
             let type = window.rand(0, 2);
@@ -2876,7 +2857,6 @@ starters: [],
             ctx.restore();
         };
 
-        /* STREAMING_CHUNK:Single Player Logic... */
         window.numpadPress = function(val) {
             if (currentPhase === 1) {
                 if (val === 'DEL') playerFormulaStr = playerFormulaStr.slice(0, -1);
@@ -2936,7 +2916,6 @@ starters: [],
             return { valid: true, msg: "正確！" };
         };
 
-
         window.recordAttempt = function(isCorrect) {
             const types = ['parallelogram', 'triangle', 'trapezoid'];
             const typeKey = types[currentQuestion.type];
@@ -2948,7 +2927,6 @@ starters: [],
             }
             window.savePlayerData();
         };
-
 
         window.isSingleAttacking = false;
 
@@ -2979,9 +2957,6 @@ starters: [],
                 else if(currentQuestion.type === 1) hint = "底 × 高 ÷ 2";
                 else if(currentQuestion.type === 2) hint = "(上底+下底) × 高 ÷ 2";
                 if (window.updateSingleAreaLabelsAndHint) window.updateSingleAreaLabelsAndHint(`💡 正確公式：${hint}`);
-                if(currentQuestion.type === 0) hint = "底 × 高";
-                else if(currentQuestion.type === 1) hint = "底 × 高 ÷ 2";
-                else if(currentQuestion.type === 2) hint = "(上底+下底) × 高 ÷ 2";
                 window.handleWrongAnswer(`${res.msg} <span class="text-blue-700 text-xs sm:text-sm ml-1">公式: ${hint}</span>`, 1); 
             }
         };
@@ -3093,13 +3068,10 @@ starters: [],
             } else {
                 const rand = Math.random();
                 if (score < 8) {
-                    // < 8：100% 遭遇各類一階基礎形態寶可夢
                     pool = pokemonData.stage3_form1;
                 } else if (score < 16) {
-                    // 8 ~ 15：40% 遭遇進階形態與強力的單階形態寶可夢，60% 遭遇各類一階基礎形態寶可夢
                     pool = (rand < 0.40) ? pokemonData.stage2_form1 : pokemonData.stage3_form1;
                 } else {
-                    // >= 16：1% 遭遇神獸系列，5% 遭遇最終進化形態，40% 遭遇進階形態與強力的單階形態，54% 遭遇各類一階基礎形態
                     if (rand < 0.01) {
                         pool = pokemonData.legendary;
                     } else if (rand < 0.06) {
@@ -3194,7 +3166,6 @@ starters: [],
         window.generateNewTurn = function(newQuestion = true) {
             currentPhase = 1; 
             window.isSingleAttacking = false;
-            currentPhase = 1; 
             if (gameMode === 'single') {
                 playerFormulaStr = ""; playerAnswerStr = "";
                 elements.formulaDisplay.innerText = ""; elements.answerDisplay.innerText = "";
@@ -3231,7 +3202,6 @@ starters: [],
 
         window.processEvolutions = function(callback) {
             evolutionQueue = [];
-            // 單人模式：取消固定關數進化，改為每次打完一隻POKEMON後有15%機率有一隻POKEMON進化
             if (Math.random() < 0.15) {
                 let candidates = [];
                 for (let i = 0; i < playerParty.length; i++) {
@@ -3309,14 +3279,11 @@ starters: [],
             const rand = Math.random();
             let selectedPool;
             if (Math.min(encCount, 4) === encCount) {
-                // 登入後單次野生遭遇次數未滿 5 次：100% 遭遇各類一階基礎形態寶可夢
                 selectedPool = pokemonData.stage3_form1;
             } else if (Math.min(encCount, 9) === encCount) {
-                // 登入後單次野生遭遇次數 5 ~ 10 次：40% 遭遇第二進階形態與強力的單階形態，60% 遭遇一階基礎形態
                 const hitStage2 = (Math.min(rand, 0.40) === rand && rand !== 0.40);
                 selectedPool = hitStage2 ? pokemonData.stage2_form1 : pokemonData.stage3_form1;
             } else {
-                // 登入後單次野生遭遇次數達 10 次或以上：1% 神獸系列，5% 最終進化形態，40% 第二進階與強力的單階形態，54% 一階基礎形態
                 if (Math.min(rand, 0.01) === rand && rand !== 0.01) {
                     selectedPool = pokemonData.legendary;
                 } else if (Math.min(rand, 0.06) === rand && rand !== 0.06) {
@@ -3385,7 +3352,6 @@ starters: [],
             setTimeout(() => { elements.overlay.classList.remove('animate-encounter'); elements.overlay.classList.add('hidden'); }, 2200);
         };
 
-        /* STREAMING_CHUNK:Game flow logic... */
         window.executeWildPokemonAttack = function(returnPhase = 1) {
             if (gameMode === 'multi') return; 
             
@@ -3446,7 +3412,6 @@ starters: [],
         window.resumeTurn = function(phase) {
             currentPhase = phase;
             window.isSingleAttacking = false;
-            currentPhase = phase;
             if (phase === 1) {
                 playerFormulaStr = ""; playerAnswerStr = "";
                 elements.formulaDisplay.innerText = ""; elements.answerDisplay.innerText = "";
@@ -3561,6 +3526,3 @@ starters: [],
     </script>
 </body>
 </html>
-
-
-
