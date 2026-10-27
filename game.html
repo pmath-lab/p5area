@@ -339,11 +339,6 @@
             </div>
         </header>
 
-        <!-- 提示框置頂 -->
-        <div id="message-box" class="hidden bg-white border-b-4 border-gray-800 p-1 sm:p-2 text-xs sm:text-sm md:text-base font-black flex items-center justify-center text-center text-gray-800 shadow-md h-8 sm:h-10 z-20 flex-none w-full">
-            出現了！請在右方列出圖形的面積算式！
-        </div>
-
         <div id="start-screen" class="hidden p-4 sm:p-6 text-center bg-green-50 flex-1 flex flex-col justify-center items-center overflow-y-auto z-50 absolute inset-0">
             <h2 class="text-3xl sm:text-4xl font-black text-gray-800 mb-4 sm:mb-6 drop-shadow-sm">寶可夢面積對戰！</h2>
             <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-lg border-4 border-gray-300 max-w-lg mb-6 w-full">
@@ -516,8 +511,13 @@
 
             </div>
 
+            <!-- 提示框置頂 (已移動至作答區正上方) -->
+            <div id="message-box" class="hidden bg-white border-y-4 border-gray-800 p-1.5 sm:p-2.5 text-sm sm:text-base font-black flex items-center justify-center text-center text-gray-800 shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.15)] z-30 flex-none w-full relative">
+                出現了！請在右方列出圖形的面積算式！
+            </div>
+
             <!-- 單人操作區 (下半部) -->
-            <div id="single-bottom-panel" class="bg-gray-300 p-1.5 sm:p-3 flex-none z-10 flex flex-row items-stretch gap-1.5 sm:gap-3 h-48 sm:h-56 border-t-4 border-gray-800">
+            <div id="single-bottom-panel" class="bg-gray-300 p-1.5 sm:p-3 flex-none z-10 flex flex-row items-stretch gap-1.5 sm:gap-3 h-48 sm:h-56 border-t-0 border-gray-800">
                 <div class="w-1/2 flex flex-col bg-gray-800 p-1.5 sm:p-2 rounded-xl border-2 border-gray-900 shadow-inner">
                     <div class="grid grid-cols-4 grid-rows-4 gap-1 sm:gap-1.5 flex-1 h-full w-full">
                         <button onclick="window.numpadPress('1')" class="bg-white rounded text-sm sm:text-lg font-black text-gray-800 shadow-[0_3px_0_#d1d5db] active:translate-y-[3px] active:shadow-none transition-all select-none">1</button>
@@ -3875,12 +3875,10 @@
             if (polyStep === 1) {
                 let res = window.validatePolygonStep1CombinedFormula(polyInputs.step1, q);
                 if (res.valid) {
-                    window.isSingleAttacking = true;
                     polyStep = 2;
                     window.updatePolygonUI();
-                    elements.messageBox.innerHTML = `<span class="text-green-600 font-black">步驟① 列式正確！發動第一波攻勢！</span> 請寫出步驟②：圖形A答案 ${opSymbol} 圖形B答案！`;
-                    window.attackPokemon(0.35, false);
-                    setTimeout(() => { window.isSingleAttacking = false; }, 600);
+                    elements.messageBox.innerHTML = `<span class="text-green-600 font-black">步驟① 列式正確！</span> 請寫出步驟②：圖形A答案 ${opSymbol} 圖形B答案！`;
+                    // 移除第一波攻勢，直接進入下一步計算
                 } else {
                     polyStats[methodKey].step1++; // 紀錄步驟1答錯次數
                     window.isSingleAttacking = true;
@@ -3889,12 +3887,10 @@
             } else if (polyStep === 2) {
                 let res = window.validatePolygonStep2CombinedAnswers(polyInputs.step2, q);
                 if (res.valid) {
-                    window.isSingleAttacking = true;
                     polyStep = 3;
                     window.updatePolygonUI();
-                    elements.messageBox.innerHTML = `<span class="text-green-600 font-black">步驟② 計算正確！發動第二波連擊！</span> 請寫出步驟③：最終總面積答案！`;
-                    window.attackPokemon(0.35, false);
-                    setTimeout(() => { window.isSingleAttacking = false; }, 600);
+                    elements.messageBox.innerHTML = `<span class="text-green-600 font-black">步驟② 計算正確！</span> 請寫出步驟③：最終總面積答案！`;
+                    // 移除第二波連擊，直接進入最終解答
                 } else {
                     polyStats[methodKey].step2++; // 紀錄步驟2答錯次數
                     window.isSingleAttacking = true;
@@ -3911,8 +3907,8 @@
                     window.isSingleAttacking = true;
                     currentPhase = 3;
                     window.recordAttempt(true);
-                    elements.messageBox.innerHTML = `<span class="text-green-600 font-black">步驟③ 總面積完全正確！發動第三波必殺連擊！</span>`;
-                    window.attackPokemon(1.5, true);
+                    elements.messageBox.innerHTML = `<span class="text-green-600 font-black">步驟③ 總面積完全正確！發動致命一擊！</span>`;
+                    window.attackPokemon(1.5, true); // 只有步驟3全對才攻擊
                 } else {
                     polyStats[methodKey].step3++; // 紀錄步驟3答錯次數
                     window.isSingleAttacking = true;
@@ -4285,9 +4281,9 @@
             elements.messageBox.innerHTML = `<span class="text-red-600 font-black">${errorMsg}</span>`;
             currentPhase = 3; 
             setTimeout(() => { 
-                elements.messageBox.innerHTML = `<span class="text-gray-800 font-bold">${currentPokemon.name} 趁機攻擊！</span>`;
+                // 已移除原先快速覆蓋錯誤提示的「趁機攻擊！」字眼，保留公式提示供學生參考
                 window.executeWildPokemonAttack(returnPhase); 
-            }, 1800); 
+            }, 1000); 
         };
 
         window.switchPokemon = function(index) {
@@ -4309,10 +4305,7 @@
                 elements.playerSpriteContainer.classList.remove('translate-y-12', 'opacity-0');
                 elements.messageBox.innerHTML = `回來吧！去吧！<span class="text-blue-600 font-bold">${playerParty[activePlayerIndex].name}</span>！`;
                 
-                setTimeout(() => {
-                    if (currentPhase === 1) elements.messageBox.innerText = `請重新列出圖形的面積算式！`;
-                    else if (currentPhase === 2) elements.messageBox.innerText = `請重新計算出正確答案！`;
-                }, 1500);
+                // 移除原先無意義的引導文字覆蓋，讓更換寶可夢文字停留或保持上一次的提示
             }, 300); 
         };
 
@@ -4730,31 +4723,14 @@
                             
                             setTimeout(() => { window.resumeTurn(returnPhase); }, 1500);
                         } else {
-                            const endGymBtn = document.getElementById('end-gym-btn');
-                            const scoreUnit = document.getElementById('end-score-unit');
-                            if (gameMode === 'gym' && currentGymLeader) {
-                                elements.endTitle.innerText = `${currentGymLeader.gymName}挑戰失敗！`;
-                                elements.endTitle.className = "text-3xl sm:text-4xl font-black text-red-600 mb-4";
-                                elements.endIcon.innerText = "😵";
-                                elements.endSubtitle.innerText = `未能擊敗館主 ${currentGymLeader.name}，目前累積答對`;
-                                elements.finalScore.innerText = score;
-                                if (scoreUnit) scoreUnit.innerText = "題";
-                                if (endGymBtn) endGymBtn.classList.remove('hidden');
-                            } else {
-                                elements.endTitle.innerText = "挑戰失敗！";
-                                elements.endTitle.className = "text-4xl font-black text-red-600 mb-4";
-                                elements.endIcon.innerText = "😵";
-                                elements.endSubtitle.innerText = "隊伍全軍覆沒，總共答對";
-                                elements.finalScore.innerText = score;
-                                if (scoreUnit) scoreUnit.innerText = "題";
-                                if (endGymBtn) endGymBtn.classList.add('hidden');
-                            }
-                            window.showScreen('end');
+                            elements.endTitle.innerText = "挑戰失敗！"; elements.endTitle.className = "text-4xl font-black text-red-600 mb-4";
+                            elements.endIcon.innerText = "😵"; elements.endSubtitle.innerText = "隊伍全軍覆沒，總共答對";
+                            elements.finalScore.innerText = score; window.showScreen('end');
                         }
                     }, 2000);
                 } else {
-                    elements.messageBox.innerHTML = `受到了 <span class="text-red-600 font-bold">${damage}</span> 點傷害！`;
-                    setTimeout(() => { window.resumeTurn(returnPhase); }, 1500);
+                    // 移除受傷文字覆蓋，讓學生的錯誤提示保留在畫面上
+                    setTimeout(() => { window.resumeTurn(returnPhase); }, 1000);
                 }
             }, 500);
         };
@@ -4767,7 +4743,7 @@
                 const keyMap = { 1: 'step1', 2: 'step2', 3: 'step3' };
                 if (keyMap[polyStep]) polyInputs[keyMap[polyStep]] = "";
                 window.updatePolygonUI();
-                elements.messageBox.innerText = `請重新輸入步驟 ${polyStep} 的正確內容！`;
+                // 已移除覆蓋提示
                 return;
             }
             currentPhase = phase;
@@ -4775,11 +4751,11 @@
                 playerFormulaStr = ""; playerAnswerStr = "";
                 elements.formulaDisplay.innerText = ""; elements.answerDisplay.innerText = "";
                 elements.phase1.classList.remove('hidden'); elements.phase2.classList.add('hidden');
-                elements.messageBox.innerText = `請重新列出圖形的面積算式！`;
+                // 已移除覆蓋提示
             } else if (phase === 2) {
                 playerAnswerStr = "";
                 elements.answerDisplay.innerText = "";
-                elements.messageBox.innerText = `請重新計算出正確答案！`;
+                // 已移除覆蓋提示
             }
         };
 
