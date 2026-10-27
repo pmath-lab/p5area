@@ -268,6 +268,9 @@
                 <button onclick="window.selectMode('single')" class="btn-game bg-blue-500 text-white font-black py-5 px-6 rounded-2xl text-2xl border-2 border-blue-700 shadow-lg flex items-center justify-center gap-3">
                     👤 單人過關模式
                 </button>
+                <button onclick="window.selectMode('gym')" class="btn-game bg-amber-500 text-white font-black py-5 px-6 rounded-2xl text-2xl border-2 border-amber-700 shadow-lg flex items-center justify-center gap-3">
+                    🏟️ 關都道館挑戰賽
+                </button>
                 <button onclick="window.selectMode('multi')" class="btn-game bg-purple-500 text-white font-black py-5 px-6 rounded-2xl text-2xl border-2 border-purple-700 shadow-lg flex items-center justify-center gap-3">
                     ⚔️ 四人極巨化討伐戰
                 </button>
@@ -279,7 +282,7 @@
         <div id="login-screen" class="hidden p-4 sm:p-6 text-center bg-green-50 flex-1 flex flex-col justify-center items-center overflow-y-auto z-50 absolute inset-0">
             <h2 onclick="window.revealTestAccount()" class="text-3xl sm:text-4xl font-black text-gray-800 mb-6 drop-shadow-sm flex items-center gap-2 select-none cursor-pointer" title="單人冒險登入">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                單人冒險登入
+                <span id="login-title-text">單人冒險登入</span>
             </h2>
             <div class="bg-white p-6 rounded-2xl shadow-lg border-4 border-gray-300 w-full max-w-sm mb-6 flex flex-col gap-4">
                 <div>
@@ -359,6 +362,39 @@
             </div>
         </div>
 
+        <!-- 關都道館挑戰賽選單畫面 -->
+        <div id="gym-screen" class="hidden p-3 sm:p-5 text-center bg-amber-50 flex-1 flex flex-col justify-between items-center overflow-y-auto z-50 absolute inset-0">
+            <div class="w-full max-w-4xl flex flex-col items-center my-auto">
+                <div class="flex items-center justify-between w-full mb-2 px-2">
+                    <div class="text-left">
+                        <h2 class="text-2xl sm:text-3xl font-black text-amber-900 drop-shadow-sm flex items-center gap-2">
+                            🏟️ 關都地區道館挑戰賽
+                        </h2>
+                        <p class="text-xs sm:text-sm text-amber-700 font-bold">訓練家 <span id="gym-trainer-id" class="text-red-600 font-black">---</span>，請選擇要挑戰的道館館主！（擊敗館主全部寶可夢即可贏得徽章）</p>
+                    </div>
+                    <div class="bg-white px-3 py-1.5 rounded-xl border-2 border-amber-400 shadow-sm flex items-center gap-2">
+                        <span class="text-xs sm:text-sm font-black text-amber-800">已獲徽章：</span>
+                        <span id="gym-badge-count" class="text-lg sm:text-xl font-black text-red-600">0 / 8</span>
+                    </div>
+                </div>
+
+                <!-- 玩家目前出戰隊伍預覽 -->
+                <div class="w-full bg-white/90 rounded-xl p-2 px-3 mb-3 border-2 border-amber-300 shadow-sm flex items-center justify-between">
+                    <span class="text-xs sm:text-sm font-black text-gray-700">🎒 你的出戰隊伍：</span>
+                    <div id="gym-party-preview" class="flex items-center gap-3"></div>
+                </div>
+
+                <!-- 8大道館卡片網格 -->
+                <div id="gym-leaders-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 w-full mb-4">
+                    <!-- 由 JS 動態生成 8 位館主卡片 -->
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="window.logout()" class="btn-game bg-gray-500 hover:bg-gray-400 text-white font-black py-2.5 px-6 rounded-xl text-base sm:text-lg border-2 border-gray-700 shadow-lg">返回主選單</button>
+                </div>
+            </div>
+        </div>
+
         <!-- 3選1 起始夥伴畫面 -->
         <div id="starter-screen" class="hidden p-4 sm:p-6 text-center bg-green-50 flex-1 flex flex-col justify-center items-center overflow-y-auto z-50 absolute inset-0">
             <h2 class="text-2xl sm:text-3xl font-black text-gray-800 mb-2">大木博士：</h2>
@@ -404,6 +440,14 @@
 
                 <!-- 絕對定位：敵方資訊 -->
                 <div id="enemy-info-container" class="absolute top-2 right-2 sm:top-4 sm:right-4 z-30 flex flex-col items-end transition-all duration-300">
+                    <!-- 道館館主資訊列 (僅在道館模式顯示) -->
+                    <div id="gym-leader-banner" class="hidden flex items-center gap-2 bg-amber-900/95 text-white px-2.5 py-1 rounded-t-xl border-2 border-b-0 border-amber-400 shadow-md mr-1">
+                        <img id="gym-leader-avatar" src="" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-100 border border-amber-300 object-contain">
+                        <div class="flex flex-col text-left leading-tight">
+                            <span id="gym-leader-title" class="text-[11px] sm:text-xs font-black text-amber-200">深灰道館・小剛</span>
+                            <div id="gym-enemy-balls" class="flex gap-1 mt-0.5"></div>
+                        </div>
+                    </div>
                     <div id="enemy-box" class="bg-white/95 p-1.5 sm:p-2.5 rounded-lg shadow-md border-2 border-gray-400 min-w-[140px] sm:min-w-[180px]">
                         <div class="flex justify-between font-black text-xs sm:text-sm mb-1 text-gray-800">
                             <span id="enemy-name">野生寶可夢</span><span>Lv.<span id="enemy-level">50</span></span>
@@ -499,8 +543,9 @@
                     </div>
                 </div>
 
-                <div class="w-1/2 flex flex-col justify-center items-center p-1.5 sm:p-2 bg-white rounded-xl border-2 border-gray-400 shadow-sm relative">
-                    <div class="w-full flex-1 flex flex-col justify-center items-center px-1 gap-2 sm:gap-4">
+                <div class="w-1/2 flex flex-col justify-center items-center p-1.5 sm:p-2 bg-white rounded-xl border-2 border-gray-400 shadow-sm relative overflow-y-auto">
+                    <!-- 單人一般模式：平行四邊形/三角形/梯形面板 -->
+                    <div id="standard-qa-panel" class="w-full flex-1 flex flex-col justify-center items-center px-1 gap-2 sm:gap-4">
                         <div id="phase1-container" class="w-full flex flex-row items-center gap-1 sm:gap-2 transition-all">
                             <span class="font-black text-gray-700 text-sm sm:text-base whitespace-nowrap flex-none">面積</span>
                             <span class="font-black text-gray-700 text-sm sm:text-base w-4 text-center flex-none">=</span>
@@ -510,6 +555,36 @@
                             <span class="font-black text-gray-700 text-sm sm:text-base whitespace-nowrap flex-none invisible select-none">面積</span>
                             <span class="font-black text-gray-700 text-sm sm:text-base w-4 text-center flex-none">=</span>
                             <div id="answer-display" class="flex-1 h-10 sm:h-12 border-2 border-red-500 bg-red-50 rounded flex items-center justify-center px-2 text-lg sm:text-2xl font-black text-red-600 shadow-inner select-none leading-none overflow-hidden"></div>
+                        </div>
+                    </div>
+
+                    <!-- 道館挑戰賽專屬：多邊形面積 (分割法 / 填補法) 三步驟遞等式作答面板 -->
+                    <div id="polygon-qa-panel" class="hidden w-full flex-1 flex flex-col justify-between px-1.5 py-1 gap-1.5">
+                        <!-- 頂部方法提示與進度標籤 -->
+                        <div class="flex items-center justify-between border-b border-gray-200 pb-1">
+                            <span id="poly-method-badge" class="bg-blue-100 text-blue-900 border border-blue-400 px-2 py-0.5 rounded-full text-xs font-black">✂️ 分割法 (A + B)</span>
+                            <span id="poly-step-indicator" class="text-xs font-black text-blue-700">步驟 1/3：列出 A+B 算式</span>
+                        </div>
+
+                        <!-- 步驟 1：直接列出 圖形A算式 ± 圖形B算式 -->
+                        <div id="poly-row-step1" class="flex items-center gap-1.5 bg-blue-50 p-1 rounded-lg border-2 border-blue-400 transition-all">
+                            <span id="poly-label-step1" class="font-black text-gray-800 text-xs sm:text-sm whitespace-nowrap flex-none">面積 =</span>
+                            <div id="poly-input-step1" class="flex-1 h-8 sm:h-9 border-2 border-blue-400 bg-white rounded flex items-center justify-start text-left px-2.5 text-xs sm:text-sm font-black text-blue-700 truncate shadow-inner tracking-wide"></div>
+                            <span id="poly-check-step1" class="text-green-600 font-black text-sm hidden pr-1">✔</span>
+                        </div>
+
+                        <!-- 步驟 2：寫出 圖形A答案 ± 圖形B答案 -->
+                        <div id="poly-row-step2" class="flex items-center gap-1.5 bg-emerald-50/50 p-1 rounded-lg border border-gray-200 opacity-40 transition-all">
+                            <span class="font-black text-gray-800 text-xs sm:text-sm whitespace-nowrap flex-none"><span class="invisible select-none">面積</span> =</span>
+                            <div id="poly-input-step2" class="flex-1 h-8 sm:h-9 border-2 border-emerald-400 bg-white rounded flex items-center justify-start text-left px-2.5 text-xs sm:text-sm font-black text-emerald-700 truncate shadow-inner tracking-wide"></div>
+                            <span id="poly-check-step2" class="text-green-600 font-black text-sm hidden pr-1">✔</span>
+                        </div>
+
+                        <!-- 步驟 3：寫出 最終總面積答案 -->
+                        <div id="poly-row-step3" class="flex items-center gap-1.5 bg-amber-50/50 p-1 rounded-lg border border-gray-200 opacity-40 transition-all">
+                            <span class="font-black text-gray-800 text-xs sm:text-sm whitespace-nowrap flex-none"><span class="invisible select-none">面積</span> =</span>
+                            <div id="poly-input-step3" class="flex-1 h-8 sm:h-9 border-2 border-red-500 bg-red-50 rounded flex items-center justify-start text-left px-2.5 text-sm sm:text-base font-black text-red-600 truncate shadow-inner tracking-wider"></div>
+                            <span id="poly-unit-step3" class="font-black text-gray-700 text-xs sm:text-sm whitespace-nowrap pr-1">cm²</span>
                         </div>
                     </div>
                 </div>
@@ -533,8 +608,11 @@
             <h2 id="end-title" class="text-3xl sm:text-4xl font-black text-blue-800 mb-2 sm:mb-4 drop-shadow-sm">太棒了！</h2>
             <div id="end-icon" class="text-6xl sm:text-7xl mb-4 drop-shadow-md">🏆</div>
             <p id="end-subtitle" class="text-lg sm:text-2xl font-bold text-gray-700 mb-2">你總共答對了</p>
-            <p class="text-5xl sm:text-6xl font-black text-red-500 mb-8 drop-shadow"><span id="final-score">0</span> <span class="text-2xl sm:text-3xl text-gray-600">題</span></p>
-            <button onclick="window.selectMode('mode')" class="btn-game bg-blue-600 hover:bg-blue-500 text-white font-black py-3 px-8 rounded-xl text-xl sm:text-2xl border-4 border-blue-800 shadow-lg">回到首頁</button>
+            <p class="text-5xl sm:text-6xl font-black text-red-500 mb-8 drop-shadow"><span id="final-score">0</span> <span id="end-score-unit" class="text-2xl sm:text-3xl text-gray-600">題</span></p>
+            <div class="flex gap-3">
+                <button id="end-gym-btn" onclick="window.backToGymMenu()" class="hidden btn-game bg-amber-500 hover:bg-amber-400 text-white font-black py-3 px-8 rounded-xl text-xl sm:text-2xl border-4 border-amber-700 shadow-lg">返回道館選單</button>
+                <button onclick="window.selectMode('mode')" class="btn-game bg-blue-600 hover:bg-blue-500 text-white font-black py-3 px-8 rounded-xl text-xl sm:text-2xl border-4 border-blue-800 shadow-lg">回到首頁</button>
+            </div>
         </div>
 
         <div id="multi-end-screen" class="hidden p-4 sm:p-6 text-center bg-purple-50 flex-1 flex flex-col justify-center items-center overflow-y-auto z-50 absolute inset-0">
@@ -581,6 +659,7 @@
         let score = 0; 
         
         let gameStats = { parallelogram: { total: 0, correct: 0 }, triangle: { total: 0, correct: 0 }, trapezoid: { total: 0, correct: 0 } };
+        let polyStats = { split: { total: 0, step1: 0, step2: 0, step3: 0 }, fill: { total: 0, step1: 0, step2: 0, step3: 0 } };
         let enemyMaxHp = 100; let enemyHp = 100;
         let playerMaxHp = 100; let playerHp = 100;
         let activePlayerIndex = 0; 
@@ -596,10 +675,125 @@
         let currentPokemon = null; 
         let currentPhase = 1; 
 
+        // 關都地區 8 位道館館主資料
+        const KANTO_GYM_LEADERS = [
+            {
+                id: 'brock',
+                name: '小剛',
+                gymName: '深灰道館',
+                badgeName: '灰色徽章',
+                badgeIcon: '🪨',
+                typeText: '岩石屬性',
+                color: 'stone',
+                avatar: 'https://play.pokemonshowdown.com/sprites/trainers/brock.png',
+                fallbackPokemonId: 95,
+                partyNames: ['小拳石', '大岩蛇'],
+                quote: '我的意志堅如磐石！讓我看看你的面積計算實力吧！'
+            },
+            {
+                id: 'misty',
+                name: '小霞',
+                gymName: '華藍道館',
+                badgeName: '藍色徽章',
+                badgeIcon: '💧',
+                typeText: '水屬性',
+                color: 'blue',
+                avatar: 'https://play.pokemonshowdown.com/sprites/trainers/misty.png',
+                fallbackPokemonId: 121,
+                partyNames: ['海星星', '寶石海星'],
+                quote: '華藍道館的水系攻勢可是不會留情的喔！'
+            },
+            {
+                id: 'surge',
+                name: '馬志士',
+                gymName: '枯葉道館',
+                badgeName: '橙色徽章',
+                badgeIcon: '⚡',
+                typeText: '電屬性',
+                color: 'yellow',
+                avatar: 'https://play.pokemonshowdown.com/sprites/trainers/ltsurge.png',
+                fallbackPokemonId: 26,
+                partyNames: ['霹靂電球', '皮卡丘', '雷丘'],
+                quote: 'Hey kid！小心被我的電系寶可夢電得麻痺了！'
+            },
+            {
+                id: 'erika',
+                name: '莉佳',
+                gymName: '玉虹道館',
+                badgeName: '彩虹徽章',
+                badgeIcon: '🌸',
+                typeText: '草屬性',
+                color: 'green',
+                avatar: 'https://play.pokemonshowdown.com/sprites/trainers/erika.png',
+                fallbackPokemonId: 45,
+                partyNames: ['大食花', '蔓藤怪', '霸王花'],
+                quote: '在幽雅的花香中，一起來場高雅的面積對決吧。'
+            },
+            {
+                id: 'koga',
+                name: '阿桔',
+                gymName: '淺紅道館',
+                badgeName: '粉紅徽章',
+                badgeIcon: '🥷',
+                typeText: '毒屬性',
+                color: 'purple',
+                avatar: 'https://play.pokemonshowdown.com/sprites/trainers/koga.png',
+                fallbackPokemonId: 110,
+                partyNames: ['瓦斯彈', '臭臭泥', '摩魯蛾', '雙彈瓦斯'],
+                quote: '伊賀忍者的千變萬化之術，你能看穿圖形的真諦嗎？'
+            },
+            {
+                id: 'sabrina',
+                name: '娜姿',
+                gymName: '金黃道館',
+                badgeName: '金色徽章',
+                badgeIcon: '🔮',
+                typeText: '超能力屬性',
+                color: 'pink',
+                avatar: 'https://play.pokemonshowdown.com/sprites/trainers/sabrina.png',
+                fallbackPokemonId: 65,
+                partyNames: ['勇基拉', '魔牆人偶', '胡地'],
+                quote: '我早就預見了你的來臨... 用你的算式證明給我看吧。'
+            },
+            {
+                id: 'blaine',
+                name: '夏伯',
+                gymName: '紅蓮道館',
+                badgeName: '深紅徽章',
+                badgeIcon: '🔥',
+                typeText: '火屬性',
+                color: 'red',
+                avatar: 'https://play.pokemonshowdown.com/sprites/trainers/blaine.png',
+                fallbackPokemonId: 59,
+                partyNames: ['卡蒂狗', '小火馬', '烈焰馬', '風速狗'],
+                quote: '哇哈哈哈！燃燒熱血的面積大測驗開始啦！'
+            },
+            {
+                id: 'giovanni',
+                name: '阪木',
+                gymName: '常磐道館',
+                badgeName: '綠色徽章',
+                badgeIcon: '👑',
+                typeText: '地面屬性',
+                color: 'emerald',
+                avatar: 'https://play.pokemonshowdown.com/sprites/trainers/giovanni.png',
+                fallbackPokemonId: 34,
+                partyNames: ['三地鼠', '尼多后', '尼多王', '鑽角犀獸'],
+                quote: '能在常磐道館面對我，就讓你見識最強的地面軍團！'
+            }
+        ];
+
+        let currentGymLeader = null;
+        let currentGymEnemyParty = [];
+        let currentGymEnemyIndex = 0;
+        let defeatedGyms = {};
+
         const screens = {
             mode: document.getElementById('mode-screen'),
             login: document.getElementById('login-screen'),
-            start: document.getElementById('start-screen'), starter: document.getElementById('starter-screen'),
+            start: document.getElementById('start-screen'),
+            gym: document.getElementById('gym-screen'),
+            starter: document.getElementById('starter-screen'),
             battle: document.getElementById('battle-screen'), evolution: document.getElementById('evolution-screen'),
             end: document.getElementById('end-screen'), multiEnd: document.getElementById('multi-end-screen')
         };
@@ -895,6 +1089,13 @@
                 return;
             }
 
+            // 4.5 若道館館主頭像載入失敗，退回該館主代表寶可夢圖片
+            if (src.includes('pokemonshowdown.com/sprites/trainers/')) {
+                let fallbackId = img.dataset.fallbackPoke || '1';
+                img.src = `https://fastly.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/${fallbackId}.png`;
+                return;
+            }
+
             // 5. 終極保底：標記防止無限遞迴
             img.dataset.imgFailed = 'true';
             img.src = "https://fastly.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/1.png";
@@ -987,9 +1188,13 @@
             try {
                 gameMode = mode;
                 const battleSceneEl = elements.battleScene || document.getElementById('battle-scene-bg');
-                if (mode === 'single') {
+                const loginTitleEl = document.getElementById('login-title-text');
+                if (mode === 'single' || mode === 'gym') {
+                    if (loginTitleEl) {
+                        loginTitleEl.innerText = mode === 'gym' ? '道館挑戰賽登入' : '單人冒險登入';
+                    }
                     if (battleSceneEl) {
-                        battleSceneEl.style.backgroundImage = "url('https://pmath-lab.github.io/p5area/bg.jpg')";
+                        battleSceneEl.style.backgroundImage = mode === 'gym' ? "url('https://pmath-lab.github.io/p5area/bg2.jpg')" : "url('https://pmath-lab.github.io/p5area/bg.jpg')";
                         battleSceneEl.style.backgroundSize = "cover";
                         battleSceneEl.style.backgroundPosition = "center";
                         battleSceneEl.style.backgroundRepeat = "no-repeat";
@@ -1001,6 +1206,7 @@
                     if (elements.singleBottomPanel) elements.singleBottomPanel.classList.remove('hidden');
                     if (elements.multiBottomPanel) elements.multiBottomPanel.classList.add('hidden');
                     const multiSprites = document.getElementById('multi-player-sprites-container');
+                    if (multiSprites) multiSprites.classList.add('hidden');
                     window.showScreen('login');
                     if (window.preloadExcelStudentData) window.preloadExcelStudentData();
                 } else if (mode === 'multi') {
@@ -1021,6 +1227,175 @@
             } catch(e) {
                 console.error("選單切換錯誤:", e);
             }
+        };
+
+        window.loadGymProgress = function(studentId) {
+            defeatedGyms = {};
+            if (!studentId) return;
+            try {
+                const raw = localStorage.getItem('pokemon_gym_badges_' + studentId);
+                if (raw) defeatedGyms = JSON.parse(raw) || {};
+            } catch (e) {
+                defeatedGyms = {};
+            }
+        };
+
+        window.saveGymProgress = function() {
+            if (!currentStudentId) return;
+            try {
+                localStorage.setItem('pokemon_gym_badges_' + currentStudentId, JSON.stringify(defeatedGyms));
+            } catch (e) {}
+            window.savePlayerData(); // 同步觸發儲存雲端資料
+        };
+
+        window.renderGymSelection = function() {
+            window.loadGymProgress(currentStudentId);
+            const trainerIdEl = document.getElementById('gym-trainer-id');
+            if (trainerIdEl) trainerIdEl.innerText = currentStudentId || '---';
+
+            const badgeCountEl = document.getElementById('gym-badge-count');
+            const wonCount = KANTO_GYM_LEADERS.filter(g => defeatedGyms[g.id]).length;
+            if (badgeCountEl) badgeCountEl.innerText = `${wonCount} / 8`;
+
+            // 顯示玩家出戰寶可夢預覽
+            const partyPreviewEl = document.getElementById('gym-party-preview');
+            if (partyPreviewEl) {
+                partyPreviewEl.innerHTML = playerParty.map(p => `
+                    <div class="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-300">
+                        <img src="${p.image}" class="w-6 h-6 object-contain">
+                        <span class="text-xs font-black text-gray-800">${p.name}</span>
+                        <span class="text-[10px] font-bold text-green-700">HP:${p.stats.hp}</span>
+                    </div>
+                `).join('');
+            }
+
+            const gridEl = document.getElementById('gym-leaders-grid');
+            if (!gridEl) return;
+
+            gridEl.innerHTML = KANTO_GYM_LEADERS.map((g, idx) => {
+                const isCleared = !!defeatedGyms[g.id];
+                // 道館按順序開放：第1間(深灰道館 idx===0)直接開放，其餘須先擊敗前一間道館館主
+                const isUnlocked = (idx === 0) || !!defeatedGyms[KANTO_GYM_LEADERS[idx - 1].id];
+                const prevGymName = idx > 0 ? KANTO_GYM_LEADERS[idx - 1].gymName : '';
+
+                const pokeImgs = g.partyNames.map(n => {
+                    const pk = window.getPokemonByName(n);
+                    return `<img src="${pk.image}" title="${pk.name}" class="w-6 h-6 sm:w-7 sm:h-7 object-contain bg-gray-100 rounded-full border border-gray-300 p-0.5 ${!isUnlocked ? 'grayscale opacity-50' : ''}">`;
+                }).join('');
+
+                if (!isUnlocked) {
+                    return `
+                    <div class="bg-gray-200/90 rounded-2xl p-2.5 sm:p-3 border-4 border-gray-400 shadow-inner cursor-not-allowed opacity-75 flex flex-col justify-between relative select-none">
+                        <div class="absolute -top-2 -right-2 bg-gray-600 text-white font-black text-[11px] px-2 py-0.5 rounded-full border-2 border-gray-800 shadow">🔒 未開放</div>
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <img src="${g.avatar}" data-fallback-poke="${g.fallbackPokemonId}" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-300 border-2 border-gray-500 object-contain flex-none grayscale">
+                            <div class="text-left overflow-hidden">
+                                <div class="text-[11px] font-bold text-gray-500 truncate">第 ${idx + 1} 道館・${g.gymName}</div>
+                                <div class="text-base sm:text-lg font-black text-gray-600 truncate">館主 ${g.name}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-gray-300 pt-1.5 mt-1">
+                            <div class="flex gap-1">${pokeImgs}</div>
+                            <span class="bg-gray-500 text-white text-[10px] sm:text-xs font-black px-2 py-1 rounded-lg">需先勝${prevGymName}</span>
+                        </div>
+                    </div>`;
+                }
+
+                return `
+                <div onclick="window.startGymBattle(${idx})" class="bg-white rounded-2xl p-2.5 sm:p-3 border-4 ${isCleared ? 'border-yellow-400 bg-yellow-50/40' : 'border-amber-500 hover:border-red-500 ring-2 ring-amber-200'} shadow-md cursor-pointer hover:scale-[1.02] active:scale-95 transition-all flex flex-col justify-between relative">
+                    ${isCleared ? `<div class="absolute -top-2 -right-2 bg-yellow-400 text-yellow-950 font-black text-[11px] px-2 py-0.5 rounded-full border-2 border-yellow-600 shadow">${g.badgeIcon} 已獲徽章</div>` : `<div class="absolute -top-2 -right-2 bg-red-600 text-white font-black text-[11px] px-2 py-0.5 rounded-full border-2 border-red-800 shadow animate-pulse">🔓 可挑戰</div>`}
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <img src="${g.avatar}" data-fallback-poke="${g.fallbackPokemonId}" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-amber-100 border-2 border-amber-400 object-contain flex-none">
+                        <div class="text-left overflow-hidden">
+                            <div class="text-[11px] font-bold text-amber-700 truncate">第 ${idx + 1} 道館・${g.gymName}</div>
+                            <div class="text-base sm:text-lg font-black text-gray-800 truncate">館主 ${g.name}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-gray-200 pt-1.5 mt-1">
+                        <div class="flex gap-1">${pokeImgs}</div>
+                        <span class="bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow">${isCleared ? '再次挑戰 ⚔️' : '挑戰 ⚔️'}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        };
+
+        window.updateGymBannerUI = function() {
+            const banner = document.getElementById('gym-leader-banner');
+            if (!banner) return;
+            if (gameMode !== 'gym' || !currentGymLeader) {
+                banner.classList.add('hidden');
+                return;
+            }
+            banner.classList.remove('hidden');
+            const avatarEl = document.getElementById('gym-leader-avatar');
+            const titleEl = document.getElementById('gym-leader-title');
+            const ballsEl = document.getElementById('gym-enemy-balls');
+
+            if (avatarEl) {
+                avatarEl.dataset.fallbackPoke = currentGymLeader.fallbackPokemonId;
+                avatarEl.src = currentGymLeader.avatar;
+            }
+            if (titleEl) {
+                titleEl.innerText = `${currentGymLeader.gymName}・${currentGymLeader.name}`;
+            }
+            if (ballsEl) {
+                ballsEl.innerHTML = currentGymEnemyParty.map((pk, idx) => {
+                    const isFainted = idx < currentGymEnemyIndex || (idx === currentGymEnemyIndex && enemyHp <= 0);
+                    return `<span class="inline-block w-3 h-3 rounded-full border border-black ${isFainted ? 'bg-gray-500 opacity-50' : 'bg-red-500 shadow-[0_0_4px_#ef4444]'}" title="${pk.name}"></span>`;
+                }).join('');
+            }
+        };
+
+        window.startGymBattle = function(gymIndex) {
+            window.loadGymProgress(currentStudentId);
+            const isUnlocked = (gymIndex === 0) || !!defeatedGyms[KANTO_GYM_LEADERS[gymIndex - 1].id];
+            if (!isUnlocked) return;
+
+            currentGymLeader = KANTO_GYM_LEADERS[gymIndex];
+            if (!currentGymLeader) return;
+
+            // 每次挑戰道館前，將玩家的寶可夢恢復滿血
+            playerParty.forEach(p => {
+                p.currentHp = p.stats.hp;
+            });
+            activePlayerIndex = 0;
+
+            currentGymEnemyParty = currentGymLeader.partyNames.map(name => {
+                const pk = window.getPokemonByName(name);
+                pk.currentHp = pk.stats.hp;
+                return pk;
+            });
+            currentGymEnemyIndex = 0;
+
+            window.enterSingleGameScene();
+            elements.headerTitleText.innerText = `道館賽：${currentGymLeader.gymName} - 館主${currentGymLeader.name}`;
+
+            playerMaxHp = playerParty[activePlayerIndex].stats.hp;
+            playerHp = playerParty[activePlayerIndex].currentHp;
+            elements.playerName.innerText = playerParty[activePlayerIndex].name;
+            elements.playerSprite.src = window.getBackSpriteUrl(playerParty[activePlayerIndex].image);
+            window.updatePlayerHpBar();
+            window.renderParty();
+
+            elements.overlay.classList.remove('hidden');
+            elements.overlay.classList.add('animate-encounter');
+            setTimeout(() => {
+                window.spawnPokemon();
+                window.showScreen('battle');
+            }, 1200);
+            setTimeout(() => {
+                elements.overlay.classList.remove('animate-encounter');
+                elements.overlay.classList.add('hidden');
+            }, 2200);
+        };
+
+        window.backToGymMenu = function() {
+            const endGymBtn = document.getElementById('end-gym-btn');
+            if (endGymBtn) endGymBtn.classList.add('hidden');
+            const scoreUnit = document.getElementById('end-score-unit');
+            if (scoreUnit) scoreUnit.innerText = '題';
+            window.renderGymSelection();
+            window.showScreen('gym');
         };
 
         window.getCombinedId = function(classVal, numVal) {
@@ -2163,9 +2538,28 @@
                     trapezoid: { total: savedData.trap_total || 0, correct: savedData.trap_correct || 0 }
                 };
             }
+            
+            if (savedData.polyStats) {
+                polyStats = savedData.polyStats;
+            } else {
+                polyStats = {
+                    split: { total: savedData.split_total || 0, step1: savedData.split_step1 || 0, step2: savedData.split_step2 || 0, step3: savedData.split_step3 || 0 },
+                    fill: { total: savedData.fill_total || 0, step1: savedData.fill_step1 || 0, step2: savedData.fill_step2 || 0, step3: savedData.fill_step3 || 0 }
+                };
+            }
+
+            // 根據 GAS 的道館徽章總數重建解鎖進度
+            if (savedData.gym_badges !== undefined) {
+                defeatedGyms = {};
+                for (let i = 0; i < savedData.gym_badges && i < KANTO_GYM_LEADERS.length; i++) {
+                    defeatedGyms[KANTO_GYM_LEADERS[i].id] = true;
+                }
+                try { localStorage.setItem('pokemon_gym_badges_' + (savedData.id || currentStudentId), JSON.stringify(defeatedGyms)); } catch(e) {}
+            }
+
             score = (savedData.score !== undefined) 
                 ? savedData.score 
-                : (gameStats.triangle.correct + gameStats.parallelogram.correct + gameStats.trapezoid.correct);
+                : (gameStats.triangle.correct + gameStats.parallelogram.correct + gameStats.trapezoid.correct + polyStats.split.total + polyStats.fill.total);
 
             playerParty = [];
             if (savedData.party && Array.isArray(savedData.party) && savedData.party.length > 0) {
@@ -2206,6 +2600,15 @@
             if (window.stopMultiTimer) window.stopMultiTimer();
             const timerBadge = document.getElementById('multi-timer-badge');
             if (timerBadge) timerBadge.classList.add('hidden');
+            
+            const battleSceneEl = elements.battleScene || document.getElementById('battle-scene-bg');
+            if (battleSceneEl) {
+                battleSceneEl.style.backgroundImage = gameMode === 'gym' ? "url('https://pmath-lab.github.io/p5area/bg2.jpg')" : "url('https://pmath-lab.github.io/p5area/bg.jpg')";
+                battleSceneEl.style.backgroundSize = "cover";
+                battleSceneEl.style.backgroundPosition = "center";
+                battleSceneEl.style.backgroundRepeat = "no-repeat";
+            }
+            
             document.querySelectorAll('.single-player-element').forEach(el => el.classList.remove('hidden'));
             if (elements.playerSpriteContainer) {
                 elements.playerSpriteContainer.classList.remove('opacity-0', 'translate-y-12', 'hidden');
@@ -2229,6 +2632,7 @@
             elements.canvasWrapper.className = "w-1/2 h-full flex flex-col justify-start pt-4 sm:pt-6 items-start pl-2 sm:pl-6 relative z-10 transition-all duration-300";
             elements.enemyWrapper.className = "w-1/2 h-full flex flex-col items-center justify-start pt-12 sm:pt-16 pr-2 sm:pr-8 relative z-10 transition-all duration-300";
             
+            window.updateGymBannerUI();
             window.sessionEncounterCount = 0;
             elements.headerStudentId.innerText = currentStudentId; 
             elements.score.innerText = score; 
@@ -2259,6 +2663,8 @@
                     score: score,
                     activePlayerIndex: activePlayerIndex,
                     gameStats: gameStats,
+                    polyStats: polyStats,
+                    gym_badges: Object.keys(defeatedGyms).length,
                     timestamp: Date.now()
                 };
                 localStorage.setItem('pokemon_player_save_' + currentStudentId, JSON.stringify(localData));
@@ -2289,7 +2695,16 @@
                             para_total: gameStats.parallelogram.total,
                             para_correct: gameStats.parallelogram.correct,
                             trap_total: gameStats.trapezoid.total,
-                            trap_correct: gameStats.trapezoid.correct
+                            trap_correct: gameStats.trapezoid.correct,
+                            gym_badges: Object.keys(defeatedGyms).length,
+                            split_total: polyStats.split.total,
+                            split_step1: polyStats.split.step1,
+                            split_step2: polyStats.split.step2,
+                            split_step3: polyStats.split.step3,
+                            fill_total: polyStats.fill.total,
+                            fill_step1: polyStats.fill.step1,
+                            fill_step2: polyStats.fill.step2,
+                            fill_step3: polyStats.fill.step3
                         })
                     }).catch(err => console.warn("雲端同步失敗:", err));
                 } catch(e) { console.error("雲端存檔失敗", e); }
@@ -2386,7 +2801,12 @@
                 let localTestSave = window.loadLocalPlayerData(idInput);
                 if (localTestSave && window.applyLoadedPlayerData(localTestSave)) {
                     window.enterSingleGameScene();
-                    window.showScreen("start");
+                    if (gameMode === 'gym') {
+                        window.renderGymSelection();
+                        window.showScreen("gym");
+                    } else {
+                        window.showScreen("start");
+                    }
                 } else {
                     playerParty = []; score = 0; activePlayerIndex = 0;
                     gameStats = { parallelogram: {total:0,correct:0}, triangle: {total:0,correct:0}, trapezoid: {total:0,correct:0} };
@@ -2492,7 +2912,12 @@
             if (hasParty && playerParty.length > 0) {
                 window.savePlayerData();
                 window.enterSingleGameScene();
-                window.showScreen('start');
+                if (gameMode === 'gym') {
+                    window.renderGymSelection();
+                    window.showScreen('gym');
+                } else {
+                    window.showScreen('start');
+                }
             } else {
                 playerParty = []; score = 0; activePlayerIndex = 0;
                 gameStats = { parallelogram: {total:0,correct:0}, triangle: {total:0,correct:0}, trapezoid: {total:0,correct:0} };
@@ -2649,6 +3074,851 @@
             let normY = -dx / len;
             let distOffset = isMini ? 14 : 22;
             drawText(q.side1 + " " + u, midSlantX + normX * distOffset, midSlantY + normY * distOffset);
+        };
+
+        // ==========================================
+        // 道館挑戰賽專屬：多邊形面積題庫與繪圖系統 (參考 p5area/polygons 分割法與填補法)
+        // ==========================================
+        let polyStep = 1; // 1: 列出 圖形A算式±圖形B算式, 2: 寫出 圖形A答案±圖形B答案, 3: 寫出最終總面積答案
+        let polyInputs = { step1: "", step2: "", step3: "" };
+
+        window.generatePolygonQuestion = function() {
+            const templates = [
+                // 0: 房子形五邊形 (分割法：上方三角形 A + 下方長方形 B)
+                function() {
+                    let w = window.rand(6, 12);
+                    let hRect = window.rand(5, 9);
+                    let hTri = window.rand(3, 6);
+                    if ((w * hTri) % 2 !== 0) hTri++;
+                    let areaA = (w * hTri) / 2;
+                    let areaB = w * hRect;
+                    return {
+                        isPolygon: true,
+                        polyType: 'house_split',
+                        method: 'split', // A + B
+                        methodTitle: '✂️ 分割法 (A + B)',
+                        unit: 'cm',
+                        partA: {
+                            label: 'A三角形',
+                            shapeType: 1, // 三角形: 底 × 高 ÷ 2
+                            base: w,
+                            height: hTri,
+                            answer: areaA,
+                            formulaSample: `${w}×${hTri}÷2`,
+                            hint: `A三角形(${w}×${hTri}÷2)`
+                        },
+                        partB: {
+                            label: 'B長方形',
+                            shapeType: 0, // 長方形: 長 × 闊
+                            base: w,
+                            height: hRect,
+                            answer: areaB,
+                            formulaSample: `${w}×${hRect}`,
+                            hint: `B長方形(${w}×${hRect})`
+                        },
+                        step1Sample: `${w}×${hTri}÷2 + ${w}×${hRect}`,
+                        step2Sample: `${areaA} + ${areaB}`,
+                        answer: areaA + areaB,
+                        dims: { w, hRect, hTri }
+                    };
+                },
+                // 1: L形六邊形 (分割法：左長方形 A + 右長方形 B)
+                function() {
+                    let wA = window.rand(4, 7);
+                    let hA = window.rand(8, 12);
+                    let wB = window.rand(4, 7);
+                    let hB = window.rand(4, hA - 3);
+                    let totalW = wA + wB;
+                    let areaA = wA * hA;
+                    let areaB = wB * hB;
+                    return {
+                        isPolygon: true,
+                        polyType: 'L_split',
+                        method: 'split',
+                        methodTitle: '✂️ 分割法 (A + B)',
+                        unit: 'cm',
+                        partA: {
+                            label: 'A長方形',
+                            shapeType: 0,
+                            base: wA,
+                            height: hA,
+                            answer: areaA,
+                            formulaSample: `${wA}×${hA}`,
+                            hint: `A長方形(${wA}×${hA})`
+                        },
+                        partB: {
+                            label: 'B長方形',
+                            shapeType: 0,
+                            base: wB,
+                            height: hB,
+                            answer: areaB,
+                            formulaSample: `${wB}×${hB}`,
+                            hint: `B長方形(${wB}×${hB})`
+                        },
+                        step1Sample: `${wA}×${hA} + ${wB}×${hB}`,
+                        step2Sample: `${areaA} + ${areaB}`,
+                        answer: areaA + areaB,
+                        dims: { wA, hA, wB, hB, totalW }
+                    };
+                },
+                // 2: 梯形頂組合多邊形 (分割法：上方梯形 A + 下方長方形 B)
+                function() {
+                    let topW = window.rand(4, 7);
+                    let bottomW = topW + window.rand(2, 5);
+                    let hTrap = window.rand(3, 6);
+                    if (((topW + bottomW) * hTrap) % 2 !== 0) hTrap++;
+                    let hRect = window.rand(4, 7);
+                    let areaA = ((topW + bottomW) * hTrap) / 2;
+                    let areaB = bottomW * hRect;
+                    return {
+                        isPolygon: true,
+                        polyType: 'trap_rect_split',
+                        method: 'split',
+                        methodTitle: '✂️ 分割法 (A + B)',
+                        unit: 'm',
+                        partA: {
+                            label: 'A梯形',
+                            shapeType: 2, // 梯形
+                            top: topW,
+                            bottom: bottomW,
+                            height: hTrap,
+                            answer: areaA,
+                            formulaSample: `(${topW}+${bottomW})×${hTrap}÷2`,
+                            hint: `A梯形((${topW}+${bottomW})×${hTrap}÷2)`
+                        },
+                        partB: {
+                            label: 'B長方形',
+                            shapeType: 0,
+                            base: bottomW,
+                            height: hRect,
+                            answer: areaB,
+                            formulaSample: `${bottomW}×${hRect}`,
+                            hint: `B長方形(${bottomW}×${hRect})`
+                        },
+                        step1Sample: `(${topW}+${bottomW})×${hTrap}÷2 + ${bottomW}×${hRect}`,
+                        step2Sample: `${areaA} + ${areaB}`,
+                        answer: areaA + areaB,
+                        dims: { topW, bottomW, hTrap, hRect }
+                    };
+                },
+                // 3: 凹字缺口多邊形 (填補法：大長方形 A - 缺口長方形 B)
+                function() {
+                    let bigW = window.rand(9, 14);
+                    let bigH = window.rand(7, 11);
+                    let cutW = window.rand(3, bigW - 4);
+                    let cutH = window.rand(2, bigH - 3);
+                    let areaA = bigW * bigH;
+                    let areaB = cutW * cutH;
+                    return {
+                        isPolygon: true,
+                        polyType: 'rect_cutout_fill',
+                        method: 'fill', // A - B
+                        methodTitle: '🧩 填補法 (A − B)',
+                        unit: 'cm',
+                        partA: {
+                            label: '大長方形A',
+                            shapeType: 0,
+                            base: bigW,
+                            height: bigH,
+                            answer: areaA,
+                            formulaSample: `${bigW}×${bigH}`,
+                            hint: `大長方形A(${bigW}×${bigH})`
+                        },
+                        partB: {
+                            label: '缺口B',
+                            shapeType: 0,
+                            base: cutW,
+                            height: cutH,
+                            answer: areaB,
+                            formulaSample: `${cutW}×${cutH}`,
+                            hint: `缺口B(${cutW}×${cutH})`
+                        },
+                        step1Sample: `${bigW}×${bigH} - ${cutW}×${cutH}`,
+                        step2Sample: `${areaA} - ${areaB}`,
+                        answer: areaA - areaB,
+                        dims: { bigW, bigH, cutW, cutH }
+                    };
+                },
+                // 4: 燕尾旗形多邊形 (填補法：大長方形 A - 缺口三角形 B)
+                function() {
+                    let bigW = window.rand(8, 13);
+                    let bigH = window.rand(6, 10);
+                    let triH = window.rand(3, bigW - 3);
+                    if ((bigH * triH) % 2 !== 0) {
+                        if (bigH % 2 !== 0) bigH++;
+                    }
+                    let areaA = bigW * bigH;
+                    let areaB = (bigH * triH) / 2;
+                    return {
+                        isPolygon: true,
+                        polyType: 'banner_tri_fill',
+                        method: 'fill', // A - B
+                        methodTitle: '🧩 填補法 (A − B)',
+                        unit: 'm',
+                        partA: {
+                            label: '大長方形A',
+                            shapeType: 0,
+                            base: bigW,
+                            height: bigH,
+                            answer: areaA,
+                            formulaSample: `${bigW}×${bigH}`,
+                            hint: `大長方形A(${bigW}×${bigH})`
+                        },
+                        partB: {
+                            label: '缺口B',
+                            shapeType: 1,
+                            base: bigH,
+                            height: triH,
+                            answer: areaB,
+                            formulaSample: `${bigH}×${triH}÷2`,
+                            hint: `缺口B(${bigH}×${triH}÷2)`
+                        },
+                        step1Sample: `${bigW}×${bigH} - ${bigH}×${triH}÷2`,
+                        step2Sample: `${areaA} - ${areaB}`,
+                        answer: areaA - areaB,
+                        dims: { bigW, bigH, triH }
+                    };
+                }
+            ];
+
+            let pick = templates[window.rand(0, templates.length - 1)];
+            let q = pick();
+            q.rotation = window.rand(0, 359) * Math.PI / 180;
+            return q;
+        };
+
+        window.drawPolygonToCanvas = function(canvasId, q) {
+            let canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            let ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let w = canvas.width;
+            let h = canvas.height;
+            let u = q.unit || 'cm';
+
+            ctx.save();
+            ctx.translate(w / 2, h / 2);
+            if (q.rotation) ctx.rotate(q.rotation);
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+
+            function drawBadgeLabel(text, x, y, color = "#111827", fontSize = 15) {
+                ctx.save();
+                ctx.translate(x, y);
+                if (q.rotation) ctx.rotate(-q.rotation);
+                ctx.font = `900 ${fontSize}px 'Noto Sans TC'`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+                ctx.lineWidth = 5;
+                ctx.strokeText(text, 0, 0);
+                ctx.fillStyle = color;
+                ctx.fillText(text, 0, 0);
+                ctx.restore();
+            }
+
+            function drawRightAngle(x, y, size, dirX = 1, dirY = 1) {
+                ctx.save();
+                ctx.strokeStyle = "#4b5563";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x + dirX * size, y);
+                ctx.lineTo(x + dirX * size, y + dirY * size);
+                ctx.lineTo(x, y + dirY * size);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            const d = q.dims;
+
+            if (q.polyType === 'house_split') {
+                let totalH = d.hTri + d.hRect;
+                let diag = Math.sqrt(d.w * d.w + totalH * totalH);
+                let scale = 190 / diag;
+                let pw = d.w * scale;
+                let phRect = d.hRect * scale;
+                let phTri = d.hTri * scale;
+
+                let left = -pw / 2;
+                let topApex = -(phTri + phRect) / 2;
+                let midY = topApex + phTri;
+                let bottom = midY + phRect;
+
+                // 上方三角形 A
+                ctx.fillStyle = "#bfdbfe";
+                ctx.strokeStyle = "#1d4ed8";
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(0, topApex);
+                ctx.lineTo(left + pw, midY);
+                ctx.lineTo(left, midY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 下方長方形 B
+                ctx.fillStyle = "#bbf7d0";
+                ctx.strokeStyle = "#047857";
+                ctx.beginPath();
+                ctx.moveTo(left, midY);
+                ctx.lineTo(left + pw, midY);
+                ctx.lineTo(left + pw, bottom);
+                ctx.lineTo(left, bottom);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 分割紅虛線
+                ctx.save();
+                ctx.setLineDash([6, 5]);
+                ctx.strokeStyle = "#dc2626";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(left, midY);
+                ctx.lineTo(left + pw, midY);
+                ctx.stroke();
+
+                // 三角形高虛線
+                ctx.strokeStyle = "#1e40af";
+                ctx.beginPath();
+                ctx.moveTo(0, topApex);
+                ctx.lineTo(0, midY);
+                ctx.stroke();
+                ctx.restore();
+
+                drawRightAngle(0, midY, 8, 1, -1);
+                drawRightAngle(left, bottom, 8, 1, -1);
+
+                drawBadgeLabel("A", -pw * 0.22, midY - phTri * 0.35, "#1e3a8a", 18);
+                drawBadgeLabel("B", 0, midY + phRect * 0.5, "#065f46", 18);
+
+                drawBadgeLabel(`${d.hTri} ${u}`, 26, topApex + phTri * 0.55, "#1e40af", 14);
+                drawBadgeLabel(`${d.w} ${u}`, 0, bottom + 18, "#111827", 15);
+                drawBadgeLabel(`${d.hRect} ${u}`, left + pw + 28, midY + phRect * 0.5, "#111827", 15);
+            } 
+            else if (q.polyType === 'L_split') {
+                let diag = Math.sqrt(d.totalW * d.totalW + d.hA * d.hA);
+                let scale = 190 / diag;
+                let pwA = d.wA * scale;
+                let phA = d.hA * scale;
+                let pwB = d.wB * scale;
+                let phB = d.hB * scale;
+
+                let left = -(pwA + pwB) / 2;
+                let bottom = phA / 2;
+                let topA = -phA / 2;
+                let topB = bottom - phB;
+                let splitX = left + pwA;
+                let right = splitX + pwB;
+
+                // A 左長方形
+                ctx.fillStyle = "#bfdbfe";
+                ctx.strokeStyle = "#1d4ed8";
+                ctx.lineWidth = 3.5;
+                ctx.fillRect(left, topA, pwA, phA);
+                ctx.strokeRect(left, topA, pwA, phA);
+
+                // B 右長方形
+                ctx.fillStyle = "#bbf7d0";
+                ctx.strokeStyle = "#047857";
+                ctx.fillRect(splitX, topB, pwB, phB);
+                ctx.strokeRect(splitX, topB, pwB, phB);
+
+                // 分割紅虛線
+                ctx.save();
+                ctx.setLineDash([6, 5]);
+                ctx.strokeStyle = "#dc2626";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(splitX, topB);
+                ctx.lineTo(splitX, bottom);
+                ctx.stroke();
+                ctx.restore();
+
+                drawRightAngle(left, bottom, 8, 1, -1);
+                drawRightAngle(right, bottom, 8, -1, -1);
+
+                drawBadgeLabel("A", left + pwA / 2, 0, "#1e3a8a", 18);
+                drawBadgeLabel("B", splitX + pwB / 2, topB + phB / 2, "#065f46", 18);
+
+                drawBadgeLabel(`${d.wA} ${u}`, left + pwA / 2, topA - 15, "#111827", 14);
+                drawBadgeLabel(`${d.hA} ${u}`, left - 26, 0, "#111827", 14);
+                drawBadgeLabel(`${d.wB} ${u}`, splitX + pwB / 2, topB - 15, "#111827", 14);
+                drawBadgeLabel(`${d.hB} ${u}`, right + 26, topB + phB / 2, "#111827", 14);
+            }
+            else if (q.polyType === 'trap_rect_split') {
+                let totalH = d.hTrap + d.hRect;
+                let diag = Math.sqrt(d.bottomW * d.bottomW + totalH * totalH);
+                let scale = 190 / diag;
+                let pTopW = d.topW * scale;
+                let pBotW = d.bottomW * scale;
+                let phTrap = d.hTrap * scale;
+                let phRect = d.hRect * scale;
+
+                let left = -pBotW / 2;
+                let right = pBotW / 2;
+                let topY = -(phTrap + phRect) / 2;
+                let midY = topY + phTrap;
+                let botY = midY + phRect;
+
+                // 上方梯形 A
+                ctx.fillStyle = "#bfdbfe";
+                ctx.strokeStyle = "#1d4ed8";
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(-pTopW / 2, topY);
+                ctx.lineTo(pTopW / 2, topY);
+                ctx.lineTo(right, midY);
+                ctx.lineTo(left, midY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 下方長方形 B
+                ctx.fillStyle = "#bbf7d0";
+                ctx.strokeStyle = "#047857";
+                ctx.fillRect(left, midY, pBotW, phRect);
+                ctx.strokeRect(left, midY, pBotW, phRect);
+
+                // 分割虛線與梯形高
+                ctx.save();
+                ctx.setLineDash([6, 5]);
+                ctx.strokeStyle = "#dc2626";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(left, midY);
+                ctx.lineTo(right, midY);
+                ctx.stroke();
+
+                ctx.strokeStyle = "#1e40af";
+                ctx.beginPath();
+                ctx.moveTo(-pTopW / 2, topY);
+                ctx.lineTo(-pTopW / 2, midY);
+                ctx.stroke();
+                ctx.restore();
+
+                drawRightAngle(-pTopW / 2, midY, 7, 1, -1);
+                drawRightAngle(left, botY, 8, 1, -1);
+
+                drawBadgeLabel("A", 18, topY + phTrap * 0.5, "#1e3a8a", 17);
+                drawBadgeLabel("B", 0, midY + phRect * 0.5, "#065f46", 18);
+
+                drawBadgeLabel(`${d.topW} ${u}`, 0, topY - 14, "#111827", 14);
+                drawBadgeLabel(`${d.hTrap} ${u}`, -pTopW / 2 - 24, topY + phTrap * 0.5, "#1e40af", 13);
+                drawBadgeLabel(`${d.bottomW} ${u}`, 0, botY + 16, "#111827", 14);
+                drawBadgeLabel(`${d.hRect} ${u}`, right + 26, midY + phRect * 0.5, "#111827", 14);
+            }
+            else if (q.polyType === 'rect_cutout_fill') {
+                let diag = Math.sqrt(d.bigW * d.bigW + d.bigH * d.bigH);
+                let scale = 190 / diag;
+                let pw = d.bigW * scale;
+                let ph = d.bigH * scale;
+                let cw = d.cutW * scale;
+                let ch = d.cutH * scale;
+
+                let left = -pw / 2;
+                let right = pw / 2;
+                let top = -ph / 2;
+                let bottom = ph / 2;
+                let cLeft = -cw / 2;
+                let cRight = cw / 2;
+                let cBottom = top + ch;
+
+                // 塗色U形主體 A
+                ctx.fillStyle = "#fde68a";
+                ctx.strokeStyle = "#d97706";
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(left, top);
+                ctx.lineTo(cLeft, top);
+                ctx.lineTo(cLeft, cBottom);
+                ctx.lineTo(cRight, cBottom);
+                ctx.lineTo(cRight, top);
+                ctx.lineTo(right, top);
+                ctx.lineTo(right, bottom);
+                ctx.lineTo(left, bottom);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 缺口 B 虛線填補區
+                ctx.fillStyle = "rgba(239, 68, 68, 0.14)";
+                ctx.fillRect(cLeft, top, cw, ch);
+                ctx.save();
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = "#dc2626";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(cLeft, top);
+                ctx.lineTo(cRight, top);
+                ctx.stroke();
+                ctx.restore();
+
+                drawRightAngle(left, bottom, 8, 1, -1);
+                drawRightAngle(right, bottom, 8, -1, -1);
+
+                drawBadgeLabel("A (全圖)", 0, bottom - (ph - ch) * 0.45, "#92400e", 15);
+                drawBadgeLabel("B(缺口)", 0, top + ch * 0.5, "#dc2626", 13);
+
+                drawBadgeLabel(`${d.bigW} ${u}`, 0, bottom + 17, "#111827", 15);
+                drawBadgeLabel(`${d.bigH} ${u}`, left - 28, 0, "#111827", 15);
+                drawBadgeLabel(`${d.cutW} ${u}`, 0, top - 14, "#dc2626", 14);
+                drawBadgeLabel(`${d.cutH} ${u}`, cRight + 24, top + ch * 0.5, "#dc2626", 13);
+            }
+            else if (q.polyType === 'banner_tri_fill') {
+                let diag = Math.sqrt(d.bigW * d.bigW + d.bigH * d.bigH);
+                let scale = 190 / diag;
+                let pw = d.bigW * scale;
+                let ph = d.bigH * scale;
+                let pTriH = d.triH * scale;
+
+                let left = -pw / 2;
+                let right = pw / 2;
+                let top = -ph / 2;
+                let bottom = ph / 2;
+                let inX = right - pTriH;
+
+                // 燕尾旗塗色區
+                ctx.fillStyle = "#fde68a";
+                ctx.strokeStyle = "#d97706";
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(left, top);
+                ctx.lineTo(right, top);
+                ctx.lineTo(inX, 0);
+                ctx.lineTo(right, bottom);
+                ctx.lineTo(left, bottom);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 缺口三角形 B 填補區
+                ctx.fillStyle = "rgba(239, 68, 68, 0.14)";
+                ctx.beginPath();
+                ctx.moveTo(right, top);
+                ctx.lineTo(right, bottom);
+                ctx.lineTo(inX, 0);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.save();
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = "#dc2626";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(right, top);
+                ctx.lineTo(right, bottom);
+                ctx.moveTo(inX, 0);
+                ctx.lineTo(right, 0);
+                ctx.stroke();
+                ctx.restore();
+
+                drawRightAngle(left, bottom, 8, 1, -1);
+                drawRightAngle(right, 0, 7, -1, -1);
+
+                drawBadgeLabel("A (大長方形)", left + (pw - pTriH) * 0.48, 0, "#92400e", 14);
+                drawBadgeLabel("B", right - pTriH * 0.35, -ph * 0.22, "#dc2626", 14);
+
+                drawBadgeLabel(`${d.bigW} ${u}`, 0, top - 15, "#111827", 15);
+                drawBadgeLabel(`${d.bigH} ${u}`, left - 28, 0, "#111827", 15);
+                drawBadgeLabel(`${d.triH} ${u}`, inX + pTriH * 0.5, 16, "#dc2626", 13);
+            }
+
+            ctx.restore();
+        };
+
+        window.updatePolygonUI = function() {
+            const stdPanel = document.getElementById('standard-qa-panel');
+            const polyPanel = document.getElementById('polygon-qa-panel');
+            if (!stdPanel || !polyPanel) return;
+
+            if (gameMode !== 'gym' || !currentQuestion || !currentQuestion.isPolygon) {
+                stdPanel.classList.remove('hidden');
+                polyPanel.classList.add('hidden');
+                return;
+            }
+
+            stdPanel.classList.add('hidden');
+            polyPanel.classList.remove('hidden');
+
+            const isSplit = currentQuestion.method === 'split';
+            const opSymbol = isSplit ? '+' : '-';
+
+            const badge = document.getElementById('poly-method-badge');
+            const stepInd = document.getElementById('poly-step-indicator');
+            if (badge) {
+                badge.innerText = currentQuestion.methodTitle;
+                badge.className = isSplit
+                    ? "bg-blue-100 text-blue-900 border border-blue-400 px-2 py-0.5 rounded-full text-xs font-black"
+                    : "bg-amber-100 text-amber-900 border border-amber-400 px-2 py-0.5 rounded-full text-xs font-black";
+            }
+
+            const stepDescMap = {
+                1: `步驟 ①/3：列出 A算式 ${opSymbol} B算式`,
+                2: `步驟 ②/3：寫出 A答案 ${opSymbol} B答案`,
+                3: `步驟 ③/3：寫出最終總面積`
+            };
+            if (stepInd) stepInd.innerText = stepDescMap[polyStep] || "步驟 1/3";
+
+            // 步驟 1：直接列出 圖形A算式 ± 圖形B算式
+            const row1 = document.getElementById('poly-row-step1');
+            const inp1 = document.getElementById('poly-input-step1');
+            const chk1 = document.getElementById('poly-check-step1');
+            if (inp1) {
+                if (polyInputs.step1) {
+                    inp1.innerHTML = `<span>${polyInputs.step1}</span>`;
+                } else if (polyStep === 1) {
+                    inp1.innerHTML = `<span class="text-gray-400 font-bold text-xs">請列式：圖形A算式 ${opSymbol} 圖形B算式</span>`;
+                } else {
+                    inp1.innerHTML = '';
+                }
+            }
+            if (chk1) chk1.classList.toggle('hidden', polyStep <= 1);
+            if (row1) {
+                row1.className = polyStep === 1
+                    ? "flex items-center gap-1.5 bg-blue-50 p-1 rounded-lg border-2 border-blue-500 ring-2 ring-blue-200 transition-all"
+                    : "flex items-center gap-1.5 bg-gray-50 p-1 rounded-lg border border-gray-200 opacity-90 transition-all";
+            }
+
+            // 步驟 2：寫出 圖形A答案 ± 圖形B答案
+            const row2 = document.getElementById('poly-row-step2');
+            const inp2 = document.getElementById('poly-input-step2');
+            const chk2 = document.getElementById('poly-check-step2');
+            if (inp2) {
+                if (polyInputs.step2) {
+                    inp2.innerHTML = `<span>${polyInputs.step2}</span>`;
+                } else if (polyStep === 2) {
+                    inp2.innerHTML = `<span class="text-gray-400 font-bold text-xs">請輸入：圖形A答案 ${opSymbol} 圖形B答案</span>`;
+                } else {
+                    inp2.innerHTML = `<span class="text-gray-300 font-bold text-xs">圖形A答案 ${opSymbol} 圖形B答案</span>`;
+                }
+            }
+            if (chk2) chk2.classList.toggle('hidden', polyStep <= 2);
+            if (row2) {
+                row2.className = polyStep < 2
+                    ? "flex items-center gap-1.5 bg-emerald-50/40 p-1 rounded-lg border border-gray-200 opacity-40 transition-all"
+                    : (polyStep === 2
+                        ? "flex items-center gap-1.5 bg-emerald-50 p-1 rounded-lg border-2 border-emerald-500 ring-2 ring-emerald-200 transition-all"
+                        : "flex items-center gap-1.5 bg-gray-50 p-1 rounded-lg border border-gray-200 opacity-90 transition-all");
+            }
+
+            // 步驟 3：寫出最終總面積答案
+            const row3 = document.getElementById('poly-row-step3');
+            const inp3 = document.getElementById('poly-input-step3');
+            const unit3 = document.getElementById('poly-unit-step3');
+            if (unit3) unit3.innerText = `${currentQuestion.unit || 'cm'}²`;
+            if (inp3) {
+                if (polyInputs.step3) {
+                    inp3.innerHTML = `<span>${polyInputs.step3}</span>`;
+                } else if (polyStep === 3) {
+                    inp3.innerHTML = `<span class="text-red-300 font-bold text-xs">請輸入最終總面積答案</span>`;
+                } else {
+                    inp3.innerHTML = `<span class="text-gray-300 font-bold text-xs">最終總面積</span>`;
+                }
+            }
+            if (row3) {
+                row3.className = polyStep < 3
+                    ? "flex items-center gap-1.5 bg-amber-50/40 p-1 rounded-lg border border-gray-200 opacity-40 transition-all"
+                    : "flex items-center gap-1.5 bg-amber-50 p-1 rounded-lg border-2 border-red-500 ring-2 ring-red-200 transition-all";
+            }
+        };
+
+        window.validatePartFormula = function(formulaStr, part) {
+            if (!formulaStr || !formulaStr.trim()) return { valid: false, msg: "請輸入完整算式！" };
+            let normalized = formulaStr.replace(/[xX*]/g, '×').replace(/[/]|除/g, '÷');
+            let expr = normalized.replace(/×/g, '*').replace(/÷/g, '/');
+            let val;
+            try {
+                val = eval(expr);
+                if (!Number.isFinite(val)) throw new Error();
+            } catch (e) {
+                return { valid: false, msg: "算式格式不完整！" };
+            }
+            if (Math.abs(val - part.answer) > 0.001) {
+                return { valid: false, msg: `${part.label}列式結果不符！（提示：${part.hint}）` };
+            }
+            let nums = normalized.match(/\d+/g);
+            if (!nums) return { valid: false, msg: "算式中沒有數字！" };
+            let numVals = nums.map(Number);
+            let required = [];
+            if (part.shapeType === 0) required = [part.base, part.height];
+            else if (part.shapeType === 1) required = [part.base, part.height, 2];
+            else if (part.shapeType === 2) required = [part.top, part.bottom, part.height, 2];
+
+            let temp = [...numVals];
+            for (let r of required) {
+                let idx = temp.indexOf(r);
+                if (idx === -1) return { valid: false, msg: `${part.label}算式需使用邊長數字！（提示：${part.hint}）` };
+                temp.splice(idx, 1);
+            }
+            if (temp.length > 0) return { valid: false, msg: `${part.label}算式包含了多餘的數字！` };
+            return { valid: true };
+        };
+
+        // 驗證步驟 ①：直接列出 圖形A算式 ± 圖形B算式
+        window.validatePolygonStep1CombinedFormula = function(formulaStr, q) {
+            if (!formulaStr || !formulaStr.trim()) {
+                return { valid: false, msg: "請先輸入 圖形A算式 與 圖形B算式！" };
+            }
+            let normalized = formulaStr.replace(/\s+/g, '').replace(/[xX*]/g, '×').replace(/[/]|除/g, '÷');
+            const targetOp = q.method === 'split' ? '+' : '-';
+
+            // 找出不在括號內的頂層 + 或 - 運算符作為 A算式 與 B算式 的分隔點
+            let depth = 0;
+            let splitIndices = [];
+            for (let i = 0; i < normalized.length; i++) {
+                let ch = normalized[i];
+                if (ch === '(') depth++;
+                else if (ch === ')') depth = Math.max(0, depth - 1);
+                else if (depth === 0 && ch === targetOp && i > 0 && i < normalized.length - 1) {
+                    splitIndices.push(i);
+                }
+            }
+
+            if (splitIndices.length === 0) {
+                let opName = q.method === 'split' ? '「+」把圖形A算式和圖形B算式加起來' : '「-」把圖形A算式減去缺口B算式';
+                return { valid: false, msg: `請用${opName}！（例如：${q.step1Sample}）` };
+            }
+
+            for (let idx of splitIndices) {
+                let leftExpr = normalized.slice(0, idx);
+                let rightExpr = normalized.slice(idx + 1);
+
+                // 去除最外層多餘括號（例如 (6×4)+(5×3)）
+                if (leftExpr.startsWith('(') && leftExpr.endsWith(')')) {
+                    let inner = leftExpr.slice(1, -1);
+                    let d = 0, ok = true;
+                    for (let c of inner) {
+                        if (c === '(') d++;
+                        else if (c === ')') { d--; if (d < 0) { ok = false; break; } }
+                    }
+                    if (ok && d === 0 && q.partA.shapeType !== 2) leftExpr = inner;
+                }
+                if (rightExpr.startsWith('(') && rightExpr.endsWith(')')) {
+                    let inner = rightExpr.slice(1, -1);
+                    let d = 0, ok = true;
+                    for (let c of inner) {
+                        if (c === '(') d++;
+                        else if (c === ')') { d--; if (d < 0) { ok = false; break; } }
+                    }
+                    if (ok && d === 0 && q.partB.shapeType !== 2) rightExpr = inner;
+                }
+
+                let checkA1 = window.validatePartFormula(leftExpr, q.partA);
+                let checkB1 = window.validatePartFormula(rightExpr, q.partB);
+                if (checkA1.valid && checkB1.valid) {
+                    return { valid: true, swapped: false };
+                }
+
+                // 分割法允許 B算式 + A算式 對調順序
+                if (q.method === 'split') {
+                    let checkB2 = window.validatePartFormula(leftExpr, q.partB);
+                    let checkA2 = window.validatePartFormula(rightExpr, q.partA);
+                    if (checkB2.valid && checkA2.valid) {
+                        return { valid: true, swapped: true };
+                    }
+                }
+            }
+
+            return {
+                valid: false,
+                msg: `步驟①列式有誤！請直接列出兩部分算式（提示：${q.partA.hint} ${targetOp} ${q.partB.hint}）`
+            };
+        };
+
+        // 驗證步驟 ②：寫出 圖形A答案 ± 圖形B答案
+        window.validatePolygonStep2CombinedAnswers = function(step2Str, q) {
+            if (!step2Str || !step2Str.trim()) {
+                return { valid: false, msg: "請輸入 圖形A答案 與 圖形B答案！" };
+            }
+            let normalized = step2Str.replace(/\s+/g, '');
+            const targetOp = q.method === 'split' ? '+' : '-';
+
+            if (!normalized.includes(targetOp)) {
+                return { valid: false, msg: `請用「${targetOp}」寫出兩個圖形的面積答案！（例如：${q.step2Sample}）` };
+            }
+
+            // 必須是純數字 ± 純數字，不可夾雜 × 或 ÷
+            if (/[×÷*xX/()]/.test(normalized)) {
+                return { valid: false, msg: `步驟②請先算出 A 和 B 各自的面積數字！（例如：${q.step2Sample}）` };
+            }
+
+            let parts = normalized.split(targetOp);
+            if (parts.length !== 2 || !/^\d+$/.test(parts[0]) || !/^\d+$/.test(parts[1])) {
+                return { valid: false, msg: `格式請輸入：圖形A答案 ${targetOp} 圖形B答案！` };
+            }
+
+            let v1 = parseInt(parts[0], 10);
+            let v2 = parseInt(parts[1], 10);
+            let ansA = q.partA.answer;
+            let ansB = q.partB.answer;
+
+            if (v1 === ansA && v2 === ansB) {
+                return { valid: true };
+            }
+            if (q.method === 'split' && v1 === ansB && v2 === ansA) {
+                return { valid: true };
+            }
+
+            return {
+                valid: false,
+                msg: `A 或 B 的面積計算有誤！請檢查 ${q.partA.formulaSample}=${ansA}，${q.partB.formulaSample}=${ansB}`
+            };
+        };
+
+        window.handlePolygonSubmit = function() {
+            if (window.isSingleAttacking || !currentQuestion || !currentQuestion.isPolygon) return;
+            const q = currentQuestion;
+            const opSymbol = q.method === 'split' ? '+' : '-';
+            const methodKey = q.method;
+
+            if (polyStep === 1) {
+                let res = window.validatePolygonStep1CombinedFormula(polyInputs.step1, q);
+                if (res.valid) {
+                    window.isSingleAttacking = true;
+                    polyStep = 2;
+                    window.updatePolygonUI();
+                    elements.messageBox.innerHTML = `<span class="text-green-600 font-black">步驟① 列式正確！發動第一波攻勢！</span> 請寫出步驟②：圖形A答案 ${opSymbol} 圖形B答案！`;
+                    window.attackPokemon(0.35, false);
+                    setTimeout(() => { window.isSingleAttacking = false; }, 600);
+                } else {
+                    polyStats[methodKey].step1++; // 紀錄步驟1答錯次數
+                    window.isSingleAttacking = true;
+                    window.handleWrongAnswer(res.msg, 1);
+                }
+            } else if (polyStep === 2) {
+                let res = window.validatePolygonStep2CombinedAnswers(polyInputs.step2, q);
+                if (res.valid) {
+                    window.isSingleAttacking = true;
+                    polyStep = 3;
+                    window.updatePolygonUI();
+                    elements.messageBox.innerHTML = `<span class="text-green-600 font-black">步驟② 計算正確！發動第二波連擊！</span> 請寫出步驟③：最終總面積答案！`;
+                    window.attackPokemon(0.35, false);
+                    setTimeout(() => { window.isSingleAttacking = false; }, 600);
+                } else {
+                    polyStats[methodKey].step2++; // 紀錄步驟2答錯次數
+                    window.isSingleAttacking = true;
+                    window.handleWrongAnswer(res.msg, 2);
+                }
+            } else if (polyStep === 3) {
+                let ans = parseInt(polyInputs.step3, 10);
+                if (isNaN(ans)) {
+                    elements.messageBox.innerText = "請輸入最終總面積答案！";
+                    return;
+                }
+                if (ans === q.answer) {
+                    polyStats[methodKey].total++; // 完全答對，增加答題成功總數
+                    window.isSingleAttacking = true;
+                    currentPhase = 3;
+                    window.recordAttempt(true);
+                    elements.messageBox.innerHTML = `<span class="text-green-600 font-black">步驟③ 總面積完全正確！發動第三波必殺連擊！</span>`;
+                    window.attackPokemon(1.5, true);
+                } else {
+                    polyStats[methodKey].step3++; // 紀錄步驟3答錯次數
+                    window.isSingleAttacking = true;
+                    window.handleWrongAnswer(`最終總面積計算錯誤！請再仔細算一次 ${polyInputs.step2} 的結果！`, 3);
+                }
+            }
         };
 
         window.rand = function(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
@@ -2858,6 +4128,27 @@
         };
 
         window.numpadPress = function(val) {
+            if (gameMode === 'gym' && currentQuestion && currentQuestion.isPolygon) {
+                if (currentPhase === 3 || window.isSingleAttacking) return;
+                const keyMap = { 1: 'step1', 2: 'step2', 3: 'step3' };
+                const field = keyMap[polyStep];
+                if (!field) return;
+
+                if (val === 'DEL') {
+                    polyInputs[field] = polyInputs[field].slice(0, -1);
+                } else {
+                    // 步驟 1 可輸入完整運算符；步驟 2 只需輸入數字與 + / -；步驟 3 只需輸入純數字
+                    if (polyStep === 2 && ['×', '÷', '(', ')'].includes(val)) return;
+                    if (polyStep === 3 && ['+', '-', '×', '÷', '(', ')'].includes(val)) return;
+                    let maxLen = polyStep === 1 ? 28 : (polyStep === 2 ? 12 : 6);
+                    if (polyInputs[field].length < maxLen) {
+                        polyInputs[field] += val;
+                    }
+                }
+                window.updatePolygonUI();
+                return;
+            }
+
             if (currentPhase === 1) {
                 if (val === 'DEL') playerFormulaStr = playerFormulaStr.slice(0, -1);
                 else playerFormulaStr += val;
@@ -2917,12 +4208,21 @@
         };
 
         window.recordAttempt = function(isCorrect) {
+            if (currentQuestion && currentQuestion.isPolygon) {
+                if (isCorrect) {
+                    score++;
+                    elements.score.innerText = score;
+                }
+                window.savePlayerData();
+                return;
+            }
+
             const types = ['parallelogram', 'triangle', 'trapezoid'];
-            const typeKey = types[currentQuestion.type];
+            const typeKey = types[currentQuestion.type || 0] || 'parallelogram';
             gameStats[typeKey].total++;
             if (isCorrect) {
                 gameStats[typeKey].correct++;
-                score = gameStats.parallelogram.correct + gameStats.triangle.correct + gameStats.trapezoid.correct;
+                score = gameStats.parallelogram.correct + gameStats.triangle.correct + gameStats.trapezoid.correct + polyStats.split.total + polyStats.fill.total;
                 elements.score.innerText = score;
             }
             window.savePlayerData();
@@ -2932,6 +4232,10 @@
 
         window.singleSubmit = function() {
             if (window.isSingleAttacking) return;
+            if (gameMode === 'gym' && currentQuestion && currentQuestion.isPolygon) {
+                window.handlePolygonSubmit();
+                return;
+            }
             if (currentPhase === 1) {
                 window.checkFormula();
             } else if (currentPhase === 2) {
@@ -3065,6 +4369,13 @@
                 elements.multiHpText.classList.remove('hidden');
                 if (elements.multiBossHpContainer) elements.multiBossHpContainer.classList.remove('hidden');
                 if (elements.enemyInfoContainer) elements.enemyInfoContainer.classList.add('hidden');
+                currentPokemon = pool[Math.floor(Math.random() * pool.length)];
+            } else if (gameMode === 'gym' && currentGymLeader) {
+                elements.gmaxCloud.classList.add('hidden');
+                elements.multiHpText.classList.add('hidden');
+                if (elements.multiBossHpContainer) elements.multiBossHpContainer.classList.add('hidden');
+                if (elements.enemyInfoContainer) elements.enemyInfoContainer.classList.remove('hidden');
+                currentPokemon = currentGymEnemyParty[currentGymEnemyIndex];
             } else {
                 const rand = Math.random();
                 if (score < 8) {
@@ -3087,21 +4398,29 @@
                 elements.multiHpText.classList.add('hidden');
                 if (elements.multiBossHpContainer) elements.multiBossHpContainer.classList.add('hidden');
                 if (elements.enemyInfoContainer) elements.enemyInfoContainer.classList.remove('hidden');
+                if (window.getSingleEncounterPool) {
+                    pool = window.getSingleEncounterPool();
+                }
+                currentPokemon = pool[Math.floor(Math.random() * pool.length)];
             }
             
-            if (gameMode !== 'multi' && window.getSingleEncounterPool) {
-                pool = window.getSingleEncounterPool();
-            }
-            currentPokemon = pool[Math.floor(Math.random() * pool.length)];
             enemyMaxHp = currentPokemon.stats.hp;
             enemyHp = enemyMaxHp;
             
             elements.enemyName.innerText = currentPokemon.name; window.updateHpBar();
             elements.pokemonImg.src = currentPokemon.image;
+            window.updateGymBannerUI();
             
             if (gameMode === 'multi') {
                 elements.pokemonImg.classList.add('gmax-boss');
                 elements.messageBox.innerText = `⚠️ 警告：野生 Lv.50 ${currentPokemon.name} 出現了！大家合力擊敗牠！`;
+            } else if (gameMode === 'gym' && currentGymLeader) {
+                elements.pokemonImg.classList.remove('gmax-boss');
+                if (currentGymEnemyIndex === 0) {
+                    elements.messageBox.innerText = `🏟️ ${currentGymLeader.gymName}館主 ${currentGymLeader.name}：「${currentGymLeader.quote}」 派出了 ${currentPokemon.name}！`;
+                } else {
+                    elements.messageBox.innerText = `🏟️ 館主 ${currentGymLeader.name} 派出了下一隻寶可夢 ${currentPokemon.name}！請列出面積算式！`;
+                }
             } else {
                 elements.pokemonImg.classList.remove('gmax-boss');
                 elements.messageBox.innerText = `野生 Lv.50 ${currentPokemon.name} 出現了！請在右方列出圖形的面積算式！`;
@@ -3166,7 +4485,15 @@
         window.generateNewTurn = function(newQuestion = true) {
             currentPhase = 1; 
             window.isSingleAttacking = false;
-            if (gameMode === 'single') {
+            if (gameMode === 'gym') {
+                polyStep = 1;
+                polyInputs = { step1: "", step2: "", step3: "" };
+                if (newQuestion) {
+                    currentQuestion = window.generatePolygonQuestion();
+                    window.drawPolygonToCanvas('shape-canvas', currentQuestion);
+                }
+                window.updatePolygonUI();
+            } else if (gameMode === 'single') {
                 playerFormulaStr = ""; playerAnswerStr = "";
                 elements.formulaDisplay.innerText = ""; elements.answerDisplay.innerText = "";
                 elements.phase1.classList.remove('hidden'); elements.phase2.classList.add('hidden');
@@ -3175,6 +4502,7 @@
                     currentQuestion = window.generateAreaQuestion(); 
                     window.drawShapeToCanvas('shape-canvas', currentQuestion, false); 
                 }
+                window.updatePolygonUI();
                 window.updateSingleAreaLabelsAndHint("");
             }
         };
@@ -3302,7 +4630,7 @@
             window.sessionEncounterCount = 0;
             const battleSceneEl = elements.battleScene || document.getElementById('battle-scene-bg');
             if (battleSceneEl) {
-                battleSceneEl.style.backgroundImage = "url('https://pmath-lab.github.io/p5area/bg.jpg')";
+                battleSceneEl.style.backgroundImage = gameMode === 'gym' ? "url('https://pmath-lab.github.io/p5area/bg2.jpg')" : "url('https://pmath-lab.github.io/p5area/bg.jpg')";
                 battleSceneEl.style.backgroundSize = "cover";
                 battleSceneEl.style.backgroundPosition = "center";
                 battleSceneEl.style.backgroundRepeat = "no-repeat";
@@ -3334,7 +4662,7 @@
         window.selectStarter = function(pokemonName) {
             const battleSceneEl = elements.battleScene || document.getElementById('battle-scene-bg');
             if (battleSceneEl) {
-                battleSceneEl.style.backgroundImage = "url('https://pmath-lab.github.io/p5area/bg.jpg')";
+                battleSceneEl.style.backgroundImage = gameMode === 'gym' ? "url('https://pmath-lab.github.io/p5area/bg2.jpg')" : "url('https://pmath-lab.github.io/p5area/bg.jpg')";
                 battleSceneEl.style.backgroundSize = "cover";
                 battleSceneEl.style.backgroundPosition = "center";
                 battleSceneEl.style.backgroundRepeat = "no-repeat";
@@ -3347,6 +4675,11 @@
             elements.playerName.innerText = starter.name; 
             elements.playerSprite.src = window.getBackSpriteUrl(starter.image); 
             window.updatePlayerHpBar(); window.renderParty(); window.savePlayerData(); 
+            if (gameMode === 'gym') {
+                window.renderGymSelection();
+                window.showScreen('gym');
+                return;
+            }
             elements.overlay.classList.remove('hidden'); elements.overlay.classList.add('animate-encounter');
             setTimeout(() => { window.spawnPokemon(); window.showScreen('battle'); }, 1200);
             setTimeout(() => { elements.overlay.classList.remove('animate-encounter'); elements.overlay.classList.add('hidden'); }, 2200);
@@ -3397,9 +4730,26 @@
                             
                             setTimeout(() => { window.resumeTurn(returnPhase); }, 1500);
                         } else {
-                            elements.endTitle.innerText = "挑戰失敗！"; elements.endTitle.className = "text-4xl font-black text-red-600 mb-4";
-                            elements.endIcon.innerText = "😵"; elements.endSubtitle.innerText = "隊伍全軍覆沒，總共答對";
-                            elements.finalScore.innerText = score; window.showScreen('end');
+                            const endGymBtn = document.getElementById('end-gym-btn');
+                            const scoreUnit = document.getElementById('end-score-unit');
+                            if (gameMode === 'gym' && currentGymLeader) {
+                                elements.endTitle.innerText = `${currentGymLeader.gymName}挑戰失敗！`;
+                                elements.endTitle.className = "text-3xl sm:text-4xl font-black text-red-600 mb-4";
+                                elements.endIcon.innerText = "😵";
+                                elements.endSubtitle.innerText = `未能擊敗館主 ${currentGymLeader.name}，目前累積答對`;
+                                elements.finalScore.innerText = score;
+                                if (scoreUnit) scoreUnit.innerText = "題";
+                                if (endGymBtn) endGymBtn.classList.remove('hidden');
+                            } else {
+                                elements.endTitle.innerText = "挑戰失敗！";
+                                elements.endTitle.className = "text-4xl font-black text-red-600 mb-4";
+                                elements.endIcon.innerText = "😵";
+                                elements.endSubtitle.innerText = "隊伍全軍覆沒，總共答對";
+                                elements.finalScore.innerText = score;
+                                if (scoreUnit) scoreUnit.innerText = "題";
+                                if (endGymBtn) endGymBtn.classList.add('hidden');
+                            }
+                            window.showScreen('end');
                         }
                     }, 2000);
                 } else {
@@ -3410,8 +4760,17 @@
         };
 
         window.resumeTurn = function(phase) {
-            currentPhase = phase;
             window.isSingleAttacking = false;
+            if (gameMode === 'gym' && currentQuestion && currentQuestion.isPolygon) {
+                currentPhase = 1;
+                polyStep = phase;
+                const keyMap = { 1: 'step1', 2: 'step2', 3: 'step3' };
+                if (keyMap[polyStep]) polyInputs[keyMap[polyStep]] = "";
+                window.updatePolygonUI();
+                elements.messageBox.innerText = `請重新輸入步驟 ${polyStep} 的正確內容！`;
+                return;
+            }
+            currentPhase = phase;
             if (phase === 1) {
                 playerFormulaStr = ""; playerAnswerStr = "";
                 elements.formulaDisplay.innerText = ""; elements.answerDisplay.innerText = "";
@@ -3475,8 +4834,34 @@
                     if (!isFinalHit) window.recordAttempt(true);
                     currentPhase = 3;
                     elements.phase2.classList.add('hidden');
-                    elements.messageBox.innerText = `造成 ${damage} 點傷害！擊敗了 ${currentPokemon.name}！丟出精靈球！`;
-                    setTimeout(() => window.catchPokemon(), 800);
+                    if (gameMode === 'gym' && currentGymLeader) {
+                        window.updateGymBannerUI();
+                        elements.messageBox.innerHTML = `造成 ${damage} 點傷害！擊敗了館主 ${currentGymLeader.name} 的 <span class="text-red-600 font-black">${currentPokemon.name}</span>！`;
+                        setTimeout(() => {
+                            currentGymEnemyIndex++;
+                            if (currentGymEnemyIndex < currentGymEnemyParty.length) {
+                                window.spawnPokemon();
+                            } else {
+                                // 擊敗道館館主全部寶可夢！
+                                defeatedGyms[currentGymLeader.id] = true;
+                                window.saveGymProgress();
+                                const wonCount = KANTO_GYM_LEADERS.filter(g => defeatedGyms[g.id]).length;
+                                const endGymBtn = document.getElementById('end-gym-btn');
+                                const scoreUnit = document.getElementById('end-score-unit');
+                                elements.endTitle.innerText = `恭喜擊敗館主 ${currentGymLeader.name}！`;
+                                elements.endTitle.className = "text-3xl sm:text-4xl font-black text-amber-700 mb-2 sm:mb-4 drop-shadow-sm";
+                                elements.endIcon.innerText = currentGymLeader.badgeIcon;
+                                elements.endSubtitle.innerText = `成功獲得「${currentGymLeader.badgeName}」！目前已收集關都徽章`;
+                                elements.finalScore.innerText = `${wonCount} / 8`;
+                                if (scoreUnit) scoreUnit.innerText = "枚";
+                                if (endGymBtn) endGymBtn.classList.remove('hidden');
+                                window.showScreen('end');
+                            }
+                        }, 1400);
+                    } else {
+                        elements.messageBox.innerText = `造成 ${damage} 點傷害！擊敗了 ${currentPokemon.name}！丟出精靈球！`;
+                        setTimeout(() => window.catchPokemon(), 800);
+                    }
                 } else if (isFinalHit) {
                     currentPhase = 3;
                     elements.messageBox.innerText = `答案正確！造成 ${damage} 點傷害！對手還有體力，請挑戰下一題繼續進攻！`;
