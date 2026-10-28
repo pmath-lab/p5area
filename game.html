@@ -482,9 +482,14 @@
 
                 <!-- 單人模式：左半部題目畫板區 -->
                 <div id="canvas-wrapper" class="w-1/2 h-full flex flex-col justify-start pt-4 sm:pt-6 items-start pl-2 sm:pl-6 relative z-10 transition-all duration-300">
-                    <div class="bg-[#2c3e50] border-4 border-[#1a252f] rounded-xl p-1.5 sm:p-3 shadow-xl flex flex-col items-center relative w-full max-w-[360px]">
-                        <div class="bg-[#ecf0f1] p-1 sm:p-2 rounded border-2 border-gray-400 w-full flex justify-center board-shadow">
-                            <canvas id="shape-canvas" width="360" height="280" class="w-full max-w-[200px] sm:max-w-[280px] md:max-w-[360px] h-auto object-contain"></canvas>
+                    <div class="bg-[#2c3e50] border-4 border-[#1a252f] rounded-xl p-1.5 sm:p-3 shadow-xl flex flex-col items-center relative w-full max-w-[360px]" id="canvas-inner-box">
+                        <div class="bg-[#ecf0f1] p-1 sm:p-2 rounded border-2 border-gray-400 w-full flex justify-center board-shadow relative overflow-hidden">
+                            <canvas id="shape-canvas" width="500" height="400" class="w-full max-w-[280px] sm:max-w-[400px] md:max-w-[500px] h-auto object-contain cursor-move touch-none" title="可以拖曳移動圖形"></canvas>
+                            <!-- 放大縮小按鈕 -->
+                            <div class="absolute bottom-2 right-2 flex gap-1 z-20">
+                                <button onclick="window.zoomCanvas(0.2)" class="w-7 h-7 sm:w-8 sm:h-8 bg-white border-2 border-gray-400 rounded-full flex items-center justify-center text-gray-700 font-bold text-lg shadow hover:bg-gray-100 active:scale-95 select-none" title="放大">＋</button>
+                                <button onclick="window.zoomCanvas(-0.2)" class="w-7 h-7 sm:w-8 sm:h-8 bg-white border-2 border-gray-400 rounded-full flex items-center justify-center text-gray-700 font-bold text-lg shadow hover:bg-gray-100 active:scale-95 select-none" title="縮小">－</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2600,15 +2605,6 @@
             if (window.stopMultiTimer) window.stopMultiTimer();
             const timerBadge = document.getElementById('multi-timer-badge');
             if (timerBadge) timerBadge.classList.add('hidden');
-            
-            const battleSceneEl = elements.battleScene || document.getElementById('battle-scene-bg');
-            if (battleSceneEl) {
-                battleSceneEl.style.backgroundImage = gameMode === 'gym' ? "url('https://pmath-lab.github.io/p5area/bg2.jpg')" : "url('https://pmath-lab.github.io/p5area/bg.jpg')";
-                battleSceneEl.style.backgroundSize = "cover";
-                battleSceneEl.style.backgroundPosition = "center";
-                battleSceneEl.style.backgroundRepeat = "no-repeat";
-            }
-            
             document.querySelectorAll('.single-player-element').forEach(el => el.classList.remove('hidden'));
             if (elements.playerSpriteContainer) {
                 elements.playerSpriteContainer.classList.remove('opacity-0', 'translate-y-12', 'hidden');
@@ -2629,10 +2625,19 @@
             elements.multiHpText.classList.add('hidden');
             elements.pokemonImg.classList.remove('gmax-boss');
             
-            elements.canvasWrapper.className = "w-1/2 h-full flex flex-col justify-start pt-4 sm:pt-6 items-start pl-2 sm:pl-6 relative z-10 transition-all duration-300";
-            elements.enemyWrapper.className = "w-1/2 h-full flex flex-col items-center justify-start pt-12 sm:pt-16 pr-2 sm:pr-8 relative z-10 transition-all duration-300";
+            if (gameMode === 'gym') {
+                // 道館模式：放大左半部黑板區域
+                elements.canvasWrapper.className = "w-[55%] md:w-[60%] h-full flex flex-col justify-start pt-4 sm:pt-6 items-start pl-2 sm:pl-6 relative z-10 transition-all duration-300";
+                elements.enemyWrapper.className = "w-[45%] md:w-[40%] h-full flex flex-col items-center justify-start pt-12 sm:pt-16 pr-2 sm:pr-8 relative z-10 transition-all duration-300";
+                const innerBox = document.getElementById('canvas-inner-box');
+                if (innerBox) innerBox.classList.replace('max-w-[360px]', 'max-w-[500px]');
+            } else {
+                elements.canvasWrapper.className = "w-1/2 h-full flex flex-col justify-start pt-4 sm:pt-6 items-start pl-2 sm:pl-6 relative z-10 transition-all duration-300";
+                elements.enemyWrapper.className = "w-1/2 h-full flex flex-col items-center justify-start pt-12 sm:pt-16 pr-2 sm:pr-8 relative z-10 transition-all duration-300";
+                const innerBox = document.getElementById('canvas-inner-box');
+                if (innerBox) innerBox.classList.replace('max-w-[500px]', 'max-w-[360px]');
+            }
             
-            window.updateGymBannerUI();
             window.sessionEncounterCount = 0;
             elements.headerStudentId.innerText = currentStudentId; 
             elements.score.innerText = score; 
@@ -3295,9 +3300,12 @@
             let w = canvas.width;
             let h = canvas.height;
             let u = q.unit || 'cm';
+            
+            let panX = (canvasId === 'shape-canvas') ? (window.canvasPanX || 0) : 0;
+            let panY = (canvasId === 'shape-canvas') ? (window.canvasPanY || 0) : 0;
 
             ctx.save();
-            ctx.translate(w / 2, h / 2);
+            ctx.translate(w / 2 + panX, h / 2 + panY);
             if (q.rotation) ctx.rotate(q.rotation);
             ctx.lineJoin = "round";
             ctx.lineCap = "round";
@@ -3918,6 +3926,281 @@
         };
 
         window.rand = function(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
+
+        // 產生道館挑戰賽的複合多邊形題目
+        window.generatePolygonQuestion = function() {
+            // 移除高倍率放大，將所有數字基底限制在心算友善範圍 (大多在 10 左右)
+            const templates = [
+                // 1: 矩形 + 側邊三角形 (A+B) [對應 image_aa6c70]
+                function() {
+                    let rw = window.rand(2, 5);
+                    let rh = window.rand(2, 5);
+                    let tw = window.rand(3, 6);
+                    let th = window.rand(4, 8);
+                    if (th <= rh) th = rh + window.rand(1, 3);
+                    if ((tw * th) % 2 !== 0) th++; // 確保面積為整數
+
+                    let areaA = (tw * th) / 2;
+                    let areaB = rw * rh;
+                    return {
+                        isPolygon: true, polyType: 'poly_rect_tri_L', method: 'split', methodTitle: '✂️ 分割法 (A + B)', unit: 'cm',
+                        partA: { label: 'A三角形', shapeType: 1, base: tw, height: th, answer: areaA, formulaSample: `${tw}×${th}÷2`, hint: `A三角形(${tw}×${th}÷2)` },
+                        partB: { label: 'B長方形', shapeType: 0, base: rw, height: rh, answer: areaB, formulaSample: `${rw}×${rh}`, hint: `B長方形(${rw}×${rh})` },
+                        step1Sample: `${tw}×${th}÷2 + ${rw}×${rh}`, step2Sample: `${areaA} + ${areaB}`, answer: areaA + areaB,
+                        dims: { rw, rh, tw, th }
+                    };
+                },
+                // 2: 大矩形 - V型缺口三角形 (A-B) [對應 image_aa6c52]
+                function() {
+                    let w = window.rand(4, 8);
+                    let h = window.rand(5, 10);
+                    let ch = window.rand(2, h - 2); // 缺口深度
+                    if ((w * ch) % 2 !== 0) w++;
+
+                    let areaA = w * h;
+                    let areaB = (w * ch) / 2;
+                    return {
+                        isPolygon: true, polyType: 'poly_rect_tri_cut', method: 'fill', methodTitle: '🧩 填補法 (A − B)', unit: 'm',
+                        partA: { label: '大長方形A', shapeType: 0, base: w, height: h, answer: areaA, formulaSample: `${w}×${h}`, hint: `大長方形A(${w}×${h})` },
+                        partB: { label: '缺口B', shapeType: 1, base: w, height: ch, answer: areaB, formulaSample: `${w}×${ch}÷2`, hint: `缺口B(${w}×${ch}÷2)` },
+                        step1Sample: `${w}×${h} - ${w}×${ch}÷2`, step2Sample: `${areaA} - ${areaB}`, answer: areaA - areaB,
+                        dims: { w, h, ch }
+                    };
+                },
+                // 3: 矩形 + 右側平四 (A+B) [對應 image_aa19f9]
+                function() {
+                    let rw = window.rand(3, 6);
+                    let rh = window.rand(3, 6);
+                    let pw = window.rand(4, 8);
+                    let ph = window.rand(3, 6);
+
+                    let areaA = rw * rh;
+                    let areaB = pw * ph;
+                    return {
+                        isPolygon: true, polyType: 'poly_rect_para', method: 'split', methodTitle: '✂️ 分割法 (A + B)', unit: 'cm',
+                        partA: { label: 'A長方形', shapeType: 0, base: rw, height: rh, answer: areaA, formulaSample: `${rw}×${rh}`, hint: `A長方形(${rw}×${rh})` },
+                        partB: { label: 'B平四', shapeType: 0, base: pw, height: ph, answer: areaB, formulaSample: `${pw}×${ph}`, hint: `B平行四邊形(${pw}×${ph})` },
+                        step1Sample: `${rw}×${rh} + ${pw}×${ph}`, step2Sample: `${areaA} + ${areaB}`, answer: areaA + areaB,
+                        dims: { rw, rh, pw, ph }
+                    };
+                },
+                // 4: 頂部大矩形 + 右下角擴展三角形 (A+B) [對應 image_aa6b9e]
+                function() {
+                    let w = window.rand(6, 10);
+                    let h1 = window.rand(3, 6);
+                    let tw = window.rand(3, w - 2);
+                    let th = window.rand(3, 6);
+                    if ((tw * th) % 2 !== 0) th++;
+
+                    let areaA = w * h1;
+                    let areaB = (tw * th) / 2;
+                    return {
+                        isPolygon: true, polyType: 'poly_rect_tri_corner', method: 'split', methodTitle: '✂️ 分割法 (A + B)', unit: 'cm',
+                        partA: { label: 'A大長方形', shapeType: 0, base: w, height: h1, answer: areaA, formulaSample: `${w}×${h1}`, hint: `A大長方形(${w}×${h1})` },
+                        partB: { label: 'B小三角形', shapeType: 1, base: tw, height: th, answer: areaB, formulaSample: `${tw}×${th}÷2`, hint: `B下半三角形(${tw}×${th}÷2)` },
+                        step1Sample: `${w}×${h1} + ${tw}×${th}÷2`, step2Sample: `${areaA} + ${areaB}`, answer: areaA + areaB,
+                        dims: { w, h1, tw, th }
+                    };
+                }
+            ];
+
+            let pick = templates[window.rand(0, templates.length - 1)];
+            let q = pick();
+            // 以 45 度為單位隨機旋轉 (0, 45, 90, 135, 180, 225, 270, 315)
+            q.rotation = window.rand(0, 7) * (Math.PI / 4);
+            return q;
+        };
+
+        window.drawPolygonToCanvas = function(canvasId, q) {
+            let canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            let ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let w = canvas.width;
+            let h = canvas.height;
+            let u = q.unit || 'cm';
+
+            let panX = (canvasId === 'shape-canvas') ? (window.canvasPanX || 0) : 0;
+            let panY = (canvasId === 'shape-canvas') ? (window.canvasPanY || 0) : 0;
+            let zoom = (canvasId === 'shape-canvas') ? (window.canvasZoom || 1) : 1;
+
+            ctx.save();
+            ctx.translate(w / 2 + panX, h / 2 + panY);
+            ctx.scale(zoom, zoom);
+            if (q.rotation) ctx.rotate(q.rotation);
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+
+            function drawBadgeLabel(text, x, y, color = "#111827", fontSize = 16) {
+                ctx.save();
+                ctx.translate(x, y);
+                if (q.rotation) ctx.rotate(-q.rotation); // 自動反轉，保持文字直立
+                ctx.font = `900 ${fontSize}px 'Noto Sans TC'`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+                ctx.lineWidth = 5;
+                ctx.strokeText(text, 0, 0);
+                ctx.fillStyle = color;
+                ctx.fillText(text, 0, 0);
+                ctx.restore();
+            }
+
+            function drawRightAngle(x, y, size, dirX = 1, dirY = 1) {
+                ctx.save();
+                ctx.strokeStyle = "#4b5563";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(x + dirX * size, y);
+                ctx.lineTo(x + dirX * size, y + dirY * size);
+                ctx.lineTo(x, y + dirY * size);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            const d = q.dims;
+            const MAX_SIZE = 220; // 最大繪製尺寸限制
+
+            if (q.polyType === 'poly_rect_tri_L') {
+                let totalW = d.tw + d.rw;
+                let totalH = Math.max(d.rh, d.th);
+                let scale = MAX_SIZE / Math.max(totalW, totalH);
+                let prw = d.rw * scale, prh = d.rh * scale;
+                let ptw = d.tw * scale, pth = d.th * scale;
+                
+                let left = -(ptw + prw) / 2;
+                let bottom = totalH / 2;
+
+                // 左方三角形 A
+                ctx.fillStyle = "#fde68a"; ctx.strokeStyle = "#d97706"; ctx.lineWidth = 4;
+                ctx.beginPath(); 
+                ctx.moveTo(left, bottom); 
+                ctx.lineTo(left+ptw, bottom); 
+                ctx.lineTo(left+ptw, bottom-pth); 
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+                
+                // 右方長方形 B
+                ctx.fillStyle = "#bfdbfe"; ctx.strokeStyle = "#1d4ed8";
+                ctx.fillRect(left+ptw, bottom-prh, prw, prh); 
+                ctx.strokeRect(left+ptw, bottom-prh, prw, prh);
+
+                // 分割線
+                ctx.save(); ctx.setLineDash([6,6]); ctx.strokeStyle="#dc2626"; ctx.beginPath(); 
+                ctx.moveTo(left+ptw, bottom-prh); ctx.lineTo(left+ptw, bottom); ctx.stroke(); ctx.restore();
+
+                drawRightAngle(left+ptw, bottom-prh, 10, 1, 1);
+                drawRightAngle(left+ptw+prw, bottom, 10, -1, -1);
+                drawRightAngle(left+ptw+prw, bottom-prh, 10, -1, 1);
+
+                drawBadgeLabel(`${d.tw} ${u}`, left + ptw/2, bottom + 20);
+                drawBadgeLabel(`${d.rw} ${u}`, left + ptw + prw/2, bottom-prh - 20);
+                drawBadgeLabel(`${d.rh} ${u}`, left + ptw + prw + 25, bottom - prh/2);
+                drawBadgeLabel(`${d.th} ${u}`, left + ptw + 25, bottom - pth/2);
+            } 
+            else if (q.polyType === 'poly_rect_tri_cut') {
+                let scale = MAX_SIZE / Math.max(d.w, d.h);
+                let pw = d.w * scale, ph = d.h * scale, pch = d.ch * scale;
+                let left = -pw/2, top = -ph/2, right = pw/2, bottom = ph/2;
+
+                // 畫主體凹槽
+                ctx.fillStyle = "#93c5fd"; ctx.strokeStyle = "#1d4ed8"; ctx.lineWidth = 4;
+                ctx.beginPath(); 
+                ctx.moveTo(left, top); 
+                ctx.lineTo(0, top+pch); 
+                ctx.lineTo(right, top); 
+                ctx.lineTo(right, bottom); 
+                ctx.lineTo(left, bottom); 
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+
+                // 缺口虛線與輔助線
+                ctx.save(); ctx.setLineDash([6,6]); ctx.strokeStyle="#dc2626"; 
+                ctx.beginPath(); ctx.moveTo(left, top); ctx.lineTo(right, top); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, top); ctx.lineTo(0, top+pch); ctx.stroke(); 
+                ctx.restore();
+
+                drawRightAngle(left, bottom, 10, 1, -1);
+                drawRightAngle(right, bottom, 10, -1, -1);
+                drawRightAngle(0, top, 10, -1, 1);
+
+                drawBadgeLabel(`${d.w} ${u}`, 0, top - 20);
+                drawBadgeLabel(`${d.h} ${u}`, right + 25, 0);
+                drawBadgeLabel(`${d.ch} ${u}`, -25, top + pch/2, "#dc2626");
+            }
+            else if (q.polyType === 'poly_rect_para') {
+                let totalW = d.rw + d.pw;
+                let totalH = d.rh + d.ph;
+                let scale = MAX_SIZE / Math.max(totalW, totalH);
+                let prw = d.rw*scale, prh = d.rh*scale, ppw = d.pw*scale, pph = d.ph*scale;
+                
+                let left = -totalW/2, bottom = prh/2; 
+                
+                // 左邊長方形 A
+                ctx.fillStyle = "#93c5fd"; ctx.strokeStyle = "#1d4ed8"; ctx.lineWidth = 4;
+                ctx.fillRect(left, bottom-prh, prw, prh); 
+                ctx.strokeRect(left, bottom-prh, prw, prh);
+                
+                // 右邊平四 B
+                ctx.fillStyle = "#fde68a"; ctx.strokeStyle = "#d97706";
+                ctx.beginPath(); 
+                ctx.moveTo(left+prw, bottom); 
+                ctx.lineTo(left+prw+ppw, bottom-pph); 
+                ctx.lineTo(left+prw+ppw, bottom-pph-prh); 
+                ctx.lineTo(left+prw, bottom-prh); 
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+
+                // 虛線標示
+                ctx.save(); ctx.setLineDash([6,6]); ctx.strokeStyle="#111827";
+                ctx.beginPath(); ctx.moveTo(left+prw, bottom); ctx.lineTo(left+prw+ppw, bottom); 
+                ctx.lineTo(left+prw+ppw, bottom-pph); ctx.stroke(); ctx.restore();
+
+                drawRightAngle(left, bottom, 10, 1, -1);
+                drawRightAngle(left, bottom-prh, 10, 1, 1);
+                drawRightAngle(left+prw+ppw, bottom, 10, -1, -1);
+
+                drawBadgeLabel(`${d.rw} ${u}`, left+prw/2, bottom+25);
+                drawBadgeLabel(`${d.rh} ${u}`, left-25, bottom-prh/2);
+                drawBadgeLabel(`${d.pw} ${u}`, left+prw+ppw/2, bottom+25);
+                drawBadgeLabel(`${d.ph} ${u}`, left+prw+ppw+25, bottom-pph/2);
+            }
+            else if (q.polyType === 'poly_rect_tri_corner') {
+                let totalW = d.w;
+                let totalH = d.h1 + d.th;
+                let scale = MAX_SIZE / Math.max(totalW, totalH);
+                let pw = d.w*scale, ph1 = d.h1*scale, ptw = d.tw*scale, pth = d.th*scale;
+                
+                let left = -pw/2, top = -totalH/2;
+                
+                // 頂部大長方形 A
+                ctx.fillStyle = "#86efac"; ctx.strokeStyle = "#15803d"; ctx.lineWidth = 4;
+                ctx.fillRect(left, top, pw, ph1); 
+                ctx.strokeRect(left, top, pw, ph1);
+                
+                // 右下擴展三角形 B
+                ctx.fillStyle = "#bbf7d0"; ctx.strokeStyle = "#047857";
+                ctx.beginPath(); 
+                ctx.moveTo(left+pw-ptw, top+ph1); 
+                ctx.lineTo(left+pw, top+ph1); 
+                ctx.lineTo(left+pw, top+ph1+pth); 
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+
+                // 分割虛線
+                ctx.save(); ctx.setLineDash([6,6]); ctx.strokeStyle="#dc2626"; 
+                ctx.beginPath(); ctx.moveTo(left+pw-ptw, top+ph1); ctx.lineTo(left+pw, top+ph1); ctx.stroke(); ctx.restore();
+
+                drawRightAngle(left, top, 10, 1, 1);
+                drawRightAngle(left+pw, top, 10, -1, 1);
+                drawRightAngle(left, top+ph1, 10, 1, -1);
+
+                drawBadgeLabel(`${d.w} ${u}`, 0, top-20);
+                drawBadgeLabel(`${d.h1} ${u}`, left-25, top+ph1/2);
+                drawBadgeLabel(`${d.tw} ${u}`, left+pw-ptw/2, top+ph1-20, "#dc2626");
+                // 標示完整右側長度
+                drawBadgeLabel(`${d.h1+d.th} ${u}`, left+pw+25, top+(ph1+pth)/2);
+            }
+
+            ctx.restore();
+        };
+
         window.generateAreaQuestion = function() {
             let type = window.rand(0, 2);
             let q = { type: type };
@@ -3975,8 +4258,13 @@
             let w = canvas.width;
             let h = canvas.height;
             
+            let panX = (canvasId === 'shape-canvas') ? (window.canvasPanX || 0) : 0;
+            let panY = (canvasId === 'shape-canvas') ? (window.canvasPanY || 0) : 0;
+            let zoom = (canvasId === 'shape-canvas') ? (window.canvasZoom || 1) : 1;
+            
             ctx.save();
-            ctx.translate(w / 2, h / 2);
+            ctx.translate(w / 2 + panX, h / 2 + panY);
+            ctx.scale(zoom, zoom);
             ctx.rotate(q.rotation);
 
             ctx.lineWidth = isMini ? 2 : 4; 
@@ -4478,6 +4766,13 @@
         window.generateNewTurn = function(newQuestion = true) {
             currentPhase = 1; 
             window.isSingleAttacking = false;
+            
+            if (newQuestion) {
+                window.canvasPanX = 0;
+                window.canvasPanY = 0;
+                window.canvasZoom = 1;
+            }
+
             if (gameMode === 'gym') {
                 polyStep = 1;
                 polyInputs = { step1: "", step2: "", step3: "" };
@@ -4485,7 +4780,7 @@
                     currentQuestion = window.generatePolygonQuestion();
                     window.drawPolygonToCanvas('shape-canvas', currentQuestion);
                 }
-                window.updatePolygonUI();
+                if (window.updatePolygonUI) window.updatePolygonUI();
             } else if (gameMode === 'single') {
                 playerFormulaStr = ""; playerAnswerStr = "";
                 elements.formulaDisplay.innerText = ""; elements.answerDisplay.innerText = "";
@@ -4495,8 +4790,8 @@
                     currentQuestion = window.generateAreaQuestion(); 
                     window.drawShapeToCanvas('shape-canvas', currentQuestion, false); 
                 }
-                window.updatePolygonUI();
-                window.updateSingleAreaLabelsAndHint("");
+                if (window.updatePolygonUI) window.updatePolygonUI();
+                if (window.updateSingleAreaLabelsAndHint) window.updateSingleAreaLabelsAndHint("");
             }
         };
         window.discardNewPokemon = function() { elements.replaceModal.classList.add('hidden'); window.savePlayerData(); window.checkWinCondition(); };
@@ -4881,8 +5176,84 @@
         window.onload = () => { 
             document.getElementById('login-class').innerHTML = singleClassOptionsHtml;
             document.getElementById('login-num').innerHTML = numOptionsHtml;
+            window.setupCanvasPanning();
             window.showScreen('mode'); 
             window.resizeGame();
+        };
+
+        // 畫板拖曳功能參數與設定
+        window.canvasPanX = 0;
+        window.canvasPanY = 0;
+        window.canvasZoom = 1;
+        let isDraggingCanvas = false;
+        let lastPanClientX = 0;
+        let lastPanClientY = 0;
+        
+        window.zoomCanvas = function(delta) {
+            window.canvasZoom += delta;
+            if (window.canvasZoom < 0.5) window.canvasZoom = 0.5;
+            if (window.canvasZoom > 3.0) window.canvasZoom = 3.0;
+            
+            if (gameMode === 'gym' && currentQuestion && currentQuestion.isPolygon) {
+                window.drawPolygonToCanvas('shape-canvas', currentQuestion);
+            } else if (gameMode === 'single' && currentQuestion) {
+                window.drawShapeToCanvas('shape-canvas', currentQuestion, false);
+            }
+        };
+
+        window.setupCanvasPanning = function() {
+            const canvas = document.getElementById('shape-canvas');
+            if (!canvas) return;
+            
+            const startDrag = (e) => {
+                isDraggingCanvas = true;
+                lastPanClientX = e.touches ? e.touches[0].clientX : e.clientX;
+                lastPanClientY = e.touches ? e.touches[0].clientY : e.clientY;
+                canvas.style.cursor = 'grabbing';
+            };
+            
+            const doDrag = (e) => {
+                if (!isDraggingCanvas) return;
+                if (e.cancelable) e.preventDefault(); // 防止手機端滑動畫面
+                let currentX = e.touches ? e.touches[0].clientX : e.clientX;
+                let currentY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                // 將拖曳距離依照畫布縮放比例轉換
+                let rect = canvas.getBoundingClientRect();
+                let scaleX = canvas.width / rect.width;
+                let scaleY = canvas.height / rect.height;
+                
+                let dx = (currentX - lastPanClientX) * scaleX;
+                let dy = (currentY - lastPanClientY) * scaleY;
+                
+                window.canvasPanX += dx;
+                window.canvasPanY += dy;
+                
+                lastPanClientX = currentX;
+                lastPanClientY = currentY;
+                
+                // 即時重新繪圖
+                if (gameMode === 'gym' && currentQuestion && currentQuestion.isPolygon) {
+                    window.drawPolygonToCanvas('shape-canvas', currentQuestion);
+                } else if (gameMode === 'single' && currentQuestion) {
+                    window.drawShapeToCanvas('shape-canvas', currentQuestion, false);
+                }
+            };
+            
+            const endDrag = () => {
+                isDraggingCanvas = false;
+                canvas.style.cursor = 'move';
+            };
+            
+            // 綁定滑鼠事件
+            canvas.addEventListener('mousedown', startDrag);
+            canvas.addEventListener('mousemove', doDrag);
+            window.addEventListener('mouseup', endDrag);
+            
+            // 綁定觸控事件
+            canvas.addEventListener('touchstart', startDrag, {passive: false});
+            canvas.addEventListener('touchmove', doDrag, {passive: false});
+            window.addEventListener('touchend', endDrag);
         };
     </script>
 </body>
