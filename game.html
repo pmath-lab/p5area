@@ -472,6 +472,7 @@
                 </div>
 
                 <div class="single-player-element absolute bottom-0 left-[15%] sm:left-[25%] z-20 flex flex-col items-center justify-end w-48 sm:w-72 h-64 pointer-events-none" id="player-sprite-container">
+                    <img id="player-shiny-effect" src="https://pmath-lab.github.io/p5area/shining_effect.gif" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-[15%] w-48 h-48 sm:w-72 sm:h-72 z-0 pointer-events-none mix-blend-screen opacity-80">
                     <img id="player-sprite" src="" class="w-full h-full object-contain filter drop-shadow-2xl pixelated-sprite relative z-10 player-pokemon-float translate-y-[35%]">
                 </div>
 
@@ -481,14 +482,19 @@
                 </div>
 
                 <!-- 單人模式：左半部題目畫板區 -->
-                <div id="canvas-wrapper" class="w-1/2 h-full flex flex-col justify-start pt-4 sm:pt-6 items-start pl-2 sm:pl-6 relative z-10 transition-all duration-300">
-                    <div class="bg-[#2c3e50] border-4 border-[#1a252f] rounded-xl p-1.5 sm:p-3 shadow-xl flex flex-col items-center relative w-full max-w-[360px]" id="canvas-inner-box">
-                        <div class="bg-[#ecf0f1] p-1 sm:p-2 rounded border-2 border-gray-400 w-full flex justify-center board-shadow relative overflow-hidden">
-                            <canvas id="shape-canvas" width="500" height="400" class="w-full max-w-[280px] sm:max-w-[400px] md:max-w-[500px] h-auto object-contain cursor-move touch-none" title="可以拖曳移動圖形"></canvas>
-                            <!-- 放大縮小按鈕 -->
-                            <div class="absolute bottom-2 right-2 flex gap-1 z-20">
-                                <button onclick="window.zoomCanvas(0.2)" class="w-7 h-7 sm:w-8 sm:h-8 bg-white border-2 border-gray-400 rounded-full flex items-center justify-center text-gray-700 font-bold text-lg shadow hover:bg-gray-100 active:scale-95 select-none" title="放大">＋</button>
-                                <button onclick="window.zoomCanvas(-0.2)" class="w-7 h-7 sm:w-8 sm:h-8 bg-white border-2 border-gray-400 rounded-full flex items-center justify-center text-gray-700 font-bold text-lg shadow hover:bg-gray-100 active:scale-95 select-none" title="縮小">－</button>
+                <div id="canvas-wrapper" class="w-1/2 h-full flex flex-col justify-start pt-4 sm:pt-6 items-start pl-2 sm:pl-6 relative z-10 transition-all duration-300 pointer-events-auto">
+                    <div id="canvas-inner-box" class="bg-[#2c3e50] border-4 border-[#1a252f] rounded-xl p-1.5 sm:p-2.5 shadow-xl flex flex-col items-center relative w-full max-w-[280px] sm:max-w-[320px]">
+                        <!-- 畫板容器 (設定為相對定位，並隱藏超出範圍的圖形) -->
+                        <div id="canvas-container" class="bg-[#ecf0f1] p-0 rounded border-2 border-gray-400 w-full h-[180px] sm:h-[220px] flex justify-center board-shadow relative overflow-hidden cursor-move touch-none" 
+                             onmousedown="window.startDrag(event)" onmousemove="window.drag(event)" onmouseup="window.endDrag()" onmouseleave="window.endDrag()" 
+                             ontouchstart="window.startDrag(event)" ontouchmove="window.drag(event)" ontouchend="window.endDrag()">
+                            
+                            <canvas id="shape-canvas" width="340" height="240" class="w-full h-full object-cover transform origin-center transition-transform duration-75"></canvas>
+                            
+                            <!-- 放大縮小按鈕 (左下角) -->
+                            <div class="absolute bottom-2 left-2 flex gap-1.5 z-20">
+                                <button onclick="window.zoomCanvas(0.2); event.stopPropagation();" ontouchstart="event.stopPropagation();" class="w-7 h-7 sm:w-8 sm:h-8 bg-white border-2 border-gray-400 rounded-full shadow-md hover:bg-gray-100 flex items-center justify-center font-black text-gray-700 text-base sm:text-xl active:scale-95 select-none">＋</button>
+                                <button onclick="window.zoomCanvas(-0.2); event.stopPropagation();" ontouchstart="event.stopPropagation();" class="w-7 h-7 sm:w-8 sm:h-8 bg-white border-2 border-gray-400 rounded-full shadow-md hover:bg-gray-100 flex items-center justify-center font-black text-gray-700 text-base sm:text-xl active:scale-95 select-none">－</button>
                             </div>
                         </div>
                     </div>
@@ -498,6 +504,7 @@
                 <div id="enemy-wrapper" class="w-1/2 h-full flex flex-col items-center justify-start pt-12 sm:pt-16 pr-2 sm:pr-8 relative z-10 transition-all duration-300">
                     <div id="pokemon-container" class="pokemon-sprite flex flex-col items-center relative transition-all duration-300">
                         <div id="gmax-cloud" class="hidden gmax-clouds"></div>
+                        <img id="shiny-effect" src="https://pmath-lab.github.io/p5area/shining_effect.gif" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 sm:w-64 sm:h-64 z-0 pointer-events-none mix-blend-screen opacity-80">
                         <img id="pokemon-img" src="" alt="寶可夢" class="pokemon-float w-24 h-24 sm:w-36 sm:h-36 md:w-48 md:h-48 object-contain filter drop-shadow-2xl relative z-10">
                         <div id="pokemon-shadow" class="w-16 sm:w-24 md:w-32 bg-black/20 h-2 sm:h-3 rounded-[50%] absolute -bottom-1 sm:-bottom-2 z-0"></div>
                         
@@ -673,6 +680,7 @@
         let evolutionQueue = []; 
         let playerFormulaStr = "";
         let playerAnswerStr = "";
+        window.accumulatedShinyChance = 0; // 新增：閃光機率保底累積變數
 
         let multiPlayers = [];
 
@@ -1117,8 +1125,9 @@
             let match = frontUrl.match(/\/(\d+)\.png/);
             if(match && match[1]) {
                 let id = parseInt(match[1]);
+                let isShiny = frontUrl.includes('/shiny/');
                 if (id >= 1 && id <= 649) {
-                    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${id}.png`;
+                    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${isShiny ? 'shiny/' : ''}${id}.png`;
                 }
             }
             return frontUrl;
@@ -1127,24 +1136,42 @@
         window.getPokemonByName = function(name) {
             if (!name) name = "";
             name = name.trim();
+            let isShiny = false;
+            if (name.startsWith("閃光 ")) {
+                isShiny = true;
+                name = name.replace("閃光 ", "").trim();
+            }
             if (KANTO_NAME_ALIASES[name]) name = KANTO_NAME_ALIASES[name];
 
+            let foundPk = null;
             if (pokemonData.allMap && pokemonData.allMap[name]) {
-                return JSON.parse(JSON.stringify(pokemonData.allMap[name]));
-            }
-
-            for (let category in pokemonData) {
-                if (Array.isArray(pokemonData[category])) {
-                    let found = pokemonData[category].find(p => p.name === name);
-                    if (found) return JSON.parse(JSON.stringify(found));
-                } else if (pokemonData[category] && pokemonData[category][name]) {
-                    return JSON.parse(JSON.stringify(pokemonData[category][name]));
+                foundPk = JSON.parse(JSON.stringify(pokemonData.allMap[name]));
+            } else {
+                for (let category in pokemonData) {
+                    if (Array.isArray(pokemonData[category])) {
+                        let found = pokemonData[category].find(p => p.name === name);
+                        if (found) {
+                            foundPk = JSON.parse(JSON.stringify(found));
+                            break;
+                        }
+                    } else if (pokemonData[category] && pokemonData[category][name]) {
+                        foundPk = JSON.parse(JSON.stringify(pokemonData[category][name]));
+                        break;
+                    }
                 }
             }
-            let pool = pokemonData.starters || pokemonData.starter || [];
-            return JSON.parse(JSON.stringify(pool[0]));
+            if (!foundPk) {
+                let pool = pokemonData.starters || pokemonData.starter || [];
+                foundPk = JSON.parse(JSON.stringify(pool[0]));
+            }
+            
+            // 讀取時自動補回閃光名字與圖片
+            if (isShiny) {
+                foundPk.name = "閃光 " + foundPk.name;
+                foundPk.image = foundPk.image.replace('/official-artwork/', '/official-artwork/shiny/');
+            }
+            return foundPk;
         };
-
         window.resizeGame = function() {
             const container = document.getElementById('game-container') || document.getElementById('game-app');
             if (!container) return;
@@ -1793,18 +1820,19 @@
                     totalSpritesHtml += `
                     <div class="flex-1 flex flex-col items-center justify-end relative pb-0" id="multi-sprite-wrapper-${i}">
                         <!-- 面積題目黑板與寶可夢 -->
-                        <div class="relative w-full max-w-[130px] sm:max-w-[145px] md:max-w-[165px] flex flex-col items-center ${defeatedCanvasClass}"> 
+                        <div class="relative w-full max-w-[160px] sm:max-w-[180px] md:max-w-[210px] flex flex-col items-center ${defeatedCanvasClass}"> 
                             <!-- Pokemon Sprite Overlay (放大50%，Y座標提高20px，玩家3與玩家4垂直鏡像反轉) -->
                             <div id="multi-sprite-anim-wrapper-${i}" class="absolute left-1/2 transform -translate-x-1/2 translate-y-[35%] w-[6rem] sm:w-[7.5rem] md:w-[8.25rem] h-[6rem] sm:h-[7.5rem] md:h-[8.25rem] z-0 transition-all duration-300 pointer-events-none" style="bottom: calc(100% + 20px);">
-                                <div class="w-full h-full" style="${(i === 2 || i === 3) ? 'transform: scaleX(-1);' : ''}">
-                                    <img id="multi-sprite-img-${i}" src="${pokeImageBack}" class="w-full h-full object-contain filter drop-shadow-lg pixelated-sprite ${defeatedSpriteClass}">
+                                <div class="w-full h-full relative" style="${(i === 2 || i === 3) ? 'transform: scaleX(-1);' : ''}">
+                                    <img id="multi-shiny-effect-${i}" src="https://pmath-lab.github.io/p5area/shining_effect.gif" class="${(activePoke && activePoke.name && activePoke.name.includes('閃光')) ? '' : 'hidden'} absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 sm:w-32 sm:h-32 z-0 mix-blend-screen opacity-80 pointer-events-none">
+                                    <img id="multi-sprite-img-${i}" src="${pokeImageBack}" class="w-full h-full object-contain filter drop-shadow-lg pixelated-sprite relative z-10 ${defeatedSpriteClass}">
                                 </div>
                             </div>
                             
                             <!-- Mini Canvas (白底小黑板) -->
                             <div class="bg-white border-[3px] border-gray-400 rounded-lg p-1 shadow-lg relative z-10 w-full">
                                 <div class="bg-[#f8fafc] rounded-md w-full flex justify-center overflow-hidden border border-gray-200">
-                                    <canvas id="multi-canvas-${i}" width="150" height="105" class="w-full h-auto object-contain"></canvas>
+                                    <canvas id="multi-canvas-${i}" width="200" height="140" class="w-full h-auto object-contain"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -2051,6 +2079,15 @@
                     img.src = window.getBackSpriteUrl(p.party[pokeIndex].image);
                     window.updateMultiPlayerHp(pIndex);
                     
+                    let shinyEffect = document.getElementById(`multi-shiny-effect-${pIndex}`);
+                    if (shinyEffect) {
+                        if (p.party[pokeIndex].name.includes("閃光")) {
+                            shinyEffect.classList.remove('hidden');
+                        } else {
+                            shinyEffect.classList.add('hidden');
+                        }
+                    }
+
                     const colorMap = {
                         'blue': { border: 'border-blue-500', ring: 'ring-blue-400' },
                         'red': { border: 'border-red-500', ring: 'ring-red-400' },
@@ -2626,16 +2663,20 @@
             elements.pokemonImg.classList.remove('gmax-boss');
             
             if (gameMode === 'gym') {
-                // 道館模式：放大左半部黑板區域
-                elements.canvasWrapper.className = "w-[55%] md:w-[60%] h-full flex flex-col justify-start pt-4 sm:pt-6 items-start pl-2 sm:pl-6 relative z-10 transition-all duration-300";
-                elements.enemyWrapper.className = "w-[45%] md:w-[40%] h-full flex flex-col items-center justify-start pt-12 sm:pt-16 pr-2 sm:pr-8 relative z-10 transition-all duration-300";
+                // 道館模式：微調版面比例，黑板不會過度放大
+                elements.canvasWrapper.className = "w-[50%] md:w-[55%] h-full flex flex-col justify-start pt-4 sm:pt-6 items-start pl-2 sm:pl-4 relative z-10 transition-all duration-300 pointer-events-auto";
+                elements.enemyWrapper.className = "w-[50%] md:w-[45%] h-full flex flex-col items-center justify-start pt-12 sm:pt-16 pr-2 sm:pr-6 relative z-10 transition-all duration-300";
                 const innerBox = document.getElementById('canvas-inner-box');
-                if (innerBox) innerBox.classList.replace('max-w-[360px]', 'max-w-[500px]');
+                if (innerBox) {
+                    innerBox.className = "bg-[#2c3e50] border-4 border-[#1a252f] rounded-xl p-1.5 sm:p-2.5 shadow-xl flex flex-col items-center relative w-full max-w-[280px] sm:max-w-[340px]";
+                }
             } else {
-                elements.canvasWrapper.className = "w-1/2 h-full flex flex-col justify-start pt-4 sm:pt-6 items-start pl-2 sm:pl-6 relative z-10 transition-all duration-300";
+                elements.canvasWrapper.className = "w-1/2 h-full flex flex-col justify-start pt-4 sm:pt-6 items-start pl-2 sm:pl-6 relative z-10 transition-all duration-300 pointer-events-auto";
                 elements.enemyWrapper.className = "w-1/2 h-full flex flex-col items-center justify-start pt-12 sm:pt-16 pr-2 sm:pr-8 relative z-10 transition-all duration-300";
                 const innerBox = document.getElementById('canvas-inner-box');
-                if (innerBox) innerBox.classList.replace('max-w-[500px]', 'max-w-[360px]');
+                if (innerBox) {
+                    innerBox.className = "bg-[#2c3e50] border-4 border-[#1a252f] rounded-xl p-1.5 sm:p-2.5 shadow-xl flex flex-col items-center relative w-full max-w-[280px] sm:max-w-[320px]";
+                }
             }
             
             window.sessionEncounterCount = 0;
@@ -3640,7 +3681,7 @@
             const polyPanel = document.getElementById('polygon-qa-panel');
             if (!stdPanel || !polyPanel) return;
 
-            if (gameMode !== 'gym' || !currentQuestion || !currentQuestion.isPolygon) {
+            if (!currentQuestion || !currentQuestion.isPolygon) {
                 stdPanel.classList.remove('hidden');
                 polyPanel.classList.add('hidden');
                 return;
@@ -4250,6 +4291,55 @@
             return Math.abs(x1 - x2) < threshold;
         };
 
+        // 畫板拖曳與縮放相關變數及函式
+        window.canvasPanX = 0;
+        window.canvasPanY = 0;
+        window.canvasZoom = 1;
+        window.isDragging = false;
+        window.dragStartX = 0;
+        window.dragStartY = 0;
+
+        window.zoomCanvas = function(amount) {
+            window.canvasZoom = Math.max(0.5, Math.min(3.0, (window.canvasZoom || 1) + amount));
+            if (currentQuestion) {
+                if (currentQuestion.isPolygon) {
+                    window.drawPolygonToCanvas('shape-canvas', currentQuestion);
+                } else {
+                    window.drawShapeToCanvas('shape-canvas', currentQuestion, false);
+                }
+            }
+        };
+
+        window.startDrag = function(e) {
+            window.isDragging = true;
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            window.dragStartX = clientX - (window.canvasPanX || 0);
+            window.dragStartY = clientY - (window.canvasPanY || 0);
+        };
+
+        window.drag = function(e) {
+            if (!window.isDragging) return;
+            if (e.cancelable) e.preventDefault(); // 防止手機端滑動螢幕
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            window.canvasPanX = clientX - window.dragStartX;
+            window.canvasPanY = clientY - window.dragStartY;
+            
+            // 根據不同題型重新繪製畫布以更新位置
+            if (currentQuestion) {
+                if (currentQuestion.isPolygon) {
+                    window.drawPolygonToCanvas('shape-canvas', currentQuestion);
+                } else {
+                    window.drawShapeToCanvas('shape-canvas', currentQuestion, false);
+                }
+            }
+        };
+
+        window.endDrag = function() {
+            window.isDragging = false;
+        };
+
         window.drawShapeToCanvas = function(canvasId, q, isMini = false) {
             let canvas = document.getElementById(canvasId);
             if (!canvas) return;
@@ -4412,7 +4502,7 @@
         };
 
         window.numpadPress = function(val) {
-            if (gameMode === 'gym' && currentQuestion && currentQuestion.isPolygon) {
+            if (currentQuestion && currentQuestion.isPolygon) {
                 if (currentPhase === 3 || window.isSingleAttacking) return;
                 const keyMap = { 1: 'step1', 2: 'step2', 3: 'step3' };
                 const field = keyMap[polyStep];
@@ -4516,7 +4606,8 @@
 
         window.singleSubmit = function() {
             if (window.isSingleAttacking) return;
-            if (gameMode === 'gym' && currentQuestion && currentQuestion.isPolygon) {
+            // 移除 gameMode === 'gym' 限制
+            if (currentQuestion && currentQuestion.isPolygon) {
                 window.handlePolygonSubmit();
                 return;
             }
@@ -4658,39 +4749,46 @@
                 if (elements.enemyInfoContainer) elements.enemyInfoContainer.classList.remove('hidden');
                 currentPokemon = currentGymEnemyParty[currentGymEnemyIndex];
             } else {
-                const rand = Math.random();
-                if (score < 8) {
-                    pool = pokemonData.stage3_form1;
-                } else if (score < 16) {
-                    pool = (rand < 0.40) ? pokemonData.stage2_form1 : pokemonData.stage3_form1;
-                } else {
-                    if (rand < 0.01) {
-                        pool = pokemonData.legendary;
-                    } else if (rand < 0.06) {
-                        pool = pokemonData.final_forms;
-                    } else if (rand < 0.46) {
-                        pool = pokemonData.stage2_form1;
-                    } else {
-                        pool = pokemonData.stage3_form1;
-                    }
-                }
-                enemyMaxHp = currentPokemon ? currentPokemon.stats.hp : 100;
                 elements.gmaxCloud.classList.add('hidden');
                 elements.multiHpText.classList.add('hidden');
                 if (elements.multiBossHpContainer) elements.multiBossHpContainer.classList.add('hidden');
                 if (elements.enemyInfoContainer) elements.enemyInfoContainer.classList.remove('hidden');
+                
                 if (window.getSingleEncounterPool) {
                     pool = window.getSingleEncounterPool();
+                } else {
+                    pool = pokemonData.stage3_form1;
                 }
-                currentPokemon = pool[Math.floor(Math.random() * pool.length)];
+                
+                let chosen = pool[Math.floor(Math.random() * pool.length)];
+                currentPokemon = JSON.parse(JSON.stringify(chosen));
+                
+                let badgeCount = Object.keys(defeatedGyms || {}).length;
+                if (badgeCount > 0) {
+                    // 機率從 0 開始，用百分比比較 (例如累積到 100 以上就一定出閃光)
+                    let isShiny = (Math.random() * 100) < window.accumulatedShinyChance;
+                    if (isShiny && !currentPokemon.name.includes("閃光")) {
+                        currentPokemon.name = "閃光 " + currentPokemon.name;
+                        currentPokemon.image = currentPokemon.image.replace('/official-artwork/', '/official-artwork/shiny/');
+                        window.accumulatedShinyChance = 0; // 遇到後瞬間歸 0 重新計算
+                    }
+                }
             }
             
-            enemyMaxHp = currentPokemon.stats.hp;
+            enemyMaxHp = currentPokemon.stats ? currentPokemon.stats.hp : 100;
             enemyHp = enemyMaxHp;
             
             elements.enemyName.innerText = currentPokemon.name; window.updateHpBar();
             elements.pokemonImg.src = currentPokemon.image;
-            window.updateGymBannerUI();
+            
+            const shinyEl = document.getElementById('shiny-effect');
+            if (shinyEl) {
+                if (currentPokemon.name.includes("閃光")) {
+                    shinyEl.classList.remove('hidden');
+                } else {
+                    shinyEl.classList.add('hidden');
+                }
+            }
             
             if (gameMode === 'multi') {
                 elements.pokemonImg.classList.add('gmax-boss');
@@ -4773,7 +4871,14 @@
                 window.canvasZoom = 1;
             }
 
+            let usePolygon = false;
             if (gameMode === 'gym') {
+                usePolygon = true;
+            } else if (gameMode === 'single' && currentPokemon && currentPokemon.name && currentPokemon.name.includes("閃光")) {
+                usePolygon = true;
+            }
+
+            if (usePolygon) {
                 polyStep = 1;
                 polyInputs = { step1: "", step2: "", step3: "" };
                 if (newQuestion) {
@@ -4781,6 +4886,7 @@
                     window.drawPolygonToCanvas('shape-canvas', currentQuestion);
                 }
                 if (window.updatePolygonUI) window.updatePolygonUI();
+                if (window.updateSingleAreaLabelsAndHint) window.updateSingleAreaLabelsAndHint("");
             } else if (gameMode === 'single') {
                 playerFormulaStr = ""; playerAnswerStr = "";
                 elements.formulaDisplay.innerText = ""; elements.answerDisplay.innerText = "";
@@ -4823,14 +4929,22 @@
                 for (let i = 0; i < playerParty.length; i++) {
                     if (playerParty[i] && playerParty[i] !== newlyCaughtPokemon) {
                         if (playerParty[i].nextEvolution && pokemonData.evolutions[playerParty[i].nextEvolution]) {
-                            candidates.push({ index: i, oldPoke: playerParty[i], newPoke: pokemonData.evolutions[playerParty[i].nextEvolution] });
+                            let isShiny = playerParty[i].name.includes("閃光");
+                            let nextEvoName = playerParty[i].nextEvolution;
+                            if (isShiny) nextEvoName = "閃光 " + nextEvoName;
+                            let newPoke = window.getPokemonByName(nextEvoName);
+                            candidates.push({ index: i, oldPoke: playerParty[i], newPoke: newPoke });
                         }
                     }
                 }
                 if (candidates.length === 0) {
                     for (let i = 0; i < playerParty.length; i++) {
                         if (playerParty[i] && playerParty[i].nextEvolution && pokemonData.evolutions[playerParty[i].nextEvolution]) {
-                            candidates.push({ index: i, oldPoke: playerParty[i], newPoke: pokemonData.evolutions[playerParty[i].nextEvolution] });
+                            let isShiny = playerParty[i].name.includes("閃光");
+                            let nextEvoName = playerParty[i].nextEvolution;
+                            if (isShiny) nextEvoName = "閃光 " + nextEvoName;
+                            let newPoke = window.getPokemonByName(nextEvoName);
+                            candidates.push({ index: i, oldPoke: playerParty[i], newPoke: newPoke });
                         }
                     }
                 }
@@ -5032,7 +5146,7 @@
 
         window.resumeTurn = function(phase) {
             window.isSingleAttacking = false;
-            if (gameMode === 'gym' && currentQuestion && currentQuestion.isPolygon) {
+            if (currentQuestion && currentQuestion.isPolygon) {
                 currentPhase = 1;
                 polyStep = phase;
                 const keyMap = { 1: 'step1', 2: 'step2', 3: 'step3' };
@@ -5086,6 +5200,16 @@
             elements.playerHpBar.style.width = `${perc}%`;
             elements.playerHpText.innerText = `${Math.max(0, Math.floor(playerHp))}/${playerMaxHp}`;
             elements.playerHpBar.className = perc > 50 ? "bg-green-500 h-full rounded-full transition-all duration-500" : perc > 25 ? "bg-yellow-400 h-full rounded-full transition-all duration-500" : "bg-red-500 h-full rounded-full transition-all duration-500";
+            
+            // 檢查玩家目前出戰的寶可夢是否為閃光
+            const shinyEffect = document.getElementById('player-shiny-effect');
+            if (shinyEffect) {
+                if (playerParty[activePlayerIndex] && playerParty[activePlayerIndex].name.includes("閃光")) {
+                    shinyEffect.classList.remove('hidden');
+                } else {
+                    shinyEffect.classList.add('hidden');
+                }
+            }
         };
 
         window.attackPokemon = function(multiplier = 1.0, isFinalHit = false) {
@@ -5154,6 +5278,12 @@
                 elements.pokeball.classList.remove('pokeball-throw');
                 elements.messageBox.innerHTML = `太棒了！成功收服 <span class="text-red-600 font-black">${currentPokemon.name}</span>！`;
                 
+                // 累積閃光機率保底
+                let badgeCount = Object.keys(defeatedGyms || {}).length;
+                if (gameMode === 'single' && badgeCount > 0 && !currentPokemon.name.includes("閃光")) {
+                    window.accumulatedShinyChance = (window.accumulatedShinyChance || 0) + badgeCount;
+                }
+                
                 newlyCaughtPokemon = { ...currentPokemon, currentHp: currentPokemon.stats.hp };
                 
                 if (playerParty.length < 3) { 
@@ -5172,89 +5302,17 @@
             }, 3500);
         };
 
-        // 當畫面載入時自動塞入下拉選單的選項
+        // 當畫面載入時自動塞入下拉選單的選項 (使用 querySelectorAll 確保所有重複的選單都被正確填入)
         window.onload = () => { 
-            document.getElementById('login-class').innerHTML = singleClassOptionsHtml;
-            document.getElementById('login-num').innerHTML = numOptionsHtml;
-            window.setupCanvasPanning();
+            document.querySelectorAll('#login-class').forEach(el => el.innerHTML = singleClassOptionsHtml);
+            document.querySelectorAll('#login-num').forEach(el => el.innerHTML = numOptionsHtml);
             window.showScreen('mode'); 
             window.resizeGame();
         };
 
-        // 畫板拖曳功能參數與設定
-        window.canvasPanX = 0;
-        window.canvasPanY = 0;
-        window.canvasZoom = 1;
-        let isDraggingCanvas = false;
-        let lastPanClientX = 0;
-        let lastPanClientY = 0;
-        
-        window.zoomCanvas = function(delta) {
-            window.canvasZoom += delta;
-            if (window.canvasZoom < 0.5) window.canvasZoom = 0.5;
-            if (window.canvasZoom > 3.0) window.canvasZoom = 3.0;
-            
-            if (gameMode === 'gym' && currentQuestion && currentQuestion.isPolygon) {
-                window.drawPolygonToCanvas('shape-canvas', currentQuestion);
-            } else if (gameMode === 'single' && currentQuestion) {
-                window.drawShapeToCanvas('shape-canvas', currentQuestion, false);
-            }
-        };
-
-        window.setupCanvasPanning = function() {
-            const canvas = document.getElementById('shape-canvas');
-            if (!canvas) return;
-            
-            const startDrag = (e) => {
-                isDraggingCanvas = true;
-                lastPanClientX = e.touches ? e.touches[0].clientX : e.clientX;
-                lastPanClientY = e.touches ? e.touches[0].clientY : e.clientY;
-                canvas.style.cursor = 'grabbing';
-            };
-            
-            const doDrag = (e) => {
-                if (!isDraggingCanvas) return;
-                if (e.cancelable) e.preventDefault(); // 防止手機端滑動畫面
-                let currentX = e.touches ? e.touches[0].clientX : e.clientX;
-                let currentY = e.touches ? e.touches[0].clientY : e.clientY;
-                
-                // 將拖曳距離依照畫布縮放比例轉換
-                let rect = canvas.getBoundingClientRect();
-                let scaleX = canvas.width / rect.width;
-                let scaleY = canvas.height / rect.height;
-                
-                let dx = (currentX - lastPanClientX) * scaleX;
-                let dy = (currentY - lastPanClientY) * scaleY;
-                
-                window.canvasPanX += dx;
-                window.canvasPanY += dy;
-                
-                lastPanClientX = currentX;
-                lastPanClientY = currentY;
-                
-                // 即時重新繪圖
-                if (gameMode === 'gym' && currentQuestion && currentQuestion.isPolygon) {
-                    window.drawPolygonToCanvas('shape-canvas', currentQuestion);
-                } else if (gameMode === 'single' && currentQuestion) {
-                    window.drawShapeToCanvas('shape-canvas', currentQuestion, false);
-                }
-            };
-            
-            const endDrag = () => {
-                isDraggingCanvas = false;
-                canvas.style.cursor = 'move';
-            };
-            
-            // 綁定滑鼠事件
-            canvas.addEventListener('mousedown', startDrag);
-            canvas.addEventListener('mousemove', doDrag);
-            window.addEventListener('mouseup', endDrag);
-            
-            // 綁定觸控事件
-            canvas.addEventListener('touchstart', startDrag, {passive: false});
-            canvas.addEventListener('touchmove', doDrag, {passive: false});
-            window.addEventListener('touchend', endDrag);
-        };
+        // 保險機制：強制立即執行一次，防止 onload 被重複的代碼阻擋
+        document.querySelectorAll('#login-class').forEach(el => el.innerHTML = singleClassOptionsHtml);
+        document.querySelectorAll('#login-num').forEach(el => el.innerHTML = numOptionsHtml);
     </script>
 </body>
 </html>
