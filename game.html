@@ -3249,6 +3249,11 @@
                     return { valid: false, msg: `${part.label}算式需用括號列出相加過程！（提示：${part.hint}）` };
                 }
             }
+            if (part.shapeType === 'trapezoid_ext_h') {
+                if (!normalized.includes('+')) {
+                    return { valid: false, msg: `${part.label}的高需用括號列出相加過程！（提示：${part.hint}）` };
+                }
+            }
             let nums = normalized.match(/\d+/g);
             if (!nums) return { valid: false, msg: "算式中沒有數字！" };
             let numVals = nums.map(Number);
@@ -3258,6 +3263,7 @@
             else if (part.shapeType === 2) required = [part.top, part.bottom, part.height, 2];
             else if (part.shapeType === 'triangle_sub') required = [part.base, part.totalH, part.subH, 2];
             else if (part.shapeType === 'triangle_ext') required = [part.basePart1, part.ext, part.height, 2];
+            else if (part.shapeType === 'trapezoid_ext_h') required = [part.top, part.bottom, part.h1, part.h2, 2];
 
             let temp = [...numVals];
             for (let r of required) {
@@ -3290,8 +3296,7 @@
             }
 
             if (splitIndices.length === 0) {
-                let opName = q.method === 'split' ? '「+」把圖形A算式和圖形B算式加起來' : '「-」把圖形A算式減去缺口B算式';
-                return { valid: false, msg: `請用${opName}！（例如：${q.step1Sample}）` };
+                return { valid: false };
             }
 
             for (let idx of splitIndices) {
@@ -3306,7 +3311,7 @@
                         if (c === '(') d++;
                         else if (c === ')') { d--; if (d < 0) { ok = false; break; } }
                     }
-                    if (ok && d === 0 && q.partA.shapeType !== 2 && q.partA.shapeType !== 'triangle_ext' && q.partA.shapeType !== 'triangle_sub') leftExpr = inner;
+                    if (ok && d === 0 && q.partA.shapeType !== 2 && q.partA.shapeType !== 'triangle_ext' && q.partA.shapeType !== 'triangle_sub' && q.partA.shapeType !== 'trapezoid_ext_h') leftExpr = inner;
                 }
                 if (rightExpr.startsWith('(') && rightExpr.endsWith(')')) {
                     let inner = rightExpr.slice(1, -1);
@@ -3315,7 +3320,7 @@
                         if (c === '(') d++;
                         else if (c === ')') { d--; if (d < 0) { ok = false; break; } }
                     }
-                    if (ok && d === 0 && q.partB.shapeType !== 2 && q.partB.shapeType !== 'triangle_ext' && q.partB.shapeType !== 'triangle_sub') rightExpr = inner;
+                    if (ok && d === 0 && q.partB.shapeType !== 2 && q.partB.shapeType !== 'triangle_ext' && q.partB.shapeType !== 'triangle_sub' && q.partB.shapeType !== 'trapezoid_ext_h') rightExpr = inner;
                 }
 
                 let checkA1 = window.validatePartFormula(leftExpr, q.partA);
@@ -3334,10 +3339,7 @@
                 }
             }
 
-            return {
-                valid: false,
-                msg: `步驟①列式有誤！請直接列出兩部分算式（提示：${q.partA.hint} ${targetOp} ${q.partB.hint}）`
-            };
+            return { valid: false };
         };
 
         // 驗證步驟 ②：寫出 圖形A答案 ± 圖形B答案
@@ -3349,17 +3351,17 @@
             const targetOp = q.method === 'split' ? '+' : '-';
 
             if (!normalized.includes(targetOp)) {
-                return { valid: false, msg: `請用「${targetOp}」寫出兩個圖形的面積答案！（例如：${q.step2Sample}）` };
+                return { valid: false, msg: "提示: 先分開計各圖形的面積，最後再做加減計算多邊形" };
             }
 
             // 必須是純數字 ± 純數字，不可夾雜 × 或 ÷
             if (/[×÷*xX/()]/.test(normalized)) {
-                return { valid: false, msg: `步驟②請先算出 A 和 B 各自的面積數字！（例如：${q.step2Sample}）` };
+                return { valid: false, msg: "提示: 先分開計各圖形的面積，最後再做加減計算多邊形" };
             }
 
             let parts = normalized.split(targetOp);
             if (parts.length !== 2 || !/^\d+$/.test(parts[0]) || !/^\d+$/.test(parts[1])) {
-                return { valid: false, msg: `格式請輸入：圖形A答案 ${targetOp} 圖形B答案！` };
+                return { valid: false, msg: "提示: 先分開計各圖形的面積，最後再做加減計算多邊形" };
             }
 
             let v1 = parseInt(parts[0], 10);
@@ -3376,7 +3378,7 @@
 
             return {
                 valid: false,
-                msg: `A 或 B 的面積計算有誤！請檢查 ${q.partA.formulaSample}=${ansA}，${q.partB.formulaSample}=${ansB}`
+                msg: "提示: 先分開計各圖形的面積，最後再做加減計算多邊形"
             };
         };
 
@@ -3394,8 +3396,17 @@
                     elements.messageBox.innerHTML = `<span class="text-green-600 font-black">步驟① 列式正確！</span> 請寫出步驟②：圖形A答案 ${opSymbol} 圖形B答案！`;
                 } else {
                     polyStats[methodKey].step1++; // 紀錄步驟1答錯次數
+                    q.step1WrongCount = (q.step1WrongCount || 0) + 1;
+                    let hintMsg = "";
+                    if (q.step1WrongCount === 1) {
+                        hintMsg = `提示: ${q.hint1}`;
+                    } else if (q.step1WrongCount === 2) {
+                        hintMsg = `提示: ${q.hint2}`;
+                    } else {
+                        hintMsg = `提示: ${q.hint3 || q.step1Sample}`;
+                    }
                     window.isSingleAttacking = true;
-                    window.handleWrongAnswer(res.msg, 1);
+                    window.handleWrongAnswer(hintMsg, 1);
                 }
             } else if (polyStep === 2) {
                 let res = window.validatePolygonStep2CombinedAnswers(polyInputs.step2, q);
@@ -3406,7 +3417,7 @@
                 } else {
                     polyStats[methodKey].step2++; // 紀錄步驟2答錯次數
                     window.isSingleAttacking = true;
-                    window.handleWrongAnswer(res.msg, 2);
+                    window.handleWrongAnswer("提示: 先分開計各圖形的面積，最後再做加減計算多邊形", 2);
                 }
             } else if (polyStep === 3) {
                 let ans = parseInt(polyInputs.step3, 10);
@@ -3424,7 +3435,7 @@
                 } else {
                     polyStats[methodKey].step3++; // 紀錄步驟3答錯次數
                     window.isSingleAttacking = true;
-                    window.handleWrongAnswer(`最終總面積計算錯誤！請再仔細算一次 ${polyInputs.step2} 的結果！`, 3);
+                    window.handleWrongAnswer("提示: 小心計算", 3);
                 }
             }
         };
@@ -3454,6 +3465,9 @@
                         partA: { label: 'A大長方形', shapeType: 0, base: w, height: h1, answer: areaA, formulaSample: `${w}×${h1}`, hint: `A大長方形(${w}×${h1})` },
                         partB: { label: 'B小三角形', shapeType: 'triangle_sub', base: tw, totalH: totalH, subH: h1, height: th, answer: areaB, formulaSample: `${tw}×(${totalH}-${h1})÷2`, hint: `B三角形(${tw}×(${totalH}-${h1})÷2)` },
                         step1Sample: `${w}×${h1} + ${tw}×(${totalH}-${h1})÷2`, step2Sample: `${areaA} + ${areaB}`, answer: areaA + areaB,
+                        hint1: '矩形 + 三角形',
+                        hint2: '長×闊 + 底×高÷2   (留意直角)',
+                        hint3: `${w}×${h1} + ${tw}×(${totalH}-${h1})÷2`,
                         dims: { w, h1, tw, th, totalH }
                     };
                 },
@@ -3473,6 +3487,9 @@
                         partA: { label: 'A長方形', shapeType: 0, base: rw, height: rh, answer: areaA, formulaSample: `${rw}×${rh}`, hint: `A長方形(${rw}×${rh})` },
                         partB: { label: 'B三角形', shapeType: 'triangle_ext', basePart1: rw, ext: ext, base: tw, height: th, answer: areaB, formulaSample: `(${rw}+${ext})×${th}÷2`, hint: `B三角形((${rw}+${ext})×${th}÷2)` },
                         step1Sample: `${rw}×${rh} + (${rw}+${ext})×${th}÷2`, step2Sample: `${areaA} + ${areaB}`, answer: areaA + areaB,
+                        hint1: '矩形 + 三角形',
+                        hint2: '長×闊 + 底×高÷2   (留意直角)',
+                        hint3: `${rw}×${rh} + (${rw}+${ext})×${th}÷2`,
                         dims: { rw, rh, ext, tw, th }
                     };
                 },
@@ -3490,6 +3507,9 @@
                         partA: { label: '大長方形A', shapeType: 0, base: w, height: h, answer: areaA, formulaSample: `${w}×${h}`, hint: `大長方形A(${w}×${h})` },
                         partB: { label: '缺口B', shapeType: 1, base: w, height: ch, answer: areaB, formulaSample: `${w}×${ch}÷2`, hint: `缺口B(${w}×${ch}÷2)` },
                         step1Sample: `${w}×${h} - ${w}×${ch}÷2`, step2Sample: `${areaA} - ${areaB}`, answer: areaA - areaB,
+                        hint1: '矩形 - 三角形',
+                        hint2: '長×闊 - 底×高÷2   (留意直角)',
+                        hint3: `${w}×${h} - ${w}×${ch}÷2`,
                         dims: { w, h, ch }
                     };
                 },
@@ -3507,14 +3527,44 @@
                         partA: { label: 'A長方形', shapeType: 0, base: rw, height: rh, answer: areaA, formulaSample: `${rw}×${rh}`, hint: `A長方形(${rw}×${rh})` },
                         partB: { label: 'B平四', shapeType: 0, base: rh, height: pw, answer: areaB, formulaSample: `${rh}×${pw}`, hint: `B平行四邊形(${rh}×${pw})` },
                         step1Sample: `${rw}×${rh} + ${rh}×${pw}`, step2Sample: `${areaA} + ${areaB}`, answer: areaA + areaB,
+                        hint1: '矩形 + 平行四邊形',
+                        hint2: '長×闊 + 底×高   (留意直角)',
+                        hint3: `${rw}×${rh} + ${rh}×${pw}`,
                         dims: { rw, rh, pw, ph }
+                    };
+                },
+                // 4: 大梯形 - 內部矩形缺口 (A-B) [對應 image_bda9d8 / image_bd501c，算式 (25+14)×(12+6)÷2 - 12×14]
+                function() {
+                    const presets = [
+                        { topW: 14, botW: 25, rH: 12, lowH: 6 },
+                        { topW: 8,  botW: 15, rH: 8,  lowH: 4 },
+                        { topW: 10, botW: 18, rH: 8,  lowH: 4 },
+                        { topW: 12, botW: 20, rH: 10, lowH: 5 },
+                        { topW: 7,  botW: 13, rH: 6,  lowH: 3 },
+                        { topW: 10, botW: 17, rH: 9,  lowH: 3 }
+                    ];
+                    let p = presets[window.rand(0, presets.length - 1)];
+                    let topW = p.topW, botW = p.botW, rH = p.rH, lowH = p.lowH;
+                    let totalH = rH + lowH;
+
+                    let areaA = ((botW + topW) * totalH) / 2;
+                    let areaB = rH * topW;
+                    return {
+                        isPolygon: true, polyType: 'poly_trap_rect_cut', method: 'fill', methodTitle: '🧩 填補法 (A − B)', unit: 'cm',
+                        partA: { label: 'A大梯形', shapeType: 'trapezoid_ext_h', top: topW, bottom: botW, h1: rH, h2: lowH, height: totalH, answer: areaA, formulaSample: `(${botW}+${topW})×(${rH}+${lowH})÷2`, hint: `A大梯形((${botW}+${topW})×(${rH}+${lowH})÷2)` },
+                        partB: { label: 'B缺口矩形', shapeType: 0, base: rH, height: topW, answer: areaB, formulaSample: `${rH}×${topW}`, hint: `B缺口矩形(${rH}×${topW})` },
+                        step1Sample: `(${botW}+${topW})×(${rH}+${lowH})÷2 - ${rH}×${topW}`, step2Sample: `${areaA} - ${areaB}`, answer: areaA - areaB,
+                        hint1: '梯形 - 矩形',
+                        hint2: '(上底+下底)×高÷2 - 長×闊   (留意直角)',
+                        hint3: `(${botW}+${topW})×(${rH}+${lowH})÷2 - ${rH}×${topW}`,
+                        dims: { topW, botW, rH, lowH, totalH }
                     };
                 }
             ];
 
-            // 使用洗牌機制確保 4 款題型輪流出現，不會漏掉任何一款題型
+            // 使用洗牌機制確保 5 款題型輪流出現，不會漏掉任何一款題型
             if (!window.polyDeck || window.polyDeck.length === 0) {
-                window.polyDeck = [0, 1, 2, 3];
+                window.polyDeck = [0, 1, 2, 3, 4];
                 for (let i = window.polyDeck.length - 1; i > 0; i--) {
                     let j = Math.floor(Math.random() * (i + 1));
                     let tmp = window.polyDeck[i];
@@ -3524,9 +3574,13 @@
             }
             let pickIdx = window.polyDeck.pop();
             let q = templates[pickIdx]();
+            q.step1WrongCount = 0;
             if (q.polyType === 'poly_rect_tri_corner') {
                 // 預設採用圖片中的 45 度傾斜角或常見角度，讓視覺與圖示一致
                 const angles = [Math.PI / 4, -Math.PI / 4, 0, Math.PI / 2];
+                q.rotation = angles[window.rand(0, angles.length - 1)];
+            } else if (q.polyType === 'poly_trap_rect_cut') {
+                const angles = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
                 q.rotation = angles[window.rand(0, angles.length - 1)];
             } else {
                 q.rotation = window.rand(0, 7) * (Math.PI / 4);
@@ -3798,6 +3852,98 @@
                 drawBadgeLabel(`${d.h1} ${u}`, left - 24, top + ph1 / 2, "#111827", 15);
                 drawBadgeLabel(`${d.tw} ${u}`, triLeftX + ptw / 2, dimBotY + 15, "#111827", 15);
                 drawBadgeLabel(`${d.h1 + d.th} ${u}`, dimRightX + 24, top + (ph1 + pth) / 2, "#111827", 15);
+            }
+            else if (q.polyType === 'poly_trap_rect_cut') {
+                let totalW = d.botW;
+                let totalH = d.rH + d.lowH;
+                let scale = (MAX_SIZE * 0.85) / Math.max(totalW, totalH);
+                let pTopW = d.topW * scale;
+                let pBotW = d.botW * scale;
+                let prH = d.rH * scale;
+                let plowH = d.lowH * scale;
+
+                let topY = -totalH * scale / 2 - 6;
+                let midY = topY + prH;
+                let botY = midY + plowH;
+                let rLeft = -pTopW / 2;
+                let rRight = pTopW / 2;
+                let bLeft = -pBotW / 2;
+                let bRight = pBotW / 2;
+
+                // 淺藍色凹字形梯形主體
+                ctx.fillStyle = "#e0f2fe";
+                ctx.strokeStyle = "#334155";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(bLeft, botY);
+                ctx.lineTo(rLeft, topY);
+                ctx.lineTo(rLeft, midY);
+                ctx.lineTo(rRight, midY);
+                ctx.lineTo(rRight, topY);
+                ctx.lineTo(bRight, botY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 上方缺口虛線
+                ctx.save();
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = "#475569";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(rLeft, topY);
+                ctx.lineTo(rRight, topY);
+                ctx.stroke();
+                ctx.restore();
+
+                // 內部矩形四個角落的直角符號
+                drawRightAngle(rLeft, topY, 8, 1, 1);
+                drawRightAngle(rRight, topY, 8, -1, 1);
+                drawRightAngle(rLeft, midY, 8, 1, -1);
+                drawRightAngle(rRight, midY, 8, -1, -1);
+
+                // 下方高度 (如 6 cm) 的垂直虛線與上下直角符號
+                let dashX = rLeft + pTopW * 0.28;
+                ctx.save();
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = "#475569";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(dashX, midY);
+                ctx.lineTo(dashX, botY);
+                ctx.stroke();
+                ctx.restore();
+
+                drawRightAngle(dashX, midY, 7, 1, 1);
+                drawRightAngle(dashX, botY, 7, 1, -1);
+
+                // 底部雙箭頭尺寸標示線 (如 25 cm)
+                let arrowY = botY + 12;
+                ctx.save();
+                ctx.strokeStyle = "#475569";
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.moveTo(bLeft, botY + 3);
+                ctx.lineTo(bLeft, arrowY + 5);
+                ctx.moveTo(bRight, botY + 3);
+                ctx.lineTo(bRight, arrowY + 5);
+                ctx.moveTo(bLeft, arrowY);
+                ctx.lineTo(bRight, arrowY);
+                // 左箭頭與右箭頭
+                ctx.moveTo(bLeft + 6, arrowY - 4);
+                ctx.lineTo(bLeft, arrowY);
+                ctx.lineTo(bLeft + 6, arrowY + 4);
+                ctx.moveTo(bRight - 6, arrowY - 4);
+                ctx.lineTo(bRight, arrowY);
+                ctx.lineTo(bRight - 6, arrowY + 4);
+                ctx.stroke();
+                ctx.restore();
+
+                // 標示四個數值
+                drawBadgeLabel(`${d.topW} ${u}`, 0, topY - 14, "#111827", 15);
+                drawBadgeLabel(`${d.rH} ${u}`, rLeft + 26, topY + prH / 2, "#111827", 14);
+                drawBadgeLabel(`${d.lowH} ${u}`, dashX - 24, midY + plowH / 2, "#111827", 14);
+                drawBadgeLabel(`${d.botW} ${u}`, 0, arrowY + 15, "#111827", 15);
             }
 
             ctx.restore();
