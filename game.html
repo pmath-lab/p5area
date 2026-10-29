@@ -3127,554 +3127,7 @@
         // ==========================================
         let polyStep = 1; // 1: 列出 圖形A算式±圖形B算式, 2: 寫出 圖形A答案±圖形B答案, 3: 寫出最終總面積答案
         let polyInputs = { step1: "", step2: "", step3: "" };
-
-        window.generatePolygonQuestion = function() {
-            const templates = [
-                // 0: 房子形五邊形 (分割法：上方三角形 A + 下方長方形 B)
-                function() {
-                    let w = window.rand(6, 12);
-                    let hRect = window.rand(5, 9);
-                    let hTri = window.rand(3, 6);
-                    if ((w * hTri) % 2 !== 0) hTri++;
-                    let areaA = (w * hTri) / 2;
-                    let areaB = w * hRect;
-                    return {
-                        isPolygon: true,
-                        polyType: 'house_split',
-                        method: 'split', // A + B
-                        methodTitle: '✂️ 分割法 (A + B)',
-                        unit: 'cm',
-                        partA: {
-                            label: 'A三角形',
-                            shapeType: 1, // 三角形: 底 × 高 ÷ 2
-                            base: w,
-                            height: hTri,
-                            answer: areaA,
-                            formulaSample: `${w}×${hTri}÷2`,
-                            hint: `A三角形(${w}×${hTri}÷2)`
-                        },
-                        partB: {
-                            label: 'B長方形',
-                            shapeType: 0, // 長方形: 長 × 闊
-                            base: w,
-                            height: hRect,
-                            answer: areaB,
-                            formulaSample: `${w}×${hRect}`,
-                            hint: `B長方形(${w}×${hRect})`
-                        },
-                        step1Sample: `${w}×${hTri}÷2 + ${w}×${hRect}`,
-                        step2Sample: `${areaA} + ${areaB}`,
-                        answer: areaA + areaB,
-                        dims: { w, hRect, hTri }
-                    };
-                },
-                // 1: L形六邊形 (分割法：左長方形 A + 右長方形 B)
-                function() {
-                    let wA = window.rand(4, 7);
-                    let hA = window.rand(8, 12);
-                    let wB = window.rand(4, 7);
-                    let hB = window.rand(4, hA - 3);
-                    let totalW = wA + wB;
-                    let areaA = wA * hA;
-                    let areaB = wB * hB;
-                    return {
-                        isPolygon: true,
-                        polyType: 'L_split',
-                        method: 'split',
-                        methodTitle: '✂️ 分割法 (A + B)',
-                        unit: 'cm',
-                        partA: {
-                            label: 'A長方形',
-                            shapeType: 0,
-                            base: wA,
-                            height: hA,
-                            answer: areaA,
-                            formulaSample: `${wA}×${hA}`,
-                            hint: `A長方形(${wA}×${hA})`
-                        },
-                        partB: {
-                            label: 'B長方形',
-                            shapeType: 0,
-                            base: wB,
-                            height: hB,
-                            answer: areaB,
-                            formulaSample: `${wB}×${hB}`,
-                            hint: `B長方形(${wB}×${hB})`
-                        },
-                        step1Sample: `${wA}×${hA} + ${wB}×${hB}`,
-                        step2Sample: `${areaA} + ${areaB}`,
-                        answer: areaA + areaB,
-                        dims: { wA, hA, wB, hB, totalW }
-                    };
-                },
-                // 2: 梯形頂組合多邊形 (分割法：上方梯形 A + 下方長方形 B)
-                function() {
-                    let topW = window.rand(4, 7);
-                    let bottomW = topW + window.rand(2, 5);
-                    let hTrap = window.rand(3, 6);
-                    if (((topW + bottomW) * hTrap) % 2 !== 0) hTrap++;
-                    let hRect = window.rand(4, 7);
-                    let areaA = ((topW + bottomW) * hTrap) / 2;
-                    let areaB = bottomW * hRect;
-                    return {
-                        isPolygon: true,
-                        polyType: 'trap_rect_split',
-                        method: 'split',
-                        methodTitle: '✂️ 分割法 (A + B)',
-                        unit: 'm',
-                        partA: {
-                            label: 'A梯形',
-                            shapeType: 2, // 梯形
-                            top: topW,
-                            bottom: bottomW,
-                            height: hTrap,
-                            answer: areaA,
-                            formulaSample: `(${topW}+${bottomW})×${hTrap}÷2`,
-                            hint: `A梯形((${topW}+${bottomW})×${hTrap}÷2)`
-                        },
-                        partB: {
-                            label: 'B長方形',
-                            shapeType: 0,
-                            base: bottomW,
-                            height: hRect,
-                            answer: areaB,
-                            formulaSample: `${bottomW}×${hRect}`,
-                            hint: `B長方形(${bottomW}×${hRect})`
-                        },
-                        step1Sample: `(${topW}+${bottomW})×${hTrap}÷2 + ${bottomW}×${hRect}`,
-                        step2Sample: `${areaA} + ${areaB}`,
-                        answer: areaA + areaB,
-                        dims: { topW, bottomW, hTrap, hRect }
-                    };
-                },
-                // 3: 凹字缺口多邊形 (填補法：大長方形 A - 缺口長方形 B)
-                function() {
-                    let bigW = window.rand(9, 14);
-                    let bigH = window.rand(7, 11);
-                    let cutW = window.rand(3, bigW - 4);
-                    let cutH = window.rand(2, bigH - 3);
-                    let areaA = bigW * bigH;
-                    let areaB = cutW * cutH;
-                    return {
-                        isPolygon: true,
-                        polyType: 'rect_cutout_fill',
-                        method: 'fill', // A - B
-                        methodTitle: '🧩 填補法 (A − B)',
-                        unit: 'cm',
-                        partA: {
-                            label: '大長方形A',
-                            shapeType: 0,
-                            base: bigW,
-                            height: bigH,
-                            answer: areaA,
-                            formulaSample: `${bigW}×${bigH}`,
-                            hint: `大長方形A(${bigW}×${bigH})`
-                        },
-                        partB: {
-                            label: '缺口B',
-                            shapeType: 0,
-                            base: cutW,
-                            height: cutH,
-                            answer: areaB,
-                            formulaSample: `${cutW}×${cutH}`,
-                            hint: `缺口B(${cutW}×${cutH})`
-                        },
-                        step1Sample: `${bigW}×${bigH} - ${cutW}×${cutH}`,
-                        step2Sample: `${areaA} - ${areaB}`,
-                        answer: areaA - areaB,
-                        dims: { bigW, bigH, cutW, cutH }
-                    };
-                },
-                // 4: 燕尾旗形多邊形 (填補法：大長方形 A - 缺口三角形 B)
-                function() {
-                    let bigW = window.rand(8, 13);
-                    let bigH = window.rand(6, 10);
-                    let triH = window.rand(3, bigW - 3);
-                    if ((bigH * triH) % 2 !== 0) {
-                        if (bigH % 2 !== 0) bigH++;
-                    }
-                    let areaA = bigW * bigH;
-                    let areaB = (bigH * triH) / 2;
-                    return {
-                        isPolygon: true,
-                        polyType: 'banner_tri_fill',
-                        method: 'fill', // A - B
-                        methodTitle: '🧩 填補法 (A − B)',
-                        unit: 'm',
-                        partA: {
-                            label: '大長方形A',
-                            shapeType: 0,
-                            base: bigW,
-                            height: bigH,
-                            answer: areaA,
-                            formulaSample: `${bigW}×${bigH}`,
-                            hint: `大長方形A(${bigW}×${bigH})`
-                        },
-                        partB: {
-                            label: '缺口B',
-                            shapeType: 1,
-                            base: bigH,
-                            height: triH,
-                            answer: areaB,
-                            formulaSample: `${bigH}×${triH}÷2`,
-                            hint: `缺口B(${bigH}×${triH}÷2)`
-                        },
-                        step1Sample: `${bigW}×${bigH} - ${bigH}×${triH}÷2`,
-                        step2Sample: `${areaA} - ${areaB}`,
-                        answer: areaA - areaB,
-                        dims: { bigW, bigH, triH }
-                    };
-                }
-            ];
-
-            let pick = templates[window.rand(0, templates.length - 1)];
-            let q = pick();
-            q.rotation = window.rand(0, 359) * Math.PI / 180;
-            return q;
-        };
-
-        window.drawPolygonToCanvas = function(canvasId, q) {
-            let canvas = document.getElementById(canvasId);
-            if (!canvas) return;
-            let ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            let w = canvas.width;
-            let h = canvas.height;
-            let u = q.unit || 'cm';
-            
-            let panX = (canvasId === 'shape-canvas') ? (window.canvasPanX || 0) : 0;
-            let panY = (canvasId === 'shape-canvas') ? (window.canvasPanY || 0) : 0;
-
-            ctx.save();
-            ctx.translate(w / 2 + panX, h / 2 + panY);
-            if (q.rotation) ctx.rotate(q.rotation);
-            ctx.lineJoin = "round";
-            ctx.lineCap = "round";
-
-            function drawBadgeLabel(text, x, y, color = "#111827", fontSize = 15) {
-                ctx.save();
-                ctx.translate(x, y);
-                if (q.rotation) ctx.rotate(-q.rotation);
-                ctx.font = `900 ${fontSize}px 'Noto Sans TC'`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
-                ctx.lineWidth = 5;
-                ctx.strokeText(text, 0, 0);
-                ctx.fillStyle = color;
-                ctx.fillText(text, 0, 0);
-                ctx.restore();
-            }
-
-            function drawRightAngle(x, y, size, dirX = 1, dirY = 1) {
-                ctx.save();
-                ctx.strokeStyle = "#4b5563";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(x + dirX * size, y);
-                ctx.lineTo(x + dirX * size, y + dirY * size);
-                ctx.lineTo(x, y + dirY * size);
-                ctx.stroke();
-                ctx.restore();
-            }
-
-            const d = q.dims;
-
-            if (q.polyType === 'house_split') {
-                let totalH = d.hTri + d.hRect;
-                let diag = Math.sqrt(d.w * d.w + totalH * totalH);
-                let scale = 190 / diag;
-                let pw = d.w * scale;
-                let phRect = d.hRect * scale;
-                let phTri = d.hTri * scale;
-
-                let left = -pw / 2;
-                let topApex = -(phTri + phRect) / 2;
-                let midY = topApex + phTri;
-                let bottom = midY + phRect;
-
-                // 上方三角形 A
-                ctx.fillStyle = "#bfdbfe";
-                ctx.strokeStyle = "#1d4ed8";
-                ctx.lineWidth = 3.5;
-                ctx.beginPath();
-                ctx.moveTo(0, topApex);
-                ctx.lineTo(left + pw, midY);
-                ctx.lineTo(left, midY);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-
-                // 下方長方形 B
-                ctx.fillStyle = "#bbf7d0";
-                ctx.strokeStyle = "#047857";
-                ctx.beginPath();
-                ctx.moveTo(left, midY);
-                ctx.lineTo(left + pw, midY);
-                ctx.lineTo(left + pw, bottom);
-                ctx.lineTo(left, bottom);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-
-                // 分割紅虛線
-                ctx.save();
-                ctx.setLineDash([6, 5]);
-                ctx.strokeStyle = "#dc2626";
-                ctx.lineWidth = 2.5;
-                ctx.beginPath();
-                ctx.moveTo(left, midY);
-                ctx.lineTo(left + pw, midY);
-                ctx.stroke();
-
-                // 三角形高虛線
-                ctx.strokeStyle = "#1e40af";
-                ctx.beginPath();
-                ctx.moveTo(0, topApex);
-                ctx.lineTo(0, midY);
-                ctx.stroke();
-                ctx.restore();
-
-                drawRightAngle(0, midY, 8, 1, -1);
-                drawRightAngle(left, bottom, 8, 1, -1);
-
-                drawBadgeLabel("A", -pw * 0.22, midY - phTri * 0.35, "#1e3a8a", 18);
-                drawBadgeLabel("B", 0, midY + phRect * 0.5, "#065f46", 18);
-
-                drawBadgeLabel(`${d.hTri} ${u}`, 26, topApex + phTri * 0.55, "#1e40af", 14);
-                drawBadgeLabel(`${d.w} ${u}`, 0, bottom + 18, "#111827", 15);
-                drawBadgeLabel(`${d.hRect} ${u}`, left + pw + 28, midY + phRect * 0.5, "#111827", 15);
-            } 
-            else if (q.polyType === 'L_split') {
-                let diag = Math.sqrt(d.totalW * d.totalW + d.hA * d.hA);
-                let scale = 190 / diag;
-                let pwA = d.wA * scale;
-                let phA = d.hA * scale;
-                let pwB = d.wB * scale;
-                let phB = d.hB * scale;
-
-                let left = -(pwA + pwB) / 2;
-                let bottom = phA / 2;
-                let topA = -phA / 2;
-                let topB = bottom - phB;
-                let splitX = left + pwA;
-                let right = splitX + pwB;
-
-                // A 左長方形
-                ctx.fillStyle = "#bfdbfe";
-                ctx.strokeStyle = "#1d4ed8";
-                ctx.lineWidth = 3.5;
-                ctx.fillRect(left, topA, pwA, phA);
-                ctx.strokeRect(left, topA, pwA, phA);
-
-                // B 右長方形
-                ctx.fillStyle = "#bbf7d0";
-                ctx.strokeStyle = "#047857";
-                ctx.fillRect(splitX, topB, pwB, phB);
-                ctx.strokeRect(splitX, topB, pwB, phB);
-
-                // 分割紅虛線
-                ctx.save();
-                ctx.setLineDash([6, 5]);
-                ctx.strokeStyle = "#dc2626";
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(splitX, topB);
-                ctx.lineTo(splitX, bottom);
-                ctx.stroke();
-                ctx.restore();
-
-                drawRightAngle(left, bottom, 8, 1, -1);
-                drawRightAngle(right, bottom, 8, -1, -1);
-
-                drawBadgeLabel("A", left + pwA / 2, 0, "#1e3a8a", 18);
-                drawBadgeLabel("B", splitX + pwB / 2, topB + phB / 2, "#065f46", 18);
-
-                drawBadgeLabel(`${d.wA} ${u}`, left + pwA / 2, topA - 15, "#111827", 14);
-                drawBadgeLabel(`${d.hA} ${u}`, left - 26, 0, "#111827", 14);
-                drawBadgeLabel(`${d.wB} ${u}`, splitX + pwB / 2, topB - 15, "#111827", 14);
-                drawBadgeLabel(`${d.hB} ${u}`, right + 26, topB + phB / 2, "#111827", 14);
-            }
-            else if (q.polyType === 'trap_rect_split') {
-                let totalH = d.hTrap + d.hRect;
-                let diag = Math.sqrt(d.bottomW * d.bottomW + totalH * totalH);
-                let scale = 190 / diag;
-                let pTopW = d.topW * scale;
-                let pBotW = d.bottomW * scale;
-                let phTrap = d.hTrap * scale;
-                let phRect = d.hRect * scale;
-
-                let left = -pBotW / 2;
-                let right = pBotW / 2;
-                let topY = -(phTrap + phRect) / 2;
-                let midY = topY + phTrap;
-                let botY = midY + phRect;
-
-                // 上方梯形 A
-                ctx.fillStyle = "#bfdbfe";
-                ctx.strokeStyle = "#1d4ed8";
-                ctx.lineWidth = 3.5;
-                ctx.beginPath();
-                ctx.moveTo(-pTopW / 2, topY);
-                ctx.lineTo(pTopW / 2, topY);
-                ctx.lineTo(right, midY);
-                ctx.lineTo(left, midY);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-
-                // 下方長方形 B
-                ctx.fillStyle = "#bbf7d0";
-                ctx.strokeStyle = "#047857";
-                ctx.fillRect(left, midY, pBotW, phRect);
-                ctx.strokeRect(left, midY, pBotW, phRect);
-
-                // 分割虛線與梯形高
-                ctx.save();
-                ctx.setLineDash([6, 5]);
-                ctx.strokeStyle = "#dc2626";
-                ctx.lineWidth = 2.5;
-                ctx.beginPath();
-                ctx.moveTo(left, midY);
-                ctx.lineTo(right, midY);
-                ctx.stroke();
-
-                ctx.strokeStyle = "#1e40af";
-                ctx.beginPath();
-                ctx.moveTo(-pTopW / 2, topY);
-                ctx.lineTo(-pTopW / 2, midY);
-                ctx.stroke();
-                ctx.restore();
-
-                drawRightAngle(-pTopW / 2, midY, 7, 1, -1);
-                drawRightAngle(left, botY, 8, 1, -1);
-
-                drawBadgeLabel("A", 18, topY + phTrap * 0.5, "#1e3a8a", 17);
-                drawBadgeLabel("B", 0, midY + phRect * 0.5, "#065f46", 18);
-
-                drawBadgeLabel(`${d.topW} ${u}`, 0, topY - 14, "#111827", 14);
-                drawBadgeLabel(`${d.hTrap} ${u}`, -pTopW / 2 - 24, topY + phTrap * 0.5, "#1e40af", 13);
-                drawBadgeLabel(`${d.bottomW} ${u}`, 0, botY + 16, "#111827", 14);
-                drawBadgeLabel(`${d.hRect} ${u}`, right + 26, midY + phRect * 0.5, "#111827", 14);
-            }
-            else if (q.polyType === 'rect_cutout_fill') {
-                let diag = Math.sqrt(d.bigW * d.bigW + d.bigH * d.bigH);
-                let scale = 190 / diag;
-                let pw = d.bigW * scale;
-                let ph = d.bigH * scale;
-                let cw = d.cutW * scale;
-                let ch = d.cutH * scale;
-
-                let left = -pw / 2;
-                let right = pw / 2;
-                let top = -ph / 2;
-                let bottom = ph / 2;
-                let cLeft = -cw / 2;
-                let cRight = cw / 2;
-                let cBottom = top + ch;
-
-                // 塗色U形主體 A
-                ctx.fillStyle = "#fde68a";
-                ctx.strokeStyle = "#d97706";
-                ctx.lineWidth = 3.5;
-                ctx.beginPath();
-                ctx.moveTo(left, top);
-                ctx.lineTo(cLeft, top);
-                ctx.lineTo(cLeft, cBottom);
-                ctx.lineTo(cRight, cBottom);
-                ctx.lineTo(cRight, top);
-                ctx.lineTo(right, top);
-                ctx.lineTo(right, bottom);
-                ctx.lineTo(left, bottom);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-
-                // 缺口 B 虛線填補區
-                ctx.fillStyle = "rgba(239, 68, 68, 0.14)";
-                ctx.fillRect(cLeft, top, cw, ch);
-                ctx.save();
-                ctx.setLineDash([5, 5]);
-                ctx.strokeStyle = "#dc2626";
-                ctx.lineWidth = 2.5;
-                ctx.beginPath();
-                ctx.moveTo(cLeft, top);
-                ctx.lineTo(cRight, top);
-                ctx.stroke();
-                ctx.restore();
-
-                drawRightAngle(left, bottom, 8, 1, -1);
-                drawRightAngle(right, bottom, 8, -1, -1);
-
-                drawBadgeLabel("A (全圖)", 0, bottom - (ph - ch) * 0.45, "#92400e", 15);
-                drawBadgeLabel("B(缺口)", 0, top + ch * 0.5, "#dc2626", 13);
-
-                drawBadgeLabel(`${d.bigW} ${u}`, 0, bottom + 17, "#111827", 15);
-                drawBadgeLabel(`${d.bigH} ${u}`, left - 28, 0, "#111827", 15);
-                drawBadgeLabel(`${d.cutW} ${u}`, 0, top - 14, "#dc2626", 14);
-                drawBadgeLabel(`${d.cutH} ${u}`, cRight + 24, top + ch * 0.5, "#dc2626", 13);
-            }
-            else if (q.polyType === 'banner_tri_fill') {
-                let diag = Math.sqrt(d.bigW * d.bigW + d.bigH * d.bigH);
-                let scale = 190 / diag;
-                let pw = d.bigW * scale;
-                let ph = d.bigH * scale;
-                let pTriH = d.triH * scale;
-
-                let left = -pw / 2;
-                let right = pw / 2;
-                let top = -ph / 2;
-                let bottom = ph / 2;
-                let inX = right - pTriH;
-
-                // 燕尾旗塗色區
-                ctx.fillStyle = "#fde68a";
-                ctx.strokeStyle = "#d97706";
-                ctx.lineWidth = 3.5;
-                ctx.beginPath();
-                ctx.moveTo(left, top);
-                ctx.lineTo(right, top);
-                ctx.lineTo(inX, 0);
-                ctx.lineTo(right, bottom);
-                ctx.lineTo(left, bottom);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-
-                // 缺口三角形 B 填補區
-                ctx.fillStyle = "rgba(239, 68, 68, 0.14)";
-                ctx.beginPath();
-                ctx.moveTo(right, top);
-                ctx.lineTo(right, bottom);
-                ctx.lineTo(inX, 0);
-                ctx.closePath();
-                ctx.fill();
-
-                ctx.save();
-                ctx.setLineDash([5, 5]);
-                ctx.strokeStyle = "#dc2626";
-                ctx.lineWidth = 2.5;
-                ctx.beginPath();
-                ctx.moveTo(right, top);
-                ctx.lineTo(right, bottom);
-                ctx.moveTo(inX, 0);
-                ctx.lineTo(right, 0);
-                ctx.stroke();
-                ctx.restore();
-
-                drawRightAngle(left, bottom, 8, 1, -1);
-                drawRightAngle(right, 0, 7, -1, -1);
-
-                drawBadgeLabel("A (大長方形)", left + (pw - pTriH) * 0.48, 0, "#92400e", 14);
-                drawBadgeLabel("B", right - pTriH * 0.35, -ph * 0.22, "#dc2626", 14);
-
-                drawBadgeLabel(`${d.bigW} ${u}`, 0, top - 15, "#111827", 15);
-                drawBadgeLabel(`${d.bigH} ${u}`, left - 28, 0, "#111827", 15);
-                drawBadgeLabel(`${d.triH} ${u}`, inX + pTriH * 0.5, 16, "#dc2626", 13);
-            }
-
-            ctx.restore();
-        };
+        window.polyDeck = [];
 
         window.updatePolygonUI = function() {
             const stdPanel = document.getElementById('standard-qa-panel');
@@ -3786,6 +3239,16 @@
             if (Math.abs(val - part.answer) > 0.001) {
                 return { valid: false, msg: `${part.label}列式結果不符！（提示：${part.hint}）` };
             }
+            if (part.shapeType === 'triangle_sub') {
+                if (!normalized.includes('-')) {
+                    return { valid: false, msg: `${part.label}算式需用括號列出相減過程！（提示：${part.hint}）` };
+                }
+            }
+            if (part.shapeType === 'triangle_ext') {
+                if (!normalized.includes('+')) {
+                    return { valid: false, msg: `${part.label}算式需用括號列出相加過程！（提示：${part.hint}）` };
+                }
+            }
             let nums = normalized.match(/\d+/g);
             if (!nums) return { valid: false, msg: "算式中沒有數字！" };
             let numVals = nums.map(Number);
@@ -3793,11 +3256,13 @@
             if (part.shapeType === 0) required = [part.base, part.height];
             else if (part.shapeType === 1) required = [part.base, part.height, 2];
             else if (part.shapeType === 2) required = [part.top, part.bottom, part.height, 2];
+            else if (part.shapeType === 'triangle_sub') required = [part.base, part.totalH, part.subH, 2];
+            else if (part.shapeType === 'triangle_ext') required = [part.basePart1, part.ext, part.height, 2];
 
             let temp = [...numVals];
             for (let r of required) {
                 let idx = temp.indexOf(r);
-                if (idx === -1) return { valid: false, msg: `${part.label}算式需使用邊長數字！（提示：${part.hint}）` };
+                if (idx === -1) return { valid: false, msg: `${part.label}算式需使用圖中標示的邊長數字！（提示：${part.hint}）` };
                 temp.splice(idx, 1);
             }
             if (temp.length > 0) return { valid: false, msg: `${part.label}算式包含了多餘的數字！` };
@@ -3841,7 +3306,7 @@
                         if (c === '(') d++;
                         else if (c === ')') { d--; if (d < 0) { ok = false; break; } }
                     }
-                    if (ok && d === 0 && q.partA.shapeType !== 2) leftExpr = inner;
+                    if (ok && d === 0 && q.partA.shapeType !== 2 && q.partA.shapeType !== 'triangle_ext' && q.partA.shapeType !== 'triangle_sub') leftExpr = inner;
                 }
                 if (rightExpr.startsWith('(') && rightExpr.endsWith(')')) {
                     let inner = rightExpr.slice(1, -1);
@@ -3850,7 +3315,7 @@
                         if (c === '(') d++;
                         else if (c === ')') { d--; if (d < 0) { ok = false; break; } }
                     }
-                    if (ok && d === 0 && q.partB.shapeType !== 2) rightExpr = inner;
+                    if (ok && d === 0 && q.partB.shapeType !== 2 && q.partB.shapeType !== 'triangle_ext' && q.partB.shapeType !== 'triangle_sub') rightExpr = inner;
                 }
 
                 let checkA1 = window.validatePartFormula(leftExpr, q.partA);
@@ -3927,7 +3392,6 @@
                     polyStep = 2;
                     window.updatePolygonUI();
                     elements.messageBox.innerHTML = `<span class="text-green-600 font-black">步驟① 列式正確！</span> 請寫出步驟②：圖形A答案 ${opSymbol} 圖形B答案！`;
-                    // 移除第一波攻勢，直接進入下一步計算
                 } else {
                     polyStats[methodKey].step1++; // 紀錄步驟1答錯次數
                     window.isSingleAttacking = true;
@@ -3939,7 +3403,6 @@
                     polyStep = 3;
                     window.updatePolygonUI();
                     elements.messageBox.innerHTML = `<span class="text-green-600 font-black">步驟② 計算正確！</span> 請寫出步驟③：最終總面積答案！`;
-                    // 移除第二波連擊，直接進入最終解答
                 } else {
                     polyStats[methodKey].step2++; // 紀錄步驟2答錯次數
                     window.isSingleAttacking = true;
@@ -3968,34 +3431,56 @@
 
         window.rand = function(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; };
 
-        // 產生道館挑戰賽的複合多邊形題目
+        // 產生道館挑戰賽與閃光寶可夢的複合多邊形題目
         window.generatePolygonQuestion = function() {
-            // 移除高倍率放大，將所有數字基底限制在心算友善範圍 (大多在 10 左右)
             const templates = [
-                // 1: 矩形 + 側邊三角形 (A+B) [對應 image_aa6c70]
+                // 0: 頂部大矩形 + 右下角擴展三角形 (A+B) [對應 image_cb5ffb / image_cb6e9b，黑線標示與括號相減]
                 function() {
-                    let rw = window.rand(2, 5);
-                    let rh = window.rand(2, 5);
-                    let tw = window.rand(3, 6);
-                    let th = window.rand(4, 8);
-                    if (th <= rh) th = rh + window.rand(1, 3);
-                    if ((tw * th) % 2 !== 0) th++; // 確保面積為整數
+                    let w = window.rand(6, 10);
+                    let h1 = window.rand(3, 6);
+                    let tw = window.rand(3, w - 2);
+                    let th = window.rand(2, 5);
+                    if ((tw * th) % 2 !== 0) {
+                        if (tw % 2 !== 0) tw++;
+                        if (tw >= w) tw = w - 2;
+                        if ((tw * th) % 2 !== 0) th++;
+                    }
+                    let totalH = h1 + th;
 
-                    let areaA = (tw * th) / 2;
-                    let areaB = rw * rh;
+                    let areaA = w * h1;
+                    let areaB = (tw * th) / 2;
                     return {
-                        isPolygon: true, polyType: 'poly_rect_tri_L', method: 'split', methodTitle: '✂️ 分割法 (A + B)', unit: 'cm',
-                        partA: { label: 'A三角形', shapeType: 1, base: tw, height: th, answer: areaA, formulaSample: `${tw}×${th}÷2`, hint: `A三角形(${tw}×${th}÷2)` },
-                        partB: { label: 'B長方形', shapeType: 0, base: rw, height: rh, answer: areaB, formulaSample: `${rw}×${rh}`, hint: `B長方形(${rw}×${rh})` },
-                        step1Sample: `${tw}×${th}÷2 + ${rw}×${rh}`, step2Sample: `${areaA} + ${areaB}`, answer: areaA + areaB,
-                        dims: { rw, rh, tw, th }
+                        isPolygon: true, polyType: 'poly_rect_tri_corner', method: 'split', methodTitle: '✂️ 分割法 (A + B)', unit: 'cm',
+                        partA: { label: 'A大長方形', shapeType: 0, base: w, height: h1, answer: areaA, formulaSample: `${w}×${h1}`, hint: `A大長方形(${w}×${h1})` },
+                        partB: { label: 'B小三角形', shapeType: 'triangle_sub', base: tw, totalH: totalH, subH: h1, height: th, answer: areaB, formulaSample: `${tw}×(${totalH}-${h1})÷2`, hint: `B三角形(${tw}×(${totalH}-${h1})÷2)` },
+                        step1Sample: `${w}×${h1} + ${tw}×(${totalH}-${h1})÷2`, step2Sample: `${areaA} + ${areaB}`, answer: areaA + areaB,
+                        dims: { w, h1, tw, th, totalH }
                     };
                 },
-                // 2: 大矩形 - V型缺口三角形 (A-B) [對應 image_aa6c52]
+                // 1: 矩形 + 下方延伸三角形 (A+B) [對應 image_cbd3fd，顯示紅線延伸，需寫出 (rw+ext)×th÷2]
+                function() {
+                    let rw = window.rand(3, 6);
+                    let rh = window.rand(2, 5);
+                    let ext = window.rand(1, 3);
+                    let tw = rw + ext;
+                    let th = window.rand(4, 8);
+                    if ((tw * th) % 2 !== 0) th++;
+
+                    let areaA = rw * rh;
+                    let areaB = (tw * th) / 2;
+                    return {
+                        isPolygon: true, polyType: 'poly_rect_tri_L', method: 'split', methodTitle: '✂️ 分割法 (A + B)', unit: 'cm',
+                        partA: { label: 'A長方形', shapeType: 0, base: rw, height: rh, answer: areaA, formulaSample: `${rw}×${rh}`, hint: `A長方形(${rw}×${rh})` },
+                        partB: { label: 'B三角形', shapeType: 'triangle_ext', basePart1: rw, ext: ext, base: tw, height: th, answer: areaB, formulaSample: `(${rw}+${ext})×${th}÷2`, hint: `B三角形((${rw}+${ext})×${th}÷2)` },
+                        step1Sample: `${rw}×${rh} + (${rw}+${ext})×${th}÷2`, step2Sample: `${areaA} + ${areaB}`, answer: areaA + areaB,
+                        dims: { rw, rh, ext, tw, th }
+                    };
+                },
+                // 2: 大矩形 - V型缺口三角形 (A-B)
                 function() {
                     let w = window.rand(4, 8);
                     let h = window.rand(5, 10);
-                    let ch = window.rand(2, h - 2); // 缺口深度
+                    let ch = window.rand(2, h - 2);
                     if ((w * ch) % 2 !== 0) w++;
 
                     let areaA = w * h;
@@ -4008,47 +3493,44 @@
                         dims: { w, h, ch }
                     };
                 },
-                // 3: 矩形 + 右側平四 (A+B) [對應 image_aa19f9]
+                // 3: 矩形 + 平行四邊形 (A+B)
                 function() {
                     let rw = window.rand(3, 6);
-                    let rh = window.rand(3, 6);
-                    let pw = window.rand(4, 8);
-                    let ph = window.rand(3, 6);
+                    let rh = window.rand(4, 7);
+                    let pw = window.rand(5, 8);
+                    let ph = window.rand(2, 4);
 
                     let areaA = rw * rh;
-                    let areaB = pw * ph;
+                    let areaB = rh * pw;
                     return {
                         isPolygon: true, polyType: 'poly_rect_para', method: 'split', methodTitle: '✂️ 分割法 (A + B)', unit: 'cm',
                         partA: { label: 'A長方形', shapeType: 0, base: rw, height: rh, answer: areaA, formulaSample: `${rw}×${rh}`, hint: `A長方形(${rw}×${rh})` },
-                        partB: { label: 'B平四', shapeType: 0, base: pw, height: ph, answer: areaB, formulaSample: `${pw}×${ph}`, hint: `B平行四邊形(${pw}×${ph})` },
-                        step1Sample: `${rw}×${rh} + ${pw}×${ph}`, step2Sample: `${areaA} + ${areaB}`, answer: areaA + areaB,
+                        partB: { label: 'B平四', shapeType: 0, base: rh, height: pw, answer: areaB, formulaSample: `${rh}×${pw}`, hint: `B平行四邊形(${rh}×${pw})` },
+                        step1Sample: `${rw}×${rh} + ${rh}×${pw}`, step2Sample: `${areaA} + ${areaB}`, answer: areaA + areaB,
                         dims: { rw, rh, pw, ph }
-                    };
-                },
-                // 4: 頂部大矩形 + 右下角擴展三角形 (A+B) [對應 image_aa6b9e]
-                function() {
-                    let w = window.rand(6, 10);
-                    let h1 = window.rand(3, 6);
-                    let tw = window.rand(3, w - 2);
-                    let th = window.rand(3, 6);
-                    if ((tw * th) % 2 !== 0) th++;
-
-                    let areaA = w * h1;
-                    let areaB = (tw * th) / 2;
-                    return {
-                        isPolygon: true, polyType: 'poly_rect_tri_corner', method: 'split', methodTitle: '✂️ 分割法 (A + B)', unit: 'cm',
-                        partA: { label: 'A大長方形', shapeType: 0, base: w, height: h1, answer: areaA, formulaSample: `${w}×${h1}`, hint: `A大長方形(${w}×${h1})` },
-                        partB: { label: 'B小三角形', shapeType: 1, base: tw, height: th, answer: areaB, formulaSample: `${tw}×${th}÷2`, hint: `B下半三角形(${tw}×${th}÷2)` },
-                        step1Sample: `${w}×${h1} + ${tw}×${th}÷2`, step2Sample: `${areaA} + ${areaB}`, answer: areaA + areaB,
-                        dims: { w, h1, tw, th }
                     };
                 }
             ];
 
-            let pick = templates[window.rand(0, templates.length - 1)];
-            let q = pick();
-            // 以 45 度為單位隨機旋轉 (0, 45, 90, 135, 180, 225, 270, 315)
-            q.rotation = window.rand(0, 7) * (Math.PI / 4);
+            // 使用洗牌機制確保 4 款題型輪流出現，不會漏掉任何一款題型
+            if (!window.polyDeck || window.polyDeck.length === 0) {
+                window.polyDeck = [0, 1, 2, 3];
+                for (let i = window.polyDeck.length - 1; i > 0; i--) {
+                    let j = Math.floor(Math.random() * (i + 1));
+                    let tmp = window.polyDeck[i];
+                    window.polyDeck[i] = window.polyDeck[j];
+                    window.polyDeck[j] = tmp;
+                }
+            }
+            let pickIdx = window.polyDeck.pop();
+            let q = templates[pickIdx]();
+            if (q.polyType === 'poly_rect_tri_corner') {
+                // 預設採用圖片中的 45 度傾斜角或常見角度，讓視覺與圖示一致
+                const angles = [Math.PI / 4, -Math.PI / 4, 0, Math.PI / 2];
+                q.rotation = angles[window.rand(0, angles.length - 1)];
+            } else {
+                q.rotation = window.rand(0, 7) * (Math.PI / 4);
+            }
             return q;
         };
 
@@ -4075,7 +3557,7 @@
             function drawBadgeLabel(text, x, y, color = "#111827", fontSize = 16) {
                 ctx.save();
                 ctx.translate(x, y);
-                if (q.rotation) ctx.rotate(-q.rotation); // 自動反轉，保持文字直立
+                if (q.rotation) ctx.rotate(-q.rotation);
                 ctx.font = `900 ${fontSize}px 'Noto Sans TC'`;
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
@@ -4100,43 +3582,71 @@
             }
 
             const d = q.dims;
-            const MAX_SIZE = 220; // 最大繪製尺寸限制
+            const MAX_SIZE = 165;
 
             if (q.polyType === 'poly_rect_tri_L') {
-                let totalW = d.tw + d.rw;
-                let totalH = Math.max(d.rh, d.th);
+                let totalW = d.tw;
+                let totalH = d.rh + d.th;
                 let scale = MAX_SIZE / Math.max(totalW, totalH);
                 let prw = d.rw * scale, prh = d.rh * scale;
-                let ptw = d.tw * scale, pth = d.th * scale;
-                
-                let left = -(ptw + prw) / 2;
-                let bottom = totalH / 2;
+                let pext = d.ext * scale, ptw = d.tw * scale, pth = d.th * scale;
 
-                // 左方三角形 A
-                ctx.fillStyle = "#fde68a"; ctx.strokeStyle = "#d97706"; ctx.lineWidth = 4;
-                ctx.beginPath(); 
-                ctx.moveTo(left, bottom); 
-                ctx.lineTo(left+ptw, bottom); 
-                ctx.lineTo(left+ptw, bottom-pth); 
-                ctx.closePath(); ctx.fill(); ctx.stroke();
-                
-                // 右方長方形 B
-                ctx.fillStyle = "#bfdbfe"; ctx.strokeStyle = "#1d4ed8";
-                ctx.fillRect(left+ptw, bottom-prh, prw, prh); 
-                ctx.strokeRect(left+ptw, bottom-prh, prw, prh);
+                let right = ptw / 2;
+                let rectLeft = right - prw;
+                let triLeft = right - ptw;
+                let top = -totalH / 2;
+                let midY = top + prh;
+                let bottom = midY + pth;
 
-                // 分割線
-                ctx.save(); ctx.setLineDash([6,6]); ctx.strokeStyle="#dc2626"; ctx.beginPath(); 
-                ctx.moveTo(left+ptw, bottom-prh); ctx.lineTo(left+ptw, bottom); ctx.stroke(); ctx.restore();
+                // 上方長方形 A
+                ctx.fillStyle = "#bfdbfe"; ctx.strokeStyle = "#1d4ed8"; ctx.lineWidth = 3.5;
+                ctx.fillRect(rectLeft, top, prw, prh);
+                ctx.strokeRect(rectLeft, top, prw, prh);
 
-                drawRightAngle(left+ptw, bottom-prh, 10, 1, 1);
-                drawRightAngle(left+ptw+prw, bottom, 10, -1, -1);
-                drawRightAngle(left+ptw+prw, bottom-prh, 10, -1, 1);
+                // 下方三角形 B
+                ctx.fillStyle = "#fde68a"; ctx.strokeStyle = "#d97706"; ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(triLeft, midY);
+                ctx.lineTo(right, midY);
+                ctx.lineTo(right, bottom);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
 
-                drawBadgeLabel(`${d.tw} ${u}`, left + ptw/2, bottom + 20);
-                drawBadgeLabel(`${d.rw} ${u}`, left + ptw + prw/2, bottom-prh - 20);
-                drawBadgeLabel(`${d.rh} ${u}`, left + ptw + prw + 25, bottom - prh/2);
-                drawBadgeLabel(`${d.th} ${u}`, left + ptw + 25, bottom - pth/2);
+                // 紅虛線分割線
+                ctx.save();
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = "#dc2626";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(rectLeft, midY);
+                ctx.lineTo(right, midY);
+                ctx.stroke();
+                ctx.restore();
+
+                // 左側延伸長度紅線標示 (例如 1 cm)
+                let bracketY = midY + 14;
+                ctx.save();
+                ctx.strokeStyle = "#dc2626";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(triLeft, midY + 4);
+                ctx.lineTo(triLeft, bracketY + 5);
+                ctx.moveTo(rectLeft, midY + 4);
+                ctx.lineTo(rectLeft, bracketY + 5);
+                ctx.moveTo(triLeft, bracketY);
+                ctx.lineTo(rectLeft, bracketY);
+                ctx.stroke();
+                ctx.restore();
+
+                drawRightAngle(rectLeft, top, 9, 1, 1);
+                drawRightAngle(right, top, 9, -1, 1);
+                drawRightAngle(rectLeft, midY, 9, 1, -1);
+
+                drawBadgeLabel(`${d.rw} ${u}`, rectLeft + prw / 2, top - 16, "#111827", 15);
+                drawBadgeLabel(`${d.rh} ${u}`, rectLeft - 24, top + prh / 2, "#111827", 15);
+                drawBadgeLabel(`${d.ext} ${u}`, (triLeft + rectLeft) / 2, bracketY + 15, "#dc2626", 15);
+                drawBadgeLabel(`${d.th} ${u}`, right + 26, midY + pth / 2, "#111827", 15);
             } 
             else if (q.polyType === 'poly_rect_tri_cut') {
                 let scale = MAX_SIZE / Math.max(d.w, d.h);
@@ -4144,7 +3654,7 @@
                 let left = -pw/2, top = -ph/2, right = pw/2, bottom = ph/2;
 
                 // 畫主體凹槽
-                ctx.fillStyle = "#93c5fd"; ctx.strokeStyle = "#1d4ed8"; ctx.lineWidth = 4;
+                ctx.fillStyle = "#93c5fd"; ctx.strokeStyle = "#1d4ed8"; ctx.lineWidth = 3.5;
                 ctx.beginPath(); 
                 ctx.moveTo(left, top); 
                 ctx.lineTo(0, top+pch); 
@@ -4159,13 +3669,13 @@
                 ctx.beginPath(); ctx.moveTo(0, top); ctx.lineTo(0, top+pch); ctx.stroke(); 
                 ctx.restore();
 
-                drawRightAngle(left, bottom, 10, 1, -1);
-                drawRightAngle(right, bottom, 10, -1, -1);
-                drawRightAngle(0, top, 10, -1, 1);
+                drawRightAngle(left, bottom, 9, 1, -1);
+                drawRightAngle(right, bottom, 9, -1, -1);
+                drawRightAngle(0, top, 9, -1, 1);
 
-                drawBadgeLabel(`${d.w} ${u}`, 0, top - 20);
-                drawBadgeLabel(`${d.h} ${u}`, right + 25, 0);
-                drawBadgeLabel(`${d.ch} ${u}`, -25, top + pch/2, "#dc2626");
+                drawBadgeLabel(`${d.w} ${u}`, 0, top - 18, "#111827", 15);
+                drawBadgeLabel(`${d.h} ${u}`, right + 25, 0, "#111827", 15);
+                drawBadgeLabel(`${d.ch} ${u}`, -24, top + pch/2, "#dc2626", 15);
             }
             else if (q.polyType === 'poly_rect_para') {
                 let totalW = d.rw + d.pw;
@@ -4176,7 +3686,7 @@
                 let left = -totalW/2, bottom = prh/2; 
                 
                 // 左邊長方形 A
-                ctx.fillStyle = "#93c5fd"; ctx.strokeStyle = "#1d4ed8"; ctx.lineWidth = 4;
+                ctx.fillStyle = "#93c5fd"; ctx.strokeStyle = "#1d4ed8"; ctx.lineWidth = 3.5;
                 ctx.fillRect(left, bottom-prh, prw, prh); 
                 ctx.strokeRect(left, bottom-prh, prw, prh);
                 
@@ -4194,49 +3704,100 @@
                 ctx.beginPath(); ctx.moveTo(left+prw, bottom); ctx.lineTo(left+prw+ppw, bottom); 
                 ctx.lineTo(left+prw+ppw, bottom-pph); ctx.stroke(); ctx.restore();
 
-                drawRightAngle(left, bottom, 10, 1, -1);
-                drawRightAngle(left, bottom-prh, 10, 1, 1);
-                drawRightAngle(left+prw+ppw, bottom, 10, -1, -1);
+                drawRightAngle(left, bottom, 9, 1, -1);
+                drawRightAngle(left, bottom-prh, 9, 1, 1);
+                drawRightAngle(left+prw+ppw, bottom, 9, -1, -1);
 
-                drawBadgeLabel(`${d.rw} ${u}`, left+prw/2, bottom+25);
-                drawBadgeLabel(`${d.rh} ${u}`, left-25, bottom-prh/2);
-                drawBadgeLabel(`${d.pw} ${u}`, left+prw+ppw/2, bottom+25);
-                drawBadgeLabel(`${d.ph} ${u}`, left+prw+ppw+25, bottom-pph/2);
+                drawBadgeLabel(`${d.rw} ${u}`, left+prw/2, bottom+20, "#111827", 15);
+                drawBadgeLabel(`${d.rh} ${u}`, left-24, bottom-prh/2, "#111827", 15);
+                drawBadgeLabel(`${d.pw} ${u}`, left+prw+ppw/2, bottom+20, "#111827", 15);
+                drawBadgeLabel(`${d.ph} ${u}`, left+prw+ppw+24, bottom-pph/2, "#111827", 15);
             }
             else if (q.polyType === 'poly_rect_tri_corner') {
                 let totalW = d.w;
                 let totalH = d.h1 + d.th;
-                let scale = MAX_SIZE / Math.max(totalW, totalH);
-                let pw = d.w*scale, ph1 = d.h1*scale, ptw = d.tw*scale, pth = d.th*scale;
+                let scale = (MAX_SIZE * 0.85) / Math.max(totalW, totalH);
+                let pw = d.w * scale, ph1 = d.h1 * scale, ptw = d.tw * scale, pth = d.th * scale;
                 
-                let left = -pw/2, top = -totalH/2;
+                let left = -pw / 2, top = -totalH / 2;
+                let right = left + pw;
+                let midY = top + ph1;
+                let botY = midY + pth;
+                let triLeftX = right - ptw;
                 
-                // 頂部大長方形 A
-                ctx.fillStyle = "#86efac"; ctx.strokeStyle = "#15803d"; ctx.lineWidth = 4;
-                ctx.fillRect(left, top, pw, ph1); 
-                ctx.strokeRect(left, top, pw, ph1);
-                
-                // 右下擴展三角形 B
-                ctx.fillStyle = "#bbf7d0"; ctx.strokeStyle = "#047857";
-                ctx.beginPath(); 
-                ctx.moveTo(left+pw-ptw, top+ph1); 
-                ctx.lineTo(left+pw, top+ph1); 
-                ctx.lineTo(left+pw, top+ph1+pth); 
-                ctx.closePath(); ctx.fill(); ctx.stroke();
+                // 多邊形整體外框與填色
+                ctx.fillStyle = "#86efac";
+                ctx.strokeStyle = "#15803d";
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(left, top);
+                ctx.lineTo(right, top);
+                ctx.lineTo(right, botY);
+                ctx.lineTo(triLeftX, midY);
+                ctx.lineTo(left, midY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
 
-                // 分割虛線
-                ctx.save(); ctx.setLineDash([6,6]); ctx.strokeStyle="#dc2626"; 
-                ctx.beginPath(); ctx.moveTo(left+pw-ptw, top+ph1); ctx.lineTo(left+pw, top+ph1); ctx.stroke(); ctx.restore();
+                // 內部紅色虛線分割線與紅色直角符號
+                ctx.save();
+                ctx.setLineDash([6, 6]);
+                ctx.strokeStyle = "#dc2626";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(triLeftX, midY);
+                ctx.lineTo(right, midY);
+                ctx.stroke();
+                ctx.restore();
 
-                drawRightAngle(left, top, 10, 1, 1);
-                drawRightAngle(left+pw, top, 10, -1, 1);
-                drawRightAngle(left, top+ph1, 10, 1, -1);
+                ctx.save();
+                ctx.strokeStyle = "#dc2626";
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(right - 9, midY);
+                ctx.lineTo(right - 9, midY + 9);
+                ctx.lineTo(right, midY + 9);
+                ctx.stroke();
+                ctx.restore();
 
-                drawBadgeLabel(`${d.w} ${u}`, 0, top-20);
-                drawBadgeLabel(`${d.h1} ${u}`, left-25, top+ph1/2);
-                drawBadgeLabel(`${d.tw} ${u}`, left+pw-ptw/2, top+ph1-20, "#dc2626");
-                // 標示完整右側長度
-                drawBadgeLabel(`${d.h1+d.th} ${u}`, left+pw+25, top+(ph1+pth)/2);
+                drawRightAngle(left, top, 9, 1, 1);
+                drawRightAngle(right, top, 9, -1, 1);
+                drawRightAngle(left, midY, 9, 1, -1);
+
+                // 右側總長 (例如 8 cm) 的黑色延伸尺寸線
+                let dimRightX = right + 16;
+                ctx.save();
+                ctx.strokeStyle = "#1f2937";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(right + 4, top);
+                ctx.lineTo(dimRightX + 6, top);
+                ctx.moveTo(right + 4, botY);
+                ctx.lineTo(dimRightX + 6, botY);
+                ctx.moveTo(dimRightX, top);
+                ctx.lineTo(dimRightX, botY);
+                ctx.stroke();
+                ctx.restore();
+
+                // 下方三角形底長 (例如 6 cm) 的黑色延伸尺寸線
+                let dimBotY = botY + 16;
+                ctx.save();
+                ctx.strokeStyle = "#1f2937";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(triLeftX, midY + 4);
+                ctx.lineTo(triLeftX, dimBotY + 6);
+                ctx.moveTo(right, botY + 4);
+                ctx.lineTo(right, dimBotY + 6);
+                ctx.moveTo(triLeftX, dimBotY);
+                ctx.lineTo(right, dimBotY);
+                ctx.stroke();
+                ctx.restore();
+
+                drawBadgeLabel(`${d.w} ${u}`, 0, top - 16, "#111827", 15);
+                drawBadgeLabel(`${d.h1} ${u}`, left - 24, top + ph1 / 2, "#111827", 15);
+                drawBadgeLabel(`${d.tw} ${u}`, triLeftX + ptw / 2, dimBotY + 15, "#111827", 15);
+                drawBadgeLabel(`${d.h1 + d.th} ${u}`, dimRightX + 24, top + (ph1 + pth) / 2, "#111827", 15);
             }
 
             ctx.restore();
